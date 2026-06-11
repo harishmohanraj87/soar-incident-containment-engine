@@ -1,0 +1,11 @@
+{
+  "alert_id": "ALT-90210",
+  "timestamp": "2026-06-11T08:45:12Z",
+  "alert_type": "Brute Force Attack",
+  "severity": "High",
+  "source_ip": "192.168.1.50",
+  "attacker_ip": "203.0.113.45",
+  "target_system": "Authentication_Server_01",
+  "description": "Multiple failed login attempts detected for user 'admin' within a 2-minute window.",
+  "status": "New"
+}
