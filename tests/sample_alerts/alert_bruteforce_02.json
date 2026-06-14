@@ -1,0 +1,11 @@
+{
+  "alert_id": "ALT-104992",
+  "timestamp": "2026-06-13T20:15:00Z",
+  "alert_type": "Suspected Data Exfiltration",
+  "severity": "Critical",
+  "source_ip": "10.0.5.101",
+  "attacker_ip": "198.51.100.77",
+  "target_system": "Customer_DB_04",
+  "description": "Unusually large outbound data transfer (50GB) detected from internal database server to an unknown external IP over port 443 within a 15-minute window.",
+  "status": "New"
+}
