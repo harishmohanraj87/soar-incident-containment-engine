@@ -1,0 +1,11 @@
+{
+  "alert_id": "ALT-95332",
+  "timestamp": "2026-06-16T14:20:05Z",
+  "alert_type": "SQL Injection Attempt",
+  "severity": "Critical",
+  "source_ip": "10.0.5.12",
+  "attacker_ip": "198.51.100.88",
+  "target_system": "Web_App_Database_Primary",
+  "description": "WAF blocked a sequence of malformed HTTP POST requests containing SQL syntax targeted at the customer login portal.",
+  "status": "New"
+}
