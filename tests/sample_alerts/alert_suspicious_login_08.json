@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80140",
+    "timestamp": "2026-06-18T04:05:44Z",
+    "alert_type": "Suspicious Login",
+    "severity": "High",
+    "user_account": "aevans_admin",
+    "source_ip": "103.25.142.3",
+    "geolocation": "Mumbai, IN",
+    "description": "Anomalous login successfully bypassed location-based conditional access policies via legacy authentication protocols.",
+    "status": "New"
+  }

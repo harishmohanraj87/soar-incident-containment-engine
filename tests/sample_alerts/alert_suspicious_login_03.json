@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80123",
+    "timestamp": "2026-06-17T18:32:14Z",
+    "alert_type": "Suspicious Login",
+    "severity": "Critical",
+    "user_account": "mgarcia_finance",
+    "source_ip": "103.45.67.89",
+    "geolocation": "Beijing, CN",
+    "description": "Account logged in from a known Tor exit node outside of the user's typical geographic baseline.",
+    "status": "New"
+  }

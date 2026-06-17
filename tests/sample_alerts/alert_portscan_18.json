@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-40616",
+    "timestamp": "2026-06-17T16:20:30Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "Low",
+    "attacker_ip": "104.244.42.8",
+    "target_network": "10.50.0.0/16",
+    "description": "Occasional SYN packets sent to random high-numbered ports over a 24-hour period.",
+    "status": "New"
+  }

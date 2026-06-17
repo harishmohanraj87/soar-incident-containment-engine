@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-40614",
+    "timestamp": "2026-06-17T15:15:22Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "High",
+    "attacker_ip": "198.51.100.111",
+    "target_network": "192.168.1.0/24",
+    "description": "Comprehensive 'all ports' scan (1-65535) detected against the primary domain controller.",
+    "status": "New"
+  }

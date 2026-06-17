@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80138",
+    "timestamp": "2026-06-18T02:30:10Z",
+    "alert_type": "Suspicious Login",
+    "severity": "Critical",
+    "user_account": "mscott_eng",
+    "source_ip": "46.101.88.5",
+    "geolocation": "London, UK",
+    "description": "Session cookie hijack suspected; valid API session token reused from a completely different Autonomous System Number (ASN).",
+    "status": "New"
+  }

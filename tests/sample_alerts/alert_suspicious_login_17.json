@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80135",
+    "timestamp": "2026-06-18T00:20:12Z",
+    "alert_type": "Suspicious Login",
+    "severity": "Medium",
+    "user_account": "jdoe_guest",
+    "source_ip": "104.244.42.1",
+    "geolocation": "Ashburn, US",
+    "description": "Guest account accessed from a commercial data center / cloud provider IP rather than a standard residential ISP.",
+    "status": "New"
+  }

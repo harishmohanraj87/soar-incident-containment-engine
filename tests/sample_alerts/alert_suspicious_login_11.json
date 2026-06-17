@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80129",
+    "timestamp": "2026-06-17T21:10:55Z",
+    "alert_type": "Suspicious Login",
+    "severity": "Medium",
+    "user_account": "admin_root",
+    "source_ip": "185.190.140.2",
+    "geolocation": "Amsterdam, NL",
+    "description": "Administrator authentication successful via a known anonymous commercial VPN hosting provider.",
+    "status": "Resolved"
+  }

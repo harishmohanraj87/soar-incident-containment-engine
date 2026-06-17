@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90304",
+    "timestamp": "2026-06-16T09:10:55Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "Critical",
+    "source_ip": "10.254.0.1",
+    "attacker_ip": "198.51.100.14",
+    "target_system": "Corporate_VPN_Appliance",
+    "description": "Credential stuffing attack detected on the VPN gateway utilizing a known compromised password list.",
+    "status": "New"
+  }

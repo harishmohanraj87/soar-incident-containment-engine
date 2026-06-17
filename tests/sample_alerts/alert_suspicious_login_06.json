@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80125",
+    "timestamp": "2026-06-17T19:22:11Z",
+    "alert_type": "Suspicious Login",
+    "severity": "Critical",
+    "user_account": "svc_backup_prod",
+    "source_ip": "198.51.100.4",
+    "geolocation": "St. Petersburg, RU",
+    "description": "Interactive login detected for a non-interactive service account from a non-corporate, external IP address.",
+    "status": "New"
+  }

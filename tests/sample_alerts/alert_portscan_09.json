@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-40607",
+    "timestamp": "2026-06-17T11:45:30Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "High",
+    "attacker_ip": "104.244.42.100",
+    "target_network": "10.0.0.0/8",
+    "description": "Masscan signature identified, attempting to map the entire internal 10.0.0.0/8 address space for port 445 (SMB).",
+    "status": "New"
+  }

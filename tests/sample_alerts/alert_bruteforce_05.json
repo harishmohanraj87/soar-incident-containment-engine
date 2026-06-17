@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90303",
+    "timestamp": "2026-06-16T07:45:05Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "Medium",
+    "source_ip": "172.16.0.10",
+    "attacker_ip": "192.0.2.205",
+    "target_system": "Customer_Portal_CMS",
+    "description": "Repeated HTTP POST requests with invalid credentials directed at the WordPress admin login page (/wp-login.php).",
+    "status": "New"
+  }

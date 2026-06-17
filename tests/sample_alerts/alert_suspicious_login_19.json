@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80136",
+    "timestamp": "2026-06-18T01:05:55Z",
+    "alert_type": "Suspicious Login",
+    "severity": "Low",
+    "user_account": "sroberts_vp",
+    "source_ip": "220.10.5.99",
+    "geolocation": "Taipei, TW",
+    "description": "First-time login from this specific country/region detected for this user's historical behavioral profile.",
+    "status": "Resolved"
+  }
