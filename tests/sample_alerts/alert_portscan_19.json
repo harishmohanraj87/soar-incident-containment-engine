@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-40617",
+    "timestamp": "2026-06-17T16:48:12Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "High",
+    "attacker_ip": "185.220.101.99",
+    "target_network": "192.168.100.0/24",
+    "description": "Fragmented packet scan detected, attempting to evade intrusion detection system (IDS) signatures.",
+    "status": "New"
+  }

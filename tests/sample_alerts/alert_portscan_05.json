@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-40603",
+    "timestamp": "2026-06-17T09:40:22Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "Medium",
+    "attacker_ip": "185.220.101.44",
+    "target_network": "192.168.100.0/24",
+    "description": "Rapid sequential UDP port scan targeting common service ports (53, 161, 123) within a 30-second window.",
+    "status": "New"
+  }
