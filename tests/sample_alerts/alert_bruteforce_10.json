@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90302",
+    "timestamp": "2026-06-16T04:22:10Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "High",
+    "source_ip": "192.168.5.50",
+    "attacker_ip": "203.0.113.102",
+    "target_system": "Windows_Domain_Controller_02",
+    "description": "Rapid succession of failed RDP authentication attempts targeting multiple domain administrator accounts.",
+    "status": "In Progress"
+  }

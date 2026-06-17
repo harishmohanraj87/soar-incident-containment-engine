@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90308",
+    "timestamp": "2026-06-16T19:15:00Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "Medium",
+    "source_ip": "10.50.2.14",
+    "attacker_ip": "203.0.113.12",
+    "target_system": "B2B_Payment_API",
+    "description": "High volume of failed API token authentication requests observed from a single IP within a 60-second window.",
+    "status": "In Progress"
+  }

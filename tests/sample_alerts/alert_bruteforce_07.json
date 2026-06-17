@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90307",
+    "timestamp": "2026-06-16T16:50:15Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "High",
+    "source_ip": "172.31.5.88",
+    "attacker_ip": "198.51.100.200",
+    "target_system": "Exchange_Mail_Server",
+    "description": "Password spray attack detected across 50 different employee email accounts via Outlook Web Access (OWA).",
+    "status": "New"
+  }

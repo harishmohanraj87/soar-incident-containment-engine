@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90310",
+    "timestamp": "2026-06-17T08:20:12Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "Critical",
+    "source_ip": "192.168.1.250",
+    "attacker_ip": "198.51.100.42",
+    "target_system": "Cloud_SSO_Gateway",
+    "description": "Aggressive brute force attempts bypassing multi-factor authentication (MFA) prompts using legacy authentication protocols.",
+    "status": "New"
+  }
