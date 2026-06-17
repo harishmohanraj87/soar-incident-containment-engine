@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80131",
+    "timestamp": "2026-06-17T22:05:40Z",
+    "alert_type": "Suspicious Login",
+    "severity": "High",
+    "user_account": "cgreen_ops",
+    "source_ip": "41.200.55.12",
+    "geolocation": "Cairo, EG",
+    "description": "Impossible travel alert: successful login from Egypt just 2 hours after local network access in Sydney, Australia.",
+    "status": "In Progress"
+  }

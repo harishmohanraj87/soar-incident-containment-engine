@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80130",
+    "timestamp": "2026-06-17T21:35:22Z",
+    "alert_type": "Suspicious Login",
+    "severity": "High",
+    "user_account": "kwhite_sales",
+    "source_ip": "177.43.22.11",
+    "geolocation": "Sao Paulo, BR",
+    "description": "Account authenticated from 3 distinctly different sovereign countries within a rolling 24-hour window.",
+    "status": "New"
+  }

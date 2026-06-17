@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80124",
+    "timestamp": "2026-06-17T19:05:40Z",
+    "alert_type": "Suspicious Login",
+    "severity": "High",
+    "user_account": "tdavis_hr",
+    "source_ip": "45.12.34.56",
+    "geolocation": "Lagos, NG",
+    "description": "Impossible travel alert: user successfully authenticated from Nigeria 1 hour after an active session was initiated in London, UK.",
+    "status": "In Progress"
+  }

@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80127",
+    "timestamp": "2026-06-17T20:15:30Z",
+    "alert_type": "Suspicious Login",
+    "severity": "Medium",
+    "user_account": "rjones_exec",
+    "source_ip": "85.20.14.33",
+    "geolocation": "Bucharest, RO",
+    "description": "Successful login at 3:00 AM local time from an unregistered, unrecognized device hardware fingerprint.",
+    "status": "In Progress"
+  }
