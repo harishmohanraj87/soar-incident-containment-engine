@@ -1,0 +1,11 @@
+{
+  "alert_id": "ALT-50110",
+  "timestamp": "2026-06-18T09:15:22Z",
+  "alert_type": "Phishing Link Clicked",
+  "severity": "High",
+  "user_account": "mscott_sales",
+  "sender_email": "billing@update-paypal-secure-alert.com",
+  "malicious_url": "http://update-paypal-secure-alert.com/login",
+  "description": "User clicked on a known malicious URL embedded in an external email that bypassed the spam filter. The proxy blocked the outbound connection, but an investigation is required to ensure credentials were not compromised.",
+  "status": "New"
+}
