@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50112",
+    "timestamp": "2026-06-18T09:45:12Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "Critical",
+    "user_account": "pbeesly_admin",
+    "sender_email": "admin@microsoft-365-alert.com",
+    "malicious_url": "http://microsoft-365-alert.com/login",
+    "description": "User clicked a link in a fake Microsoft Office 365 password expiry notice. The proxy permitted the connection, and immediate password reset is required.",
+    "status": "New"
+  }
