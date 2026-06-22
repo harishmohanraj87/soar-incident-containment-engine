@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80133",
+    "timestamp": "2026-06-17T23:15:00Z",
+    "alert_type": "Suspicious Login",
+    "severity": "Critical",
+    "user_account": "bwilliams_legal",
+    "source_ip": "188.166.44.22",
+    "geolocation": "Frankfurt, DE",
+    "description": "Successful primary authentication bypassing Multi-Factor Authentication (MFA) requirements from a new geographical region.",
+    "status": "New"
+  }

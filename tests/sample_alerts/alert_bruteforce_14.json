@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90309",
+    "timestamp": "2026-06-17T03:45:30Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "Low",
+    "source_ip": "10.0.99.105",
+    "attacker_ip": "192.0.2.155",
+    "target_system": "Warehouse_IP_Camera_04",
+    "description": "Automated script attempting to log into the device management interface using default factory credentials.",
+    "status": "New"
+  }

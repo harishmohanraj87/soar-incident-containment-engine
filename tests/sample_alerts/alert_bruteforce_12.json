@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90311",
+    "timestamp": "2026-06-17T10:05:00Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "High",
+    "source_ip": "10.20.5.50",
+    "attacker_ip": "203.0.113.201",
+    "target_system": "GitLab_CI_Server",
+    "description": "Consecutive failed authentication attempts targeting service accounts via the GitLab REST API.",
+    "status": "New"
+  }

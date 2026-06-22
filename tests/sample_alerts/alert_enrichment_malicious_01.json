@@ -1,0 +1,11 @@
+{
+  "alert_id": "TEST-ENRICH-001",
+  "timestamp": "2026-06-20T14:00:00Z",
+  "alert_type": "Suspicious Outbound Connection",
+  "severity": "High",
+  "source_ip": "192.168.1.55",
+  "destination_ip": "185.220.101.46",
+  "description": "Internal workstation attempted connection to a known Tor exit node or blacklisted IP.",
+  "expected_enrichment_result": "malicious",
+  "status": "New"
+}

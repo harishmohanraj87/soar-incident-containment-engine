@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50114",
+    "timestamp": "2026-06-18T10:55:40Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "High",
+    "user_account": "abernard_sales",
+    "sender_email": "it-helpdesk@company-portal-login.info",
+    "malicious_url": "http://company-portal-login.info/reset",
+    "description": "Targeted spear-phishing attempt mimicking internal IT helpdesk. User clicked the password reset link; endpoint agent isolated the machine pending review.",
+    "status": "New"
+  }

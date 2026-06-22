@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80132",
+    "timestamp": "2026-06-17T22:42:15Z",
+    "alert_type": "Suspicious Login",
+    "severity": "Critical",
+    "user_account": "lmartinez_it",
+    "source_ip": "82.102.23.41",
+    "geolocation": "Tehran, IR",
+    "description": "Login success originating from a known malicious IP subnet associated with advanced persistent threat (APT) activity.",
+    "status": "New"
+  }

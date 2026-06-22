@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-40606",
+    "timestamp": "2026-06-17T11:12:08Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "Low",
+    "attacker_ip": "203.0.113.19",
+    "target_network": "172.31.0.0/16",
+    "description": "Automated vulnerability scanner signature detected, sweeping for open port 8080 and 8443.",
+    "status": "Resolved"
+  }

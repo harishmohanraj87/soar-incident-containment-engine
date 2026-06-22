@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90306",
+    "timestamp": "2026-06-16T14:05:40Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "Low",
+    "source_ip": "10.10.10.20",
+    "attacker_ip": "192.0.2.66",
+    "target_system": "Legacy_FTP_Server",
+    "description": "Continuous failed FTP login attempts targeting generic usernames (admin, test, guest).",
+    "status": "Resolved"
+  }

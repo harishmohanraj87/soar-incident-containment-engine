@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90312",
+    "timestamp": "2026-06-17T11:45:22Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "Medium",
+    "source_ip": "192.168.20.100",
+    "attacker_ip": "198.51.100.111",
+    "target_system": "Internal_Wiki_Confluence",
+    "description": "Dictionary attack pattern observed against the single sign-on endpoint for the internal engineering wiki.",
+    "status": "In Progress"
+  }
