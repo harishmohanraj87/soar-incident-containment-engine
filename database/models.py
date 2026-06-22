@@ -1,4 +1,4 @@
-from database import create_connection
+from database.database import create_connection
 
 def create_alerts_table():
     conn = create_connection()
