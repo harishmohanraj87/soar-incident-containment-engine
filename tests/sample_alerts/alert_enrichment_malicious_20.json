@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-020",
+    "timestamp": "2026-06-20T23:35:10Z",
+    "alert_type": "C2 Communication Attempt",
+    "severity": "High",
+    "source_ip": "172.20.100.5",
+    "destination_ip": "185.15.56.22",
+    "description": "Periodic heartbeat traffic (every 60 seconds) detected communicating with an unverified external IP.",
+    "expected_enrichment_result": "malicious",
+    "status": "New"
+  }

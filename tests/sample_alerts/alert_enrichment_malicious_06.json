@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-006",
+    "timestamp": "2026-06-20T15:22:15Z",
+    "alert_type": "Suspicious Outbound Connection",
+    "severity": "High",
+    "source_ip": "192.168.1.201",
+    "destination_ip": "104.244.42.1",
+    "description": "User clicked a link connecting to an IP historically tied to credential harvesting campaigns.",
+    "expected_enrichment_result": "malicious",
+    "status": "New"
+  }

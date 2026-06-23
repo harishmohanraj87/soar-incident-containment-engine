@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-018",
+    "timestamp": "2026-06-20T22:05:40Z",
+    "alert_type": "Initial Access Broker Scan",
+    "severity": "Critical",
+    "source_ip": "10.10.20.15",
+    "destination_ip": "195.133.40.8",
+    "description": "Reverse shell connection attempt routed back to a known Initial Access Broker scanning node.",
+    "expected_enrichment_result": "malicious",
+    "status": "New"
+  }

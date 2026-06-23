@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-003",
+    "timestamp": "2026-06-20T14:30:10Z",
+    "alert_type": "Suspicious Outbound Connection",
+    "severity": "Medium",
+    "source_ip": "172.16.20.100",
+    "destination_ip": "52.219.100.2",
+    "description": "High volume of outbound traffic directed to an unknown external IP address over HTTPS.",
+    "expected_enrichment_result": "benign",
+    "status": "In Progress"
+  }

@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-015",
+    "timestamp": "2026-06-20T19:55:30Z",
+    "alert_type": "Suspicious Outbound Connection",
+    "severity": "High",
+    "source_ip": "10.0.3.44",
+    "destination_ip": "91.200.12.54",
+    "description": "Outbound connection via non-standard ports to an IP located in a high-risk jurisdiction.",
+    "expected_enrichment_result": "suspicious",
+    "status": "In Progress"
+  }

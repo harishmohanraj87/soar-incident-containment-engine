@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50133",
+    "timestamp": "2026-06-19T11:12:50Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "High",
+    "user_account": "amartin_acct",
+    "sender_email": "security@bankofamerica-alert-center.com",
+    "malicious_url": "http://bankofamerica-alert-center.com/login",
+    "description": "User clicked a banking phishing link. The connection was allowed by the proxy; requires verification if the user submitted corporate card details.",
+    "status": "New"
+  }

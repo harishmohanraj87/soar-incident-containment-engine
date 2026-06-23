@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50129",
+    "timestamp": "2026-06-18T22:40:33Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "High",
+    "user_account": "kkapoor_cust",
+    "sender_email": "tickets@jira-service-desk-update.com",
+    "malicious_url": "http://jira-service-desk-update.com/browse/SEC-999",
+    "description": "User clicked a link embedded in a fake Jira ticket notification. The destination site attempts to execute an exploit kit against outdated browsers.",
+    "status": "New"
+  }

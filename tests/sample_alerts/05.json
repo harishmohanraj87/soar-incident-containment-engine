@@ -1,5 +1,5 @@
 {
-  "alert_id": "TEST-ENRICH-021",
+  "alert_id": "TEST-ENRICH-002",
   "timestamp": "2026-06-20T14:05:00Z",
   "alert_type": "Port Scan Detected",
   "severity": "Medium",

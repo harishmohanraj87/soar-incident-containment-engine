@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-007",
+    "timestamp": "2026-06-20T15:50:33Z",
+    "alert_type": "Cryptomining Traffic Detected",
+    "severity": "High",
+    "source_ip": "172.31.5.88",
+    "destination_ip": "51.15.44.22",
+    "description": "Continuous Stratum protocol traffic detected targeting an external unverified mining pool IP.",
+    "expected_enrichment_result": "malicious",
+    "status": "In Progress"
+  }

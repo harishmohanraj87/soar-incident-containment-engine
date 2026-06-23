@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-009",
+    "timestamp": "2026-06-20T16:40:05Z",
+    "alert_type": "Fast Flux DNS Anomaly",
+    "severity": "Medium",
+    "source_ip": "192.168.50.31",
+    "destination_ip": "82.102.23.41",
+    "description": "Connection to an IP address that frequently changes its associated DNS A-records.",
+    "expected_enrichment_result": "suspicious",
+    "status": "New"
+  }

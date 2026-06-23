@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-024",
+    "timestamp": "2026-06-20T15:10:05Z",
+    "alert_type": "Suspicious Lateral Movement",
+    "severity": "Medium",
+    "source_ip": "172.16.0.50",
+    "target_network": "172.16.5.0/24",
+    "description": "Multiple WMI execution attempts detected. Source IP matches the authorized Microsoft Endpoint Configuration Manager (SCCM).",
+    "expected_enrichment_result": "safe_internal",
+    "status": "New"
+  }

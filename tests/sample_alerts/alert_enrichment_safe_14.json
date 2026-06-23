@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-034",
+    "timestamp": "2026-06-20T20:20:15Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "Medium",
+    "source_ip": "10.100.5.50",
+    "target_network": "10.100.10.0/24",
+    "description": "Authorized penetration testing team mapping the staging environment subnet.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "New"
+  }

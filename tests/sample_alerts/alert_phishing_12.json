@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50131",
+    "timestamp": "2026-06-19T09:22:40Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "Critical",
+    "user_account": "tflenderson_hr",
+    "sender_email": "it-support@vpn-client-upgrade.net",
+    "malicious_url": "http://vpn-client-upgrade.net/download",
+    "description": "User clicked a mandatory VPN upgrade link from a spoofed internal IT address. EDR blocked the execution of 'vpn_update_v2.exe'.",
+    "status": "New"
+  }

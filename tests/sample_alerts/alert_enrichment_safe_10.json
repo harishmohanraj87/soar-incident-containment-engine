@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-030",
+    "timestamp": "2026-06-20T18:05:44Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "Low",
+    "source_ip": "10.200.1.20",
+    "target_network": "10.200.0.0/16",
+    "description": "Periodic Nmap sweep initiated by the internal asset discovery tool.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "New"
+  }

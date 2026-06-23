@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-027",
+    "timestamp": "2026-06-20T16:25:50Z",
+    "alert_type": "Unusual SNMP Query Volume",
+    "severity": "Low",
+    "source_ip": "10.10.10.10",
+    "target_network": "10.10.0.0/16",
+    "description": "High volume of SNMP GET requests originating from the SolarWinds Orion monitoring instance.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "In Progress"
+  }

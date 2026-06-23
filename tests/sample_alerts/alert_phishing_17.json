@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50126",
+    "timestamp": "2026-06-18T19:30:55Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "High",
+    "user_account": "jdoe_eng",
+    "sender_email": "security@github-auth-alert.com",
+    "malicious_url": "http://github-auth-alert.com/re-authenticate",
+    "description": "Engineering user clicked a link claiming their GitHub Personal Access Token expired. Requires immediate token revocation check.",
+    "status": "New"
+  }

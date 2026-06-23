@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50125",
+    "timestamp": "2026-06-18T18:50:15Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "Low",
+    "user_account": "mscott_sales",
+    "sender_email": "notifications@linkedin-network-update.tv",
+    "malicious_url": "http://linkedin-network-update.tv/messages",
+    "description": "User clicked a fake LinkedIn connection request email. The corporate firewall successfully blocked the categorized malicious domain.",
+    "status": "Resolved"
+  }

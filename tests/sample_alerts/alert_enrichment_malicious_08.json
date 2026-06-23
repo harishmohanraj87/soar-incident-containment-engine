@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-008",
+    "timestamp": "2026-06-20T16:15:12Z",
+    "alert_type": "Mass Data Transfer",
+    "severity": "Medium",
+    "source_ip": "10.0.99.105",
+    "destination_ip": "142.250.190.46",
+    "description": "Large outbound file transfer triggered a DLP rule. Destination IP belongs to a public cloud provider.",
+    "expected_enrichment_result": "benign",
+    "status": "New"
+  }

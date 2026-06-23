@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50134",
+    "timestamp": "2026-06-19T12:30:22Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "Low",
+    "user_account": "cbratton_qa",
+    "sender_email": "promos@spotify-premium-offer.co",
+    "malicious_url": "http://spotify-premium-offer.co/claim",
+    "description": "User clicked a spam/phishing link offering free services. The site was pre-emptively blocked by the corporate firewall's reputation filter.",
+    "status": "Resolved"
+  }

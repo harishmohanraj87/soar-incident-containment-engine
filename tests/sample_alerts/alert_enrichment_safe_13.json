@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-033",
+    "timestamp": "2026-06-20T19:45:50Z",
+    "alert_type": "Unauthorized DNS Zone Transfer Attempt",
+    "severity": "High",
+    "source_ip": "172.16.1.2",
+    "target_network": "172.16.1.0/24",
+    "description": "AXFR zone transfer request between the authorized primary and secondary internal DNS servers.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "Resolved"
+  }

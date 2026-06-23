@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-037",
+    "timestamp": "2026-06-20T22:15:10Z",
+    "alert_type": "Privileged Account Creation",
+    "severity": "High",
+    "source_ip": "172.20.0.100",
+    "target_network": "172.20.5.0/24",
+    "description": "Automated provisioning script creating temporary admin accounts for the nightly maintenance window.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "Resolved"
+  }

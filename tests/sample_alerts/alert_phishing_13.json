@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50130",
+    "timestamp": "2026-06-19T08:15:00Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "Medium",
+    "user_account": "gweathers_ops",
+    "sender_email": "alerts@concur-travel-expenses.info",
+    "malicious_url": "http://concur-travel-expenses.info/review",
+    "description": "User interacted with a fake expense rejection notice. The web proxy flagged the SSL certificate as untrusted and terminated the connection.",
+    "status": "Resolved"
+  }

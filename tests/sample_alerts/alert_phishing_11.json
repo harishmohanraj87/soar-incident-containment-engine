@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50132",
+    "timestamp": "2026-06-19T10:05:15Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "Medium",
+    "user_account": "sroberts_vp",
+    "sender_email": "no-reply@netflix-payment-failed.tv",
+    "malicious_url": "http://netflix-payment-failed.tv/billing",
+    "description": "User clicked a consumer-focused phishing link on a BYOD device connected to the corporate network. DNS sinkhole intercepted the request.",
+    "status": "In Progress"
+  }
