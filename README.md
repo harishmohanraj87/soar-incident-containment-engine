@@ -1,101 +1,281 @@
- #SOAR Incident Containment Engine
+# 🛡️ SOAR Incident Containment Engine
 
-A Security Orchestration, Automation, and Response (SOAR) platform designed to automate security alert processing, threat intelligence enrichment, incident tracking, and response actions.
+## 🔍 Overview
 
----
+The SOAR Incident Containment Engine is a Security Orchestration, Automation, and Response (SOAR) platform designed to automate security alert processing, threat intelligence enrichment, incident tracking, and response workflows.
 
-## Project Goals
-
-- Receive and process security alerts from SIEM systems
-- Normalize alerts into a standardized format
-- Extract Indicators of Compromise (IOCs)
-- Enrich alerts using Threat Intelligence APIs
-- Store alerts and incidents in a database
-- Maintain audit logs and event tracking
-- Execute automated containment playbooks
-- Provide incident visibility through a dashboard
+The system receives security alerts from SIEM platforms, enriches them using external Threat Intelligence sources, calculates risk scores, and prepares incidents for automated response actions.
 
 ---
 
-## Week 1 Progress
+## 🎯 Objective
 
-### Project Setup
-- Repository initialized and configured
-- GitHub workflow established (Branches, Pull Requests, Code Reviews)
-- Team roles assigned and project architecture defined
+This project aims to:
 
-### Backend Foundation
-- FastAPI backend initialized
-- Created:
-  - `backend/main.py`
-  - `backend/parser.py`
-  - `backend/normalizer.py`
-- Successfully launched FastAPI development server
+- Automate security alert processing
+- Normalize alerts from different sources
+- Enrich Indicators of Compromise (IOCs)
+- Integrate external Threat Intelligence feeds
+- Calculate threat risk scores
+- Track incidents and audit events
+- Prepare alerts for automated containment actions
 
-### Database Foundation
-- SQLite database integrated
-- Created:
-  - `database/database.py`
-  - `database/models.py`
-- Alerts table successfully initialized
+---
 
-### Threat Intelligence Research
-Completed API research and integration planning for:
+## ⚙️ Tech Stack
+
+### Backend
+- Python
+- FastAPI
+
+### Database
+- SQLite
+
+### Threat Intelligence
 - AbuseIPDB
 - VirusTotal
 - IPInfo
 
-### Logging & Event Tracking
-Completed:
-- Audit Logging Research
-- Standardized Event Schema Design
-
-### Alert Simulation Library
-Created realistic security alert datasets including:
-- Brute Force Attacks
-- Malware Detections
-- Data Exfiltration
-- SQL Injection Attempts
-- Port Scans
-- Anomalous Logins
-
----
-
-## Technology Stack
-
-- Python
-- FastAPI
-- SQLite
+### Development Tools
+- Git
 - GitHub
-- VirusTotal API
-- AbuseIPDB API
-- IPInfo API
+- Pull Requests
+- Feature Branch Workflow
 
 ---
 
-## Team
+## 🧠 How It Works (Pipeline)
 
-### Harish Mohanraj
-- Project Lead
-- Backend Development
-- Database Development
-
-### Yash Prashant Kulkarni
-- Threat Intelligence Lead
-
-### Surya
-- SIEM Alert Simulator Developer
+```text
+SIEM Alert
+    ↓
+FastAPI Alert Endpoint
+    ↓
+Parser
+    ↓
+Normalizer
+    ↓
+Threat Intelligence Enrichment
+    ├── AbuseIPDB
+    ├── VirusTotal
+    └── IPInfo
+    ↓
+Risk Scoring Engine
+    ↓
+Database
+    ↓
+Audit Logs
+    ↓
+Response Playbooks
+```
 
 ---
 
-## Current Status
+# 📅 Project Progress
 
-✅ Week 1 Completed
+## ✅ Week 1 – Foundation & Architecture
 
 ### Completed
-- Backend Foundation
-- Database Foundation
+
+- Repository Setup
+- GitHub Workflow Setup
+- Team Role Assignment
+- FastAPI Backend Setup
+- Alert Parser Development
+- Alert Normalizer Development
+- SQLite Database Setup
 - Threat Intelligence Research
 - Audit Logging Research
 - Event Schema Design
-- SIEM Alert Dataset
+- Sample Alert Dataset Creation
+
+### Deliverables
+
+```text
+backend/
+├── main.py
+├── parser.py
+└── normalizer.py
+
+database/
+├── database.py
+└── models.py
+
+docs/
+├── logging_research.md
+└── event_schema.md
+```
+
+---
+
+## ✅ Week 2 – Automated Threat Enrichment
+
+### Completed
+
+- Threat Intelligence Enrichment Engine
+- AbuseIPDB Integration
+- VirusTotal Integration
+- IPInfo Integration
+- Risk Score Engine
+- FastAPI Integration
+- End-to-End Alert Processing
+
+### Workflow Implemented
+
+```text
+Alert
+ ↓
+Parser
+ ↓
+Normalizer
+ ↓
+Threat Enrichment
+ ↓
+Risk Score
+ ↓
+Response
+```
+
+### Example Alert
+
+```json
+{
+  "alert_id": "ALT-1001",
+  "alert_type": "Brute Force",
+  "severity": "High",
+  "attacker_ip": "1.1.1.1"
+}
+```
+
+### Example Response
+
+```json
+{
+  "message": "alert processed",
+  "risk_level": "LOW",
+  "risk_score": 0
+}
+```
+
+---
+
+## 🚧 Week 3 – Incident Tracking & Audit Logging
+
+### Planned
+
+- Store alerts in SQLite
+- Audit Logging Engine
+- Incident Timeline Tracking
+- Event Persistence
+- Case Management Foundation
+
+---
+
+## ⏳ Week 4 – Response Automation
+
+### Planned
+
+- Automated Playbooks
+- IP Blocking Simulation
+- Host Isolation Simulation
+- Dashboard Development
+- Final Integration Testing
+
+---
+
+## 📁 Project Structure
+
+```text
+SOAR-Incident-Containment-Engine/
+
+├── backend/
+│   ├── main.py
+│   ├── parser.py
+│   └── normalizer.py
+│
+├── threat_intel/
+│   ├── enricher.py
+│   ├── abuseipdb_research.md
+│   ├── virustotal_research.md
+│   └── ipinfo_research.md
+│
+├── database/
+│   ├── database.py
+│   └── models.py
+│
+├── docs/
+│   ├── logging_research.md
+│   └── event_schema.md
+│
+└── tests/
+```
+
+---
+
+## ▶️ How To Run
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run backend:
+
+```bash
+python -m uvicorn backend.main:app --reload
+```
+
+Open Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+---
+
+## 🔐 Cybersecurity Relevance
+
+This project demonstrates:
+
+- Security Operations Center (SOC) workflows
+- Threat Intelligence Integration
+- Incident Response Automation
+- Security Alert Processing
+- Risk-Based Decision Making
+- SOAR Architecture Design
+
+---
+
+## 👨‍💻 Team
+
+### Harish Mohanraj
+Project Lead
+- Backend Development
+- Database Development
+- System Integration
+
+### Yash Prashant Kulkarni
+Threat Intelligence Lead
+- AbuseIPDB Integration
+- VirusTotal Integration
+- IPInfo Integration
+
+### Surya
+SIEM Alert Simulator Developer
+- Alert Dataset Creation
+- Testing Scenarios
+- Event Simulation
+
+---
+
+## 📊 Current Status
+
+```text
+Week 1  ✅ Completed
+Week 2  ✅ Completed
+Week 3  🚧 In Progress
+Week 4  ⏳ Planned
+```
+
+**Current Project Completion:** 50%
