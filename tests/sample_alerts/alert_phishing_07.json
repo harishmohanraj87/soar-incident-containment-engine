@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80141",
+    "timestamp": "2026-06-18T04:50:15Z",
+    "alert_type": "Suspicious Login",
+    "severity": "High",
+    "user_account": "wturner_sys",
+    "source_ip": "178.62.211.90",
+    "geolocation": "Dubai, AE",
+    "description": "Impossible travel alert: user successfully authenticated from UAE 10 minutes after disconnecting from the Paris office network.",
+    "status": "New"
+  }

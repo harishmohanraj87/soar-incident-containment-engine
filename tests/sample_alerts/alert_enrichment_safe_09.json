@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-029",
+    "timestamp": "2026-06-20T17:40:33Z",
+    "alert_type": "Mass File Deletion",
+    "severity": "High",
+    "source_ip": "192.168.1.99",
+    "target_network": "192.168.100.0/24",
+    "description": "File integrity monitoring alerted on mass file deletion. Caused by an authorized log rotation and archiving script.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "Resolved"
+  }

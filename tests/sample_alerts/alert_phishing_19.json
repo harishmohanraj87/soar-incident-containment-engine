@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50124",
+    "timestamp": "2026-06-18T18:05:40Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "High",
+    "user_account": "cminer_acct",
+    "sender_email": "payroll@adp-employee-services.info",
+    "malicious_url": "http://adp-employee-services.info/w2-update",
+    "description": "Accounting user clicked a link promising an early W-2 tax form release. The URL redirects to a typo-squatted domain known for harvesting PII.",
+    "status": "New"
+  }

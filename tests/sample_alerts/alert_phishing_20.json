@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50122",
+    "timestamp": "2026-06-18T16:45:22Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "High",
+    "user_account": "rhoward_temp",
+    "sender_email": "admin@google-workspace-verify.net",
+    "malicious_url": "http://google-workspace-verify.net/auth",
+    "description": "User clicked a fake Google Workspace storage quota warning. Proxy allowed connection, but EDR flagged suspicious browser process activity post-click.",
+    "status": "In Progress"
+  }

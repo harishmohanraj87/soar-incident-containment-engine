@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-039",
+    "timestamp": "2026-06-20T23:25:33Z",
+    "alert_type": "Unusual SSH Traffic",
+    "severity": "Medium",
+    "source_ip": "10.0.88.10",
+    "target_network": "10.0.99.0/24",
+    "description": "Ansible automation server connecting to multiple Linux nodes to deploy configuration state updates.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "In Progress"
+  }

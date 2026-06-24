@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-016",
+    "timestamp": "2026-06-20T20:30:12Z",
+    "alert_type": "Unusual High Bandwidth",
+    "severity": "Medium",
+    "source_ip": "192.168.10.82",
+    "destination_ip": "170.114.14.23",
+    "description": "Sustained high bandwidth UDP connection. IP analysis indicates it is a Webex/Zoom relay server.",
+    "expected_enrichment_result": "benign",
+    "status": "Resolved"
+  }

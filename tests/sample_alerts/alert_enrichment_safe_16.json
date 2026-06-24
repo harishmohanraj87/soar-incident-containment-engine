@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-036",
+    "timestamp": "2026-06-20T21:30:22Z",
+    "alert_type": "Excessive Database Connections",
+    "severity": "Medium",
+    "source_ip": "10.50.10.33",
+    "target_network": "10.50.20.0/24",
+    "description": "Connection flood to the SQL cluster originating from the authorized BI reporting analytics engine.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "In Progress"
+  }

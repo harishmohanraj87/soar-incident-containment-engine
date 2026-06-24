@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-028",
+    "timestamp": "2026-06-20T17:15:10Z",
+    "alert_type": "Suspicious RDP Activity",
+    "severity": "Medium",
+    "source_ip": "172.31.254.1",
+    "target_network": "172.31.10.0/24",
+    "description": "Sequential RDP connection attempts from the authorized IT Helpdesk jump server.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "New"
+  }

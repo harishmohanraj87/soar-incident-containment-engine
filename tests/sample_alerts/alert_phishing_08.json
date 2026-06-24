@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50135",
+    "timestamp": "2026-06-19T13:45:10Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "High",
+    "user_account": "pbeesly_admin",
+    "sender_email": "voicemail@cisco-unified-communications.info",
+    "malicious_url": "http://cisco-unified-communications.info/play-message",
+    "description": "User clicked a link claiming to be an unread corporate voicemail. The landing page prompts for Active Directory credentials.",
+    "status": "New"
+  }

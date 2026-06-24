@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-023",
+    "timestamp": "2026-06-20T14:45:30Z",
+    "alert_type": "Mass Data Exfiltration Attempt",
+    "severity": "High",
+    "source_ip": "10.50.2.100",
+    "target_network": "10.50.200.0/24",
+    "description": "Unusually large data transfer flagged by DLP. Traffic source is the scheduled Veeam backup service.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "In Progress"
+  }

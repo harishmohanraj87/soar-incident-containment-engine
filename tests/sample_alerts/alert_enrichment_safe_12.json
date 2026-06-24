@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-032",
+    "timestamp": "2026-06-20T19:10:05Z",
+    "alert_type": "Suspicious RPC Traffic",
+    "severity": "Medium",
+    "source_ip": "192.168.20.10",
+    "target_network": "192.168.50.0/24",
+    "description": "RPC traffic spike caused by automated Group Policy (GPO) updates pushed from the domain controller.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "In Progress"
+  }

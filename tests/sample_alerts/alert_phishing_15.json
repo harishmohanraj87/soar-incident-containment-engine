@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50128",
+    "timestamp": "2026-06-18T21:05:10Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "Critical",
+    "user_account": "dwallace_vp",
+    "sender_email": "support@aws-billing-invoice.co",
+    "malicious_url": "http://aws-billing-invoice.co/console",
+    "description": "VP clicked a highly realistic AWS billing alert phishing link. Requires immediate review of AWS IAM console logs for unauthorized access.",
+    "status": "New"
+  }
