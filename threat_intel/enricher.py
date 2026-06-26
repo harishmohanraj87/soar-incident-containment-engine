@@ -4,7 +4,10 @@ Threat Intelligence Module — SOAR Incident Containment Engine
 Author: Yash Prashant Kulkarni
 Role: Threat Intelligence Lead — Member 2
 Internship: Infotact Solutions
-Week 3 Update: Improved error handling, timeouts, exception management
+
+Week 3 Day 1 Update: Improved error handling, timeouts, exception management
+Week 3 Day 2 Update: Optimized API response handling — parallel API calls
+                     All 3 APIs now run at the same time (3x faster)
 
 What this file does:
     Takes any IP address and checks it against 3 APIs:
@@ -12,19 +15,13 @@ What this file does:
     2. VirusTotal  — 70+ antivirus engine scan
     3. IPInfo      — geolocation and ISP info
     Then combines everything into one enriched result with a final risk score.
-
-Week 3 Improvements:
-    - Added timeout to all API calls (won't hang forever)
-    - Added try/except to catch all errors gracefully
-    - Added missing API key detection
-    - Added invalid IP detection
-    - Added JSON parse error handling
-    - All failures return safe default values
 """
 
 import requests
 import os
 import logging
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -253,10 +250,11 @@ def check_ipinfo(ip_address):
 
 
 # ─────────────────────────────────────────
-# 4. MAIN FUNCTION — combines all 3
+# 4. MAIN FUNCTION — runs all 3 in parallel
 # ─────────────────────────────────────────
 
 def enrich_ip(ip_address):
+    # Basic validation
     if not ip_address or not isinstance(ip_address, str):
         logger.error("[Enricher] Invalid IP address provided")
         return None
@@ -267,11 +265,49 @@ def enrich_ip(ip_address):
         return None
 
     logger.info(f"[Enricher] Starting enrichment for {ip_address}")
+    start_time = time.time()
 
-    abuse_data    = check_abuseipdb(ip_address)
-    vt_data       = check_virustotal(ip_address)
-    location_data = check_ipinfo(ip_address)
+    # ── DAY 2 OPTIMIZATION ──────────────────
+    # Run all 3 API calls at the same time
+    # instead of one by one — 3x faster
+    # ────────────────────────────────────────
+    results = {}
 
+    tasks = {
+        "abuse":    check_abuseipdb,
+        "vt":       check_virustotal,
+        "location": check_ipinfo
+    }
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {
+            executor.submit(fn, ip_address): name
+            for name, fn in tasks.items()
+        }
+
+        for future in as_completed(futures):
+            name = futures[future]
+            try:
+                results[name] = future.result()
+            except Exception as e:
+                logger.error(f"[Enricher] {name} task failed unexpectedly: {e}")
+                if name == "abuse":
+                    results[name] = _default_abuseipdb()
+                elif name == "vt":
+                    results[name] = _default_virustotal()
+                else:
+                    results[name] = _default_ipinfo()
+
+    elapsed = round(time.time() - start_time, 2)
+    logger.info(f"[Enricher] All 3 APIs completed in {elapsed}s")
+
+    abuse_data    = results.get("abuse",    _default_abuseipdb())
+    vt_data       = results.get("vt",       _default_virustotal())
+    location_data = results.get("location", _default_ipinfo())
+
+    # Risk score formula:
+    # AbuseIPDB 40% + VirusTotal 40%
+    # (alert severity 20% handled by backend)
     risk_score = (
         abuse_data["abuse_score"]   * 0.40 +
         vt_data["virustotal_score"] * 0.40
@@ -285,24 +321,29 @@ def enrich_ip(ip_address):
     else:
         risk_level = "LOW"
 
-    logger.info(f"[Enricher] Done — risk_score: {risk_score}, risk_level: {risk_level}")
+    logger.info(f"[Enricher] Done — risk_score: {risk_score}, risk_level: {risk_level}, time: {elapsed}s")
 
     return {
         "ip":                 ip_address,
+        # AbuseIPDB fields
         "abuse_score":        abuse_data["abuse_score"],
         "total_reports":      abuse_data["total_reports"],
         "whitelisted":        abuse_data["whitelisted"],
+        # VirusTotal fields
         "virustotal_score":   vt_data["virustotal_score"],
         "malicious_engines":  vt_data["malicious_engines"],
         "suspicious_engines": vt_data["suspicious_engines"],
         "total_engines":      vt_data["total_engines"],
+        # IPInfo fields
         "country":            location_data["country"],
         "city":               location_data["city"],
         "region":             location_data["region"],
         "org":                location_data["org"],
         "timezone":           location_data["timezone"],
+        # Final risk
         "risk_score":         risk_score,
-        "risk_level":         risk_level
+        "risk_level":         risk_level,
+        "enrichment_time_s":  elapsed
     }
 
 
