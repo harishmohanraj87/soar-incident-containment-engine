@@ -103,7 +103,7 @@ consistent, and reliable results across different types of IP addresses.
 
 ## Conclusion
 
-The enricher.py module is accurate, reliable and production-ready:
+The enricher.py module is accurate, reliable and ready for backend integration and further testing:
 
 - ✅ Correctly identifies malicious IPs with HIGH/MEDIUM risk levels
 - ✅ Correctly identifies safe IPs with LOW risk levels
