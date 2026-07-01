@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-40605",
+    "timestamp": "2026-06-17T10:33:14Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "Medium",
+    "attacker_ip": "198.51.100.222",
+    "target_network": "192.168.5.0/24",
+    "description": "Multiple blocked connections to SSH (port 22) and Telnet (port 23) across 50 internal hosts.",
+    "status": "In Progress"
+  }

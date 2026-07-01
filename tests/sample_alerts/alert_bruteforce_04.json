@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-90301",
+    "timestamp": "2026-06-16T02:15:33Z",
+    "alert_type": "Brute Force Attack",
+    "severity": "Critical",
+    "source_ip": "10.0.1.15",
+    "attacker_ip": "198.51.100.77",
+    "target_system": "SSH_Gateway_Primary",
+    "description": "Over 500 failed SSH login attempts detected for the 'root' user from a single external IP address within 5 minutes.",
+    "status": "New"
+  }

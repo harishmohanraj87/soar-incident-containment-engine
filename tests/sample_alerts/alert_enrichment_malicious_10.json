@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-010",
+    "timestamp": "2026-06-20T17:05:50Z",
+    "alert_type": "Suspicious Outbound Connection",
+    "severity": "Critical",
+    "source_ip": "10.20.5.50",
+    "destination_ip": "185.190.140.11",
+    "description": "Ransomware pre-encryption check-in to a known malicious key negotiation server.",
+    "expected_enrichment_result": "malicious",
+    "status": "New"
+  }

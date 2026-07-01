@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-012",
+    "timestamp": "2026-06-20T18:10:15Z",
+    "alert_type": "Proxy Avoidance",
+    "severity": "Medium",
+    "source_ip": "172.16.88.40",
+    "destination_ip": "103.25.142.3",
+    "description": "User attempting to tunnel web traffic through a known commercial VPN or anonymous proxy node.",
+    "expected_enrichment_result": "suspicious",
+    "status": "In Progress"
+  }

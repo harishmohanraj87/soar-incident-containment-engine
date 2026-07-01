@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-002",
+    "timestamp": "2026-06-20T14:15:22Z",
+    "alert_type": "C2 Communication Attempt",
+    "severity": "Critical",
+    "source_ip": "10.0.5.12",
+    "destination_ip": "93.184.216.34",
+    "description": "Beaconing activity detected matching a known Cobalt Strike team server profile.",
+    "expected_enrichment_result": "malicious",
+    "status": "New"
+  }

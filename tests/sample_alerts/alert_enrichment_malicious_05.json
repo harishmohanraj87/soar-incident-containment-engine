@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-005",
+    "timestamp": "2026-06-20T15:05:40Z",
+    "alert_type": "Unusual Port Activity",
+    "severity": "Low",
+    "source_ip": "10.10.10.20",
+    "destination_ip": "13.107.4.52",
+    "description": "Workstation connecting to an external IP via port 123 (NTP) at an anomalous frequency.",
+    "expected_enrichment_result": "benign",
+    "status": "Resolved"
+  }

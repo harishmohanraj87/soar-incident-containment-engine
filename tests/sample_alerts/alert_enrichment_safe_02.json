@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-022",
+    "timestamp": "2026-06-20T14:22:15Z",
+    "alert_type": "Network Sweep Detected",
+    "severity": "Low",
+    "source_ip": "192.168.100.10",
+    "target_network": "192.168.0.0/16",
+    "description": "ICMP ping sweep initiated by the authorized PRTG network monitoring server.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "New"
+  }

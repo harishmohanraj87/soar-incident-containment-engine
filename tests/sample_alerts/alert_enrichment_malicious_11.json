@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-011",
+    "timestamp": "2026-06-20T17:30:22Z",
+    "alert_type": "Unusual DNS Request",
+    "severity": "Low",
+    "source_ip": "192.168.1.250",
+    "destination_ip": "8.8.8.8",
+    "description": "Server bypassed internal DNS to query a public DNS resolver directly for external domains.",
+    "expected_enrichment_result": "benign",
+    "status": "Resolved"
+  }

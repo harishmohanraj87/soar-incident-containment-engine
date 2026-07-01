@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-017",
+    "timestamp": "2026-06-20T21:15:05Z",
+    "alert_type": "DGA Domain Resolution",
+    "severity": "High",
+    "source_ip": "172.16.45.12",
+    "destination_ip": "216.58.200.46",
+    "description": "IP resolved from a Domain Generation Algorithm (DGA) query pattern. Connection blocked.",
+    "expected_enrichment_result": "malicious",
+    "status": "New"
+  }

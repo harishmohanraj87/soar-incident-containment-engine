@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80128",
+    "timestamp": "2026-06-17T20:45:12Z",
+    "alert_type": "Suspicious Login",
+    "severity": "High",
+    "user_account": "psmith_contractor",
+    "source_ip": "114.55.66.77",
+    "geolocation": "Hangzhou, CN",
+    "description": "Impossible travel alert: user logged in from China 45 minutes after checking in VPN from New York, USA.",
+    "status": "New"
+  }

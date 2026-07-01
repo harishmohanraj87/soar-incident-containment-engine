@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-014",
+    "timestamp": "2026-06-20T19:20:44Z",
+    "alert_type": "C2 Communication Attempt",
+    "severity": "Critical",
+    "source_ip": "192.168.1.115",
+    "destination_ip": "178.62.211.90",
+    "description": "Endpoint interacting with an IP address flagged by threat intel as an active APT infrastructure node.",
+    "expected_enrichment_result": "malicious",
+    "status": "New"
+  }

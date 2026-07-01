@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-040",
+    "timestamp": "2026-06-20T23:55:50Z",
+    "alert_type": "Cleartext Authentication",
+    "severity": "Medium",
+    "source_ip": "192.168.254.254",
+    "target_network": "192.168.100.0/24",
+    "description": "Legacy application server sending unencrypted auth traffic within the secured, segmented management VLAN.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "New"
+  }

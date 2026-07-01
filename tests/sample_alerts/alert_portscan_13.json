@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-40611",
+    "timestamp": "2026-06-17T13:42:50Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "Medium",
+    "attacker_ip": "185.190.140.22",
+    "target_network": "192.168.50.0/24",
+    "description": "Continuous sweeping of RDP (port 3389) across all IP addresses in the HR department subnet.",
+    "status": "In Progress"
+  }

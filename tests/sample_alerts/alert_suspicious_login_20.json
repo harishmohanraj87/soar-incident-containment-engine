@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80137",
+    "timestamp": "2026-06-18T01:45:22Z",
+    "alert_type": "Suspicious Login",
+    "severity": "High",
+    "user_account": "hclark_finance",
+    "source_ip": "5.2.69.14",
+    "geolocation": "Sofia, BG",
+    "description": "Impossible travel alert: authentication from Bulgaria 15 minutes prior to a failed login attempt in Toronto, Canada.",
+    "status": "New"
+  }

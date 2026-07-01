@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-004",
+    "timestamp": "2026-06-20T14:45:05Z",
+    "alert_type": "Malware Dropzone Accessed",
+    "severity": "High",
+    "source_ip": "192.168.100.33",
+    "destination_ip": "45.227.254.12",
+    "description": "Firewall blocked a GET request to an IP previously associated with Emotet payload distribution.",
+    "expected_enrichment_result": "malicious",
+    "status": "New"
+  }

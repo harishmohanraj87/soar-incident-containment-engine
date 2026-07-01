@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80126",
+    "timestamp": "2026-06-17T19:50:05Z",
+    "alert_type": "Suspicious Login",
+    "severity": "High",
+    "user_account": "alee_dev",
+    "source_ip": "203.0.113.15",
+    "geolocation": "Pyongyang, KP",
+    "description": "Authentication success originating from a designated embargoed/sanctioned nation state.",
+    "status": "New"
+  }

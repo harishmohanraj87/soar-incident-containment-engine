@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-40600",
+    "timestamp": "2026-06-17T08:25:10Z",
+    "alert_type": "Port Scan Detected",
+    "severity": "Medium",
+    "attacker_ip": "198.51.100.14",
+    "target_network": "192.168.1.0/24",
+    "description": "Firewall detected a standard TCP connect scan sweeping ports 1-1024 from a single external IP address.",
+    "status": "New"
+  }

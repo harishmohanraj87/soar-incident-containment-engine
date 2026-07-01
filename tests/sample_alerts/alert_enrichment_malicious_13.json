@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-013",
+    "timestamp": "2026-06-20T18:45:00Z",
+    "alert_type": "Suspicious Outbound Connection",
+    "severity": "Low",
+    "source_ip": "10.0.12.9",
+    "destination_ip": "104.16.132.229",
+    "description": "Automated alert for connection to an uncategorized IP address. Belongs to a major CDN (Cloudflare).",
+    "expected_enrichment_result": "benign",
+    "status": "New"
+  }

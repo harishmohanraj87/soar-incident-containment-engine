@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-031",
+    "timestamp": "2026-06-20T18:35:12Z",
+    "alert_type": "Active Directory Enumeration",
+    "severity": "Medium",
+    "source_ip": "10.0.5.55",
+    "target_network": "10.0.1.0/24",
+    "description": "High volume of LDAP queries matching the behavior of the corporate identity management sync appliance.",
+    "expected_enrichment_result": "safe_internal",
+    "status": "New"
+  }

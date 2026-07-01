@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOAR Incident Containment Engine</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>🛡 SOAR Incident Containment Engine</h1>
+        <span class="status">🟢 System Online</span>
+    </header>
+
+    <div class="cards">
+
+        <div class="card">
+            <h2>Alerts</h2>
+            <p>15</p>
+        </div>
+
+        <div class="card critical">
+            <h2>Critical</h2>
+            <p>5</p>
+        </div>
+
+        <div class="card">
+            <h2>Executed</h2>
+            <p>10</p>
+        </div>
+
+        <div class="card success">
+            <h2>Success</h2>
+            <p>98%</p>
+        </div>
+
+    </div>
+
+    <section class="form-box">
+
+        <h2>Execute Playbook</h2>
+
+        <form method="POST">
+
+            <label>IP Address</label>
+
+            <input
+                type="text"
+                name="ip"
+                placeholder="185.220.101.1"
+                required>
+
+            <label>Risk Score</label>
+
+            <input
+                type="number"
+                name="risk_score"
+                min="0"
+                max="100"
+                placeholder="95"
+                required>
+
+            <button type="submit">
+                ▶ Execute Playbook
+            </button>
+
+        </form>
+
+    </section>
+
+    {% if result %}
+
+    <section class="result">
+
+        <h2>Execution Result</h2>
+
+        <p><strong>Status</strong> : {{ result.status }}</p>
+        <p><strong>Action</strong> : {{ result.action }}</p>
+        <p><strong>Target</strong> : {{ result.target }}</p>
+        <p><strong>Timestamp</strong> : {{ result.timestamp }}</p>
+
+    </section>
+
+    {% endif %}
+
+</div>
+
+</body>
+</html>

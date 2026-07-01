@@ -1,0 +1,11 @@
+{
+    "alert_id": "TEST-ENRICH-019",
+    "timestamp": "2026-06-20T22:50:22Z",
+    "alert_type": "Suspicious Outbound Connection",
+    "severity": "Low",
+    "source_ip": "192.168.1.66",
+    "destination_ip": "140.82.112.4",
+    "description": "Developer machine making repeated connections to an external IP via SSH. IP belongs to GitHub.",
+    "expected_enrichment_result": "benign",
+    "status": "Resolved"
+  }

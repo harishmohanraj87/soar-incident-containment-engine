@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-80122",
+    "timestamp": "2026-06-17T18:15:00Z",
+    "alert_type": "Suspicious Login",
+    "severity": "High",
+    "user_account": "jsmith_admin",
+    "source_ip": "185.15.56.22",
+    "geolocation": "Moscow, RU",
+    "description": "Successful authentication detected from an anomalous geolocation. This triggers an impossible travel alert, as the user successfully logged in from the United States 30 minutes prior.",
+    "status": "New"
+  }

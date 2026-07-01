@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50123",
+    "timestamp": "2026-06-18T17:20:10Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "Critical",
+    "user_account": "mpalmer_exec",
+    "sender_email": "legal@salesforce-urgent-case.co",
+    "malicious_url": "http://salesforce-urgent-case.co/login",
+    "description": "Executive account interacted with a spear-phishing email impersonating Salesforce Legal. High risk of CRM credential exposure.",
+    "status": "New"
+  }

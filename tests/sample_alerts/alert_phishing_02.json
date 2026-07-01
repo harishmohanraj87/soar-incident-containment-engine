@@ -1,0 +1,11 @@
+{
+    "alert_id": "ALT-50111",
+    "timestamp": "2026-06-18T09:20:05Z",
+    "alert_type": "Phishing Link Clicked",
+    "severity": "High",
+    "user_account": "jhalpert_sales",
+    "sender_email": "hr@docusign-update-secure.net",
+    "malicious_url": "http://docusign-update-secure.net/auth",
+    "description": "User clicked on a malicious URL masquerading as a mandatory DocuSign document review from HR. Web proxy blocked the connection, preventing credential harvesting.",
+    "status": "New"
+}
