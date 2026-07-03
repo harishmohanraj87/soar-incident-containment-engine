@@ -1,94 +1,261 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOAR Incident Containment Engine</title>
+{% extends "base.html" %}
 
-    <link rel="stylesheet" href="/static/style.css">
-</head>
+{% block title %}
+Dashboard
+{% endblock %}
 
-<body>
+{% block content %}
 
-<div class="container">
+<!-- Page Header -->
 
-    <header>
-        <h1>🛡 SOAR Incident Containment Engine</h1>
-        <span class="status">🟢 System Online</span>
-    </header>
+<section class="content-header">
 
-    <div class="cards">
+    <div class="container-fluid">
 
-        <div class="card">
-            <h2>Alerts</h2>
-            <p>15</p>
-        </div>
+        <div class="row mb-3">
 
-        <div class="card critical">
-            <h2>Critical</h2>
-            <p>5</p>
-        </div>
+            <div class="col-sm-6">
 
-        <div class="card">
-            <h2>Executed</h2>
-            <p>10</p>
-        </div>
+                <h1>Dashboard</h1>
 
-        <div class="card success">
-            <h2>Success</h2>
-            <p>98%</p>
+            </div>
+
         </div>
 
     </div>
 
-    <section class="form-box">
+</section>
 
-        <h2>Execute Playbook</h2>
 
-        <form method="POST">
+<!-- Statistics Cards -->
 
-            <label>IP Address</label>
+<section class="content">
 
-            <input
-                type="text"
-                name="ip"
-                placeholder="185.220.101.1"
-                required>
+<div class="container-fluid">
 
-            <label>Risk Score</label>
+<div class="row">
 
-            <input
-                type="number"
-                name="risk_score"
-                min="0"
-                max="100"
-                placeholder="95"
-                required>
+<div class="col-lg-3 col-6">
 
-            <button type="submit">
-                ▶ Execute Playbook
-            </button>
+<div class="small-box bg-info">
 
-        </form>
+<div class="inner">
 
-    </section>
+<h3>15</h3>
 
-    {% if result %}
-
-    <section class="result">
-
-        <h2>Execution Result</h2>
-
-        <p><strong>Status</strong> : {{ result.status }}</p>
-        <p><strong>Action</strong> : {{ result.action }}</p>
-        <p><strong>Target</strong> : {{ result.target }}</p>
-        <p><strong>Timestamp</strong> : {{ result.timestamp }}</p>
-
-    </section>
-
-    {% endif %}
+<p>Total Alerts</p>
 
 </div>
 
-</body>
-</html>
+<div class="icon">
+
+<i class="fas fa-bell"></i>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="col-lg-3 col-6">
+
+<div class="small-box bg-danger">
+
+<div class="inner">
+
+<h3>5</h3>
+
+<p>High Risk Alerts</p>
+
+</div>
+
+<div class="icon">
+
+<i class="fas fa-exclamation-triangle"></i>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="col-lg-3 col-6">
+
+<div class="small-box bg-success">
+
+<div class="inner">
+
+<h3>10</h3>
+
+<p>Playbooks Executed</p>
+
+</div>
+
+<div class="icon">
+
+<i class="fas fa-play-circle"></i>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="col-lg-3 col-6">
+
+<div class="small-box bg-warning">
+
+<div class="inner">
+
+<h3>Online</h3>
+
+<p>Database Status</p>
+
+</div>
+
+<div class="icon">
+
+<i class="fas fa-database"></i>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- Alert Form -->
+
+<div class="card">
+
+<div class="card-header">
+
+<h3 class="card-title">
+
+Process Security Alert
+
+</h3>
+
+</div>
+
+<div class="card-body">
+
+<form method="POST">
+
+<div class="row">
+
+<div class="col-md-6">
+
+<label>IP Address</label>
+
+<input
+class="form-control"
+type="text"
+name="ip"
+placeholder="185.220.101.1"
+required>
+
+</div>
+
+<div class="col-md-6">
+
+<label>Risk Score</label>
+
+<input
+class="form-control"
+type="number"
+name="risk_score"
+min="0"
+max="100"
+placeholder="95"
+required>
+
+</div>
+
+</div>
+
+<br>
+
+<button class="btn btn-primary">
+
+<i class="fas fa-play"></i>
+
+Execute Playbook
+
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+
+{% if result %}
+
+<div class="card card-success">
+
+<div class="card-header">
+
+<h3 class="card-title">
+
+Playbook Result
+
+</h3>
+
+</div>
+
+<div class="card-body">
+
+<table class="table table-bordered">
+
+<tr>
+
+<th>Status</th>
+
+<td>{{ result.status }}</td>
+
+</tr>
+
+<tr>
+
+<th>Action</th>
+
+<td>{{ result.action }}</td>
+
+</tr>
+
+<tr>
+
+<th>Target</th>
+
+<td>{{ result.target }}</td>
+
+</tr>
+
+<tr>
+
+<th>Timestamp</th>
+
+<td>{{ result.timestamp }}</td>
+
+</tr>
+
+</table>
+
+</div>
+
+</div>
+
+{% endif %}
+
+</div>
+
+</section>
+
+{% endblock %}
