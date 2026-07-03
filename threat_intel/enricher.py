@@ -7,26 +7,21 @@ Internship: Infotact Solutions
 
 Week 3 Day 1 Update: Improved error handling, timeouts, exception management
 Week 3 Day 2 Update: Optimized API response handling — parallel API calls
-                     All 3 APIs now run at the same time (3x faster)
 Final Sprint Day 1:  Enhanced enrichment engine — full risk formula with severity
 Final Sprint Day 2:  Optimized API execution — retry logic added
-                     - All 3 APIs retry up to 2 times before giving up
-                     - 1 second wait between retries
-                     - Retry on timeout and connection errors only
-                     - No retry on 429 rate limit or 404 not found
-
-What this file does:
-    Takes any IP address + alert context and checks it against 3 APIs:
-    1. AbuseIPDB   — community abuse reports
-    2. VirusTotal  — 70+ antivirus engine scan
-    3. IPInfo      — geolocation and ISP info
-    Then combines everything into one enriched result with a final risk score.
+Final Sprint Day 3:  Improved risk scoring
+                     - Whitelisted IPs always get risk_level SAFE
+                     - High report count boosts risk score
+                     - Multiple malicious engines boosts risk score
+                     - Added recommended_action based on risk level
+                     - Added risk_factors list explaining why score is high
 
 Full Risk Formula:
     AbuseIPDB Score  x 0.40  (40%)
     VirusTotal Score x 0.40  (40%)
     Alert Severity   x 0.20  (20%)
-    ─────────────────────────────
+    + Bonus points for high report count and many malicious engines
+    ─────────────────────────────────────────────────────────────
     Final Risk Score = 0 to 100
 """
 
@@ -66,6 +61,15 @@ SEVERITY_SCORE_MAP = {
     "info":     10
 }
 
+# Recommended actions based on risk level
+RECOMMENDED_ACTIONS = {
+    "CRITICAL": "Auto-block IP immediately + create P1 incident + notify SOC",
+    "HIGH":     "Block IP + create incident + alert SOC analyst",
+    "MEDIUM":   "Flag for analyst review + monitor traffic",
+    "LOW":      "Log and monitor — no immediate action needed",
+    "SAFE":     "Whitelisted IP — allow traffic"
+}
+
 
 # ─────────────────────────────────────────
 # DEFAULT RESPONSES
@@ -103,11 +107,6 @@ def _default_ipinfo():
 # ─────────────────────────────────────────
 
 def _make_request(method, url, **kwargs):
-    """
-    Make an HTTP request with retry logic.
-    Retries up to MAX_RETRIES times on timeout or connection errors.
-    Does NOT retry on 429 or 404.
-    """
     for attempt in range(1, MAX_RETRIES + 2):
         try:
             response = requests.request(method, url, timeout=TIMEOUT, **kwargs)
@@ -141,14 +140,8 @@ def check_abuseipdb(ip_address):
         return _default_abuseipdb()
 
     url = "https://api.abuseipdb.com/api/v2/check"
-    headers = {
-        "Key": api_key,
-        "Accept": "application/json"
-    }
-    params = {
-        "ipAddress": ip_address,
-        "maxAgeInDays": 90
-    }
+    headers = {"Key": api_key, "Accept": "application/json"}
+    params  = {"ipAddress": ip_address, "maxAgeInDays": 90}
 
     try:
         response = _make_request("GET", url, headers=headers, params=params)
@@ -174,15 +167,12 @@ def check_abuseipdb(ip_address):
     except requests.exceptions.Timeout:
         logger.error(f"[AbuseIPDB] All retries failed — timeout for {ip_address}")
         return _default_abuseipdb()
-
     except requests.exceptions.ConnectionError:
         logger.error("[AbuseIPDB] All retries failed — connection error")
         return _default_abuseipdb()
-
     except requests.exceptions.RequestException as e:
         logger.error(f"[AbuseIPDB] Request failed: {e}")
         return _default_abuseipdb()
-
     except (KeyError, ValueError) as e:
         logger.error(f"[AbuseIPDB] Failed to parse response: {e}")
         return _default_abuseipdb()
@@ -198,29 +188,24 @@ def check_virustotal(ip_address):
         logger.error("[VirusTotal] API key missing in .env file")
         return _default_virustotal()
 
-    url = f"https://www.virustotal.com/api/v3/ip_addresses/{ip_address}"
-    headers = {
-        "x-apikey": api_key
-    }
+    url     = f"https://www.virustotal.com/api/v3/ip_addresses/{ip_address}"
+    headers = {"x-apikey": api_key}
 
     try:
         response = _make_request("GET", url, headers=headers)
 
         if response.status_code == 404:
-            logger.warning(f"[VirusTotal] IP {ip_address} not found in database")
+            logger.warning(f"[VirusTotal] IP {ip_address} not found")
             return _default_virustotal()
-
         if response.status_code == 429:
             logger.warning("[VirusTotal] Rate limit hit — skipping")
             return _default_virustotal()
-
         if response.status_code != 200:
             logger.error(f"[VirusTotal] HTTP {response.status_code} for {ip_address}")
             return _default_virustotal()
 
         stats = response.json()["data"]["attributes"]["last_analysis_stats"]
         total = sum(stats.values())
-
         vt_score = 0
         if total > 0:
             vt_score = round((stats["malicious"] + stats["suspicious"]) / total * 100)
@@ -236,15 +221,12 @@ def check_virustotal(ip_address):
     except requests.exceptions.Timeout:
         logger.error(f"[VirusTotal] All retries failed — timeout for {ip_address}")
         return _default_virustotal()
-
     except requests.exceptions.ConnectionError:
         logger.error("[VirusTotal] All retries failed — connection error")
         return _default_virustotal()
-
     except requests.exceptions.RequestException as e:
         logger.error(f"[VirusTotal] Request failed: {e}")
         return _default_virustotal()
-
     except (KeyError, ValueError) as e:
         logger.error(f"[VirusTotal] Failed to parse response: {e}")
         return _default_virustotal()
@@ -268,18 +250,16 @@ def check_ipinfo(ip_address):
         if response.status_code == 429:
             logger.warning("[IPInfo] Rate limit hit — skipping")
             return _default_ipinfo()
-
         if response.status_code != 200:
             logger.error(f"[IPInfo] HTTP {response.status_code} for {ip_address}")
             return _default_ipinfo()
 
         data = response.json()
-
         if "error" in data:
             logger.error(f"[IPInfo] API error: {data['error']}")
             return _default_ipinfo()
 
-        logger.info(f"[IPInfo] Success for {ip_address} — {data.get('city', 'Unknown')}, {data.get('country', 'Unknown')}")
+        logger.info(f"[IPInfo] Success for {ip_address} — {data.get('city')}, {data.get('country')}")
         return {
             "country":  data.get("country", "Unknown"),
             "city":     data.get("city", "Unknown"),
@@ -291,22 +271,100 @@ def check_ipinfo(ip_address):
     except requests.exceptions.Timeout:
         logger.error(f"[IPInfo] All retries failed — timeout for {ip_address}")
         return _default_ipinfo()
-
     except requests.exceptions.ConnectionError:
         logger.error("[IPInfo] All retries failed — connection error")
         return _default_ipinfo()
-
     except requests.exceptions.RequestException as e:
         logger.error(f"[IPInfo] Request failed: {e}")
         return _default_ipinfo()
-
     except (KeyError, ValueError) as e:
         logger.error(f"[IPInfo] Failed to parse response: {e}")
         return _default_ipinfo()
 
 
 # ─────────────────────────────────────────
-# 4. MAIN FUNCTION — runs all 3 in parallel
+# IMPROVED RISK SCORING — Day 3
+# ─────────────────────────────────────────
+
+def _calculate_risk(abuse_data, vt_data, severity_score):
+    """
+    Improved risk scoring with bonus points and risk factors.
+    Returns: risk_score, risk_level, risk_factors, recommended_action
+    """
+    risk_factors = []
+
+    # ── WHITELISTED CHECK ───────────────────
+    # If IP is whitelisted — always SAFE
+    if abuse_data.get("whitelisted"):
+        return 0, "SAFE", ["IP is whitelisted"], RECOMMENDED_ACTIONS["SAFE"]
+
+    # ── BASE SCORE ──────────────────────────
+    abuse_score    = abuse_data.get("abuse_score", 0)
+    vt_score       = vt_data.get("virustotal_score", 0)
+
+    base_score = (
+        abuse_score  * 0.40 +
+        vt_score     * 0.40 +
+        severity_score * 0.20
+    )
+
+    # ── BONUS POINTS ────────────────────────
+    bonus = 0
+
+    # Many community reports = more dangerous
+    total_reports = abuse_data.get("total_reports", 0)
+    if total_reports >= 50:
+        bonus += 10
+        risk_factors.append(f"High report count ({total_reports} reports)")
+    elif total_reports >= 10:
+        bonus += 5
+        risk_factors.append(f"Multiple reports ({total_reports} reports)")
+
+    # Many malicious engines = more dangerous
+    malicious = vt_data.get("malicious_engines", 0)
+    if malicious >= 10:
+        bonus += 10
+        risk_factors.append(f"Flagged by {malicious} malicious engines")
+    elif malicious >= 5:
+        bonus += 5
+        risk_factors.append(f"Flagged by {malicious} malicious engines")
+
+    # High abuse score
+    if abuse_score >= 80:
+        risk_factors.append(f"Very high abuse score ({abuse_score})")
+    elif abuse_score >= 50:
+        risk_factors.append(f"High abuse score ({abuse_score})")
+
+    # High VT score
+    if vt_score >= 50:
+        risk_factors.append(f"High VirusTotal score ({vt_score})")
+
+    # ── FINAL SCORE ─────────────────────────
+    risk_score = min(100, round(base_score + bonus))
+
+    # ── RISK LEVEL ──────────────────────────
+    if risk_score >= 90:
+        risk_level = "CRITICAL"
+    elif risk_score >= 70:
+        risk_level = "HIGH"
+    elif risk_score >= 45:
+        risk_level = "MEDIUM"
+    elif risk_score >= 20:
+        risk_level = "LOW"
+    else:
+        risk_level = "SAFE"
+
+    # If no specific factors found
+    if not risk_factors:
+        risk_factors.append("No significant threat indicators found")
+
+    recommended_action = RECOMMENDED_ACTIONS.get(risk_level, "Log and monitor")
+
+    return risk_score, risk_level, risk_factors, recommended_action
+
+
+# ─────────────────────────────────────────
+# 4. MAIN FUNCTION
 # ─────────────────────────────────────────
 
 def enrich_ip(ip_address, alert_type="unknown", severity="medium"):
@@ -314,15 +372,13 @@ def enrich_ip(ip_address, alert_type="unknown", severity="medium"):
     Main enrichment function.
 
     Args:
-        ip_address (str): The IP address to enrich
-        alert_type (str): Type of alert e.g. brute_force, port_scan, malware
-        severity   (str): Alert severity — critical, high, medium, low, info
+        ip_address (str): The IP to enrich
+        alert_type (str): e.g. brute_force, port_scan, malware
+        severity   (str): critical, high, medium, low, info
 
     Returns:
-        dict: Fully enriched alert with risk score and risk level
+        dict: Fully enriched alert with improved risk scoring
     """
-
-    # Basic validation
     if not ip_address or not isinstance(ip_address, str):
         logger.error("[Enricher] Invalid IP address provided")
         return None
@@ -332,7 +388,6 @@ def enrich_ip(ip_address, alert_type="unknown", severity="medium"):
         logger.error("[Enricher] Empty IP address provided")
         return None
 
-    # Normalize severity
     severity = severity.lower().strip()
     if severity not in SEVERITY_SCORE_MAP:
         logger.warning(f"[Enricher] Unknown severity '{severity}' — defaulting to medium")
@@ -341,12 +396,7 @@ def enrich_ip(ip_address, alert_type="unknown", severity="medium"):
     logger.info(f"[Enricher] Starting enrichment for {ip_address} | type={alert_type} | severity={severity}")
     start_time = time.time()
 
-    # ── PARALLEL API CALLS ──────────────────
-    # Run all 3 APIs at the same time — 3x faster
-    # Each API has retry logic built in
-    # ────────────────────────────────────────
     results = {}
-
     tasks = {
         "abuse":    check_abuseipdb,
         "vt":       check_virustotal,
@@ -358,13 +408,12 @@ def enrich_ip(ip_address, alert_type="unknown", severity="medium"):
             executor.submit(fn, ip_address): name
             for name, fn in tasks.items()
         }
-
         for future in as_completed(futures):
             name = futures[future]
             try:
                 results[name] = future.result()
             except Exception as e:
-                logger.error(f"[Enricher] {name} task failed unexpectedly: {e}")
+                logger.error(f"[Enricher] {name} task failed: {e}")
                 if name == "abuse":
                     results[name] = _default_abuseipdb()
                 elif name == "vt":
@@ -373,56 +422,42 @@ def enrich_ip(ip_address, alert_type="unknown", severity="medium"):
                     results[name] = _default_ipinfo()
 
     elapsed = round(time.time() - start_time, 2)
-    logger.info(f"[Enricher] All 3 APIs completed in {elapsed}s")
 
     abuse_data    = results.get("abuse",    _default_abuseipdb())
     vt_data       = results.get("vt",       _default_virustotal())
     location_data = results.get("location", _default_ipinfo())
 
-    # ── FULL RISK SCORE FORMULA ─────────────
-    # AbuseIPDB 40% + VirusTotal 40% + Severity 20%
-    # ────────────────────────────────────────
     severity_score = SEVERITY_SCORE_MAP.get(severity, 50)
 
-    risk_score = (
-        abuse_data["abuse_score"]   * 0.40 +
-        vt_data["virustotal_score"] * 0.40 +
-        severity_score              * 0.20
+    risk_score, risk_level, risk_factors, recommended_action = _calculate_risk(
+        abuse_data, vt_data, severity_score
     )
-    risk_score = round(risk_score)
-
-    if risk_score >= 80:
-        risk_level = "HIGH"
-    elif risk_score >= 50:
-        risk_level = "MEDIUM"
-    elif risk_score >= 25:
-        risk_level = "LOW"
-    else:
-        risk_level = "INFO"
 
     logger.info(f"[Enricher] Done — risk_score: {risk_score}, risk_level: {risk_level}, time: {elapsed}s")
 
     return {
-        "ip":                 ip_address,
-        "alert_type":         alert_type,
-        "severity":           severity,
-        "severity_score":     severity_score,
-        "abuse_score":        abuse_data["abuse_score"],
-        "total_reports":      abuse_data["total_reports"],
-        "whitelisted":        abuse_data["whitelisted"],
-        "isp":                abuse_data["isp"],
-        "virustotal_score":   vt_data["virustotal_score"],
-        "malicious_engines":  vt_data["malicious_engines"],
-        "suspicious_engines": vt_data["suspicious_engines"],
-        "total_engines":      vt_data["total_engines"],
-        "country":            location_data["country"],
-        "city":               location_data["city"],
-        "region":             location_data["region"],
-        "org":                location_data["org"],
-        "timezone":           location_data["timezone"],
-        "risk_score":         risk_score,
-        "risk_level":         risk_level,
-        "enrichment_time_s":  elapsed
+        "ip":                  ip_address,
+        "alert_type":          alert_type,
+        "severity":            severity,
+        "severity_score":      severity_score,
+        "abuse_score":         abuse_data["abuse_score"],
+        "total_reports":       abuse_data["total_reports"],
+        "whitelisted":         abuse_data["whitelisted"],
+        "isp":                 abuse_data["isp"],
+        "virustotal_score":    vt_data["virustotal_score"],
+        "malicious_engines":   vt_data["malicious_engines"],
+        "suspicious_engines":  vt_data["suspicious_engines"],
+        "total_engines":       vt_data["total_engines"],
+        "country":             location_data["country"],
+        "city":                location_data["city"],
+        "region":              location_data["region"],
+        "org":                 location_data["org"],
+        "timezone":            location_data["timezone"],
+        "risk_score":          risk_score,
+        "risk_level":          risk_level,
+        "risk_factors":        risk_factors,
+        "recommended_action":  recommended_action,
+        "enrichment_time_s":   elapsed
     }
 
 
