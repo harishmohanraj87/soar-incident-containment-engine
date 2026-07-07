@@ -1,94 +1,328 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOAR Incident Containment Engine</title>
+{% extends "base.html" %}
 
-    <link rel="stylesheet" href="/static/style.css">
-</head>
+{% block title %}SOAR Dashboard{% endblock %}
 
-<body>
+{% block page_title %}
+SOC Command Center
+{% endblock %}
 
-<div class="container">
+{% block content %}
 
-    <header>
-        <h1>🛡 SOAR Incident Containment Engine</h1>
-        <span class="status">🟢 System Online</span>
-    </header>
+<!-- ==========================
+      KPI CARDS
+========================== -->
 
-    <div class="cards">
+<div class="row">
 
-        <div class="card">
-            <h2>Alerts</h2>
-            <p>15</p>
-        </div>
+    <div class="col-lg-2 col-md-4 col-sm-6">
 
-        <div class="card critical">
-            <h2>Critical</h2>
-            <p>5</p>
-        </div>
+        <div class="small-box bg-info">
 
-        <div class="card">
-            <h2>Executed</h2>
-            <p>10</p>
-        </div>
+            <div class="inner">
+                <h3>{{ total_alerts|default(0) }}</h3>
+                <p>Total Alerts</p>
+            </div>
 
-        <div class="card success">
-            <h2>Success</h2>
-            <p>98%</p>
+            <div class="icon">
+                <i class="fas fa-bell"></i>
+            </div>
+
         </div>
 
     </div>
 
-    <section class="form-box">
+    <div class="col-lg-2 col-md-4 col-sm-6">
 
-        <h2>Execute Playbook</h2>
+        <div class="small-box bg-danger">
 
-        <form method="POST">
+            <div class="inner">
+                <h3>{{ critical_alerts|default(0) }}</h3>
+                <p>Critical</p>
+            </div>
 
-            <label>IP Address</label>
+            <div class="icon">
+                <i class="fas fa-radiation"></i>
+            </div>
 
-            <input
-                type="text"
-                name="ip"
-                placeholder="185.220.101.1"
-                required>
+        </div>
 
-            <label>Risk Score</label>
+    </div>
 
-            <input
-                type="number"
-                name="risk_score"
-                min="0"
-                max="100"
-                placeholder="95"
-                required>
+    <div class="col-lg-2 col-md-4 col-sm-6">
 
-            <button type="submit">
-                ▶ Execute Playbook
-            </button>
+        <div class="small-box bg-warning">
 
-        </form>
+            <div class="inner">
+                <h3>{{ open_incidents|default(0) }}</h3>
+                <p>Open Incidents</p>
+            </div>
 
-    </section>
+            <div class="icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
 
-    {% if result %}
+        </div>
 
-    <section class="result">
+    </div>
 
-        <h2>Execution Result</h2>
+    <div class="col-lg-2 col-md-4 col-sm-6">
 
-        <p><strong>Status</strong> : {{ result.status }}</p>
-        <p><strong>Action</strong> : {{ result.action }}</p>
-        <p><strong>Target</strong> : {{ result.target }}</p>
-        <p><strong>Timestamp</strong> : {{ result.timestamp }}</p>
+        <div class="small-box bg-success">
 
-    </section>
+            <div class="inner">
+                <h3>{{ blocked_ips|default(0) }}</h3>
+                <p>Blocked IPs</p>
+            </div>
 
-    {% endif %}
+            <div class="icon">
+                <i class="fas fa-ban"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-2 col-md-4 col-sm-6">
+
+        <div class="small-box bg-primary">
+
+            <div class="inner">
+                <h3>{{ playbooks|default(0) }}</h3>
+                <p>Playbooks</p>
+            </div>
+
+            <div class="icon">
+                <i class="fas fa-robot"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-2 col-md-4 col-sm-6">
+
+        <div class="small-box bg-secondary">
+
+            <div class="inner">
+                <h3>{{ mttr|default("2.4m") }}</h3>
+                <p>Avg MTTR</p>
+            </div>
+
+            <div class="icon">
+                <i class="fas fa-stopwatch"></i>
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
 
-</body>
-</html>
+
+<!-- ==========================
+      CHARTS
+========================== -->
+
+<div class="row">
+
+    <div class="col-lg-8">
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3 class="card-title">
+
+                    <i class="fas fa-chart-line mr-2"></i>
+
+                    Alert Trend
+
+                </h3>
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="alertChart" height="120"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-4">
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3 class="card-title">
+
+                    Severity Distribution
+
+                </h3>
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="severityChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================
+      THREAT + PLAYBOOK
+========================== -->
+
+<div class="row">
+
+    <div class="col-lg-6">
+
+        <div class="card card-danger">
+
+            <div class="card-header">
+
+                <h3 class="card-title">
+
+                    Threat Intelligence
+
+                </h3>
+
+            </div>
+
+            <div class="card-body">
+
+                <table class="table table-bordered">
+
+                    <tr>
+                        <th>Most Malicious IP</th>
+                        <td>{{ top_ip|default("N/A") }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Abuse Score</th>
+                        <td>{{ abuse_score|default("--") }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>VirusTotal</th>
+                        <td>{{ vt_score|default("--") }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Country</th>
+                        <td>{{ country|default("--") }}</td>
+                    </tr>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-6">
+
+        <div class="card card-success">
+
+            <div class="card-header">
+
+                <h3 class="card-title">
+
+                    Latest Playbook Execution
+
+                </h3>
+
+            </div>
+
+            <div class="card-body">
+
+                <ul class="timeline">
+
+                    <li>✔ Alert Received</li>
+                    <li>✔ Threat Enrichment</li>
+                    <li>✔ Risk Score Calculated</li>
+                    <li>✔ Block IP</li>
+                    <li>✔ Incident Created</li>
+
+                </ul>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================
+      RECENT ALERTS
+========================== -->
+
+<div class="card">
+
+    <div class="card-header">
+
+        <h3 class="card-title">
+
+            Recent Alerts
+
+        </h3>
+
+    </div>
+
+    <div class="card-body table-responsive">
+
+        <table class="table table-hover">
+
+            <thead>
+
+            <tr>
+
+                <th>Time</th>
+                <th>Alert ID</th>
+                <th>Source IP</th>
+                <th>Severity</th>
+                <th>Risk</th>
+                <th>Status</th>
+
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for alert in recent_alerts %}
+
+            <tr>
+
+                <td>{{ alert.time }}</td>
+                <td>{{ alert.id }}</td>
+                <td>{{ alert.ip }}</td>
+                <td>{{ alert.severity }}</td>
+                <td>{{ alert.score }}</td>
+                <td>{{ alert.status }}</td>
+
+            </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}
