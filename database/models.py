@@ -10,23 +10,23 @@ def create_alerts_table():
 
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-        alert_id TEXT UNIQUE,
+        alert_id TEXT UNIQUE NOT NULL,
 
-        alert_type TEXT,
+        alert_type TEXT NOT NULL,
 
-        severity TEXT,
+        severity TEXT NOT NULL,
 
-        source_ip TEXT,
+        source_ip TEXT NOT NULL,
 
         attacker_ip TEXT,
 
-        risk_score INTEGER,
+        risk_score INTEGER DEFAULT 0,
 
         risk_level TEXT,
 
-        action_taken TEXT,
+        action_taken TEXT DEFAULT 'Pending',
 
-        status TEXT,
+        status TEXT DEFAULT 'NEW',
 
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
