@@ -15,8 +15,12 @@ from database.models import create_alerts_table
 from database.crud import (
     get_total_alerts,
     get_high_risk_alerts,
+    get_critical_alerts,
     get_playbook_executions,
-    get_open_incidents
+    get_open_incidents,
+    get_blocked_ips,
+    get_mttr,
+    get_recent_alerts
 )
 
 app = FastAPI(
@@ -41,7 +45,6 @@ templates = Jinja2Templates(directory="templates")
 # ----------------------------------------
 # Dashboard
 # ----------------------------------------
-
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
 
@@ -51,19 +54,28 @@ async def dashboard(request: Request):
         context={
             "request": request,
 
+            # Dashboard KPI Cards
             "total_alerts": get_total_alerts(),
-
             "high_risk": get_high_risk_alerts(),
-
+            "critical_alerts": get_critical_alerts(),
             "playbooks": get_playbook_executions(),
-
             "incidents": get_open_incidents(),
+            "blocked_ips": get_blocked_ips(),
+            "mttr": get_mttr(),
 
+            # Dashboard Table
+            "recent_alerts": get_recent_alerts(),
+
+            # Threat Intelligence placeholders
+            "top_ip": "N/A",
+            "abuse_score": "--",
+            "vt_score": "--",
+            "country": "--",
+
+            # Future Playbook Results
             "result": None
         }
     )
-
-
 @app.post("/", response_class=HTMLResponse)
 async def execute_dashboard(
     request: Request,
@@ -84,13 +96,23 @@ async def execute_dashboard(
         context={
             "request": request,
 
+            # Dashboard KPI Cards
             "total_alerts": get_total_alerts(),
-
             "high_risk": get_high_risk_alerts(),
-
+            "critical_alerts": get_critical_alerts(),
             "playbooks": get_playbook_executions(),
-
             "incidents": get_open_incidents(),
+            "blocked_ips": get_blocked_ips(),
+            "mttr": get_mttr(),
+
+            # Dashboard Table
+            "recent_alerts": get_recent_alerts(),
+
+            # Threat Intelligence placeholders
+            "top_ip": "N/A",
+            "abuse_score": "--",
+            "vt_score": "--",
+            "country": "--",
 
             "result": result
         }
