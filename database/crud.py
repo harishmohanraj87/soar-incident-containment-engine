@@ -202,3 +202,79 @@ def get_open_incidents():
     conn.close()
 
     return total
+
+# -----------------------------
+# ADVANCED DASHBOARD STATISTICS
+# -----------------------------
+
+def get_critical_alerts():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM alerts
+        WHERE severity = 'CRITICAL'
+    """)
+
+    total = cursor.fetchone()[0]
+
+    conn.close()
+
+    return total
+
+
+def get_blocked_ips():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM alerts
+        WHERE action_taken = 'Block IP'
+    """)
+
+    total = cursor.fetchone()[0]
+
+    conn.close()
+
+    return total
+
+
+def get_mttr():
+
+    """
+    Placeholder for Mean Time To Respond.
+
+    Later this will be calculated using
+    incident timestamps.
+    """
+
+    return "2.4 min"
+
+
+def get_recent_alerts(limit=10):
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            alert_id,
+            source_ip,
+            severity,
+            risk_score,
+            status,
+            created_at
+        FROM alerts
+        ORDER BY created_at DESC
+        LIMIT ?
+    """, (limit,))
+
+    alerts = cursor.fetchall()
+
+    conn.close()
+
+    return alerts
