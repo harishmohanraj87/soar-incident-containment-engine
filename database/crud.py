@@ -24,15 +24,15 @@ def save_alert(alert):
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        alert["id"],
-        alert["type"],
-        alert["severity"],
-        alert["source_ip"],
-        alert["attacker_ip"],
-        alert["risk_score"],
-        alert["risk_level"],
-        alert["action_taken"],
-        alert["status"]
+        alert.get("id"),
+        alert.get("type"),
+        alert.get("severity"),
+        alert.get("source_ip"),
+        alert.get("attacker_ip"),
+        alert.get("risk_score", 0),
+        alert.get("risk_level", "LOW"),
+        alert.get("action_taken", "Pending"),
+        alert.get("status", "NEW")
     ))
 
     conn.commit()
