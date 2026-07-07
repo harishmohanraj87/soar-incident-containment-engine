@@ -13,6 +13,7 @@ from playbooks.engine import execute_playbook
 from database.models import create_alerts_table
 
 from database.crud import (
+    save_alert,
     get_total_alerts,
     get_high_risk_alerts,
     get_critical_alerts,
@@ -126,41 +127,84 @@ async def execute_dashboard(
 @app.post("/alerts")
 def receive_alert(alert: dict):
 
+    # Parse incoming alert
     parsed = parse_alert(alert)
 
+    # Normalize alert
     normalized = normalize_alert(parsed)
 
     attacker_ip = normalized.get("attacker_ip")
 
+    # ----------------------------------------
+    # Threat Intelligence Enrichment
+    # ----------------------------------------
+
     if attacker_ip:
 
-        enrichment = enrich_ip(attacker_ip)
+        enrichment = enrich_ip(
+            ip_address=attacker_ip,
+            alert_type=normalized["type"],
+            severity=normalized["severity"]
+        )
 
+        # Merge enrichment data
         normalized.update(enrichment)
+
+    # ----------------------------------------
+    # Risk Score
+    # ----------------------------------------
 
     abuse_score = normalized.get("abuse_score", 0)
 
     normalized["risk_score"] = abuse_score
 
+    # Risk Level
+    if abuse_score >= 90:
+        normalized["risk_level"] = "CRITICAL"
+    elif abuse_score >= 70:
+        normalized["risk_level"] = "HIGH"
+    elif abuse_score >= 40:
+        normalized["risk_level"] = "MEDIUM"
+    else:
+        normalized["risk_level"] = "LOW"
+
+    # Initial Incident Status
+    normalized["status"] = "NEW"
+
+    # ----------------------------------------
+    # Execute Playbook
+    # ----------------------------------------
+
     if attacker_ip:
 
         playbook_result = execute_playbook({
-
             "ip": attacker_ip,
-
             "risk_score": abuse_score
-
         })
+
+        normalized["action_taken"] = playbook_result.get(
+            "action",
+            "Pending"
+        )
 
     else:
 
         playbook_result = {
-
             "status": "skipped",
-
             "message": "No attacker IP found."
-
         }
+
+        normalized["action_taken"] = "Pending"
+
+    # ----------------------------------------
+    # Save Alert
+    # ----------------------------------------
+
+    save_alert(normalized)
+
+    # ----------------------------------------
+    # Response
+    # ----------------------------------------
 
     return {
 
@@ -170,4 +214,4 @@ def receive_alert(alert: dict):
 
         "playbook": playbook_result
 
-    } 
+    }
