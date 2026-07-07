@@ -5,24 +5,42 @@ from fastapi.templating import Jinja2Templates
 
 from backend.parser import parse_alert
 from backend.normalizer import normalize_alert
+
 from threat_intel.enricher import enrich_ip
+
 from playbooks.engine import execute_playbook
+
+from database.models import create_alerts_table
+
+from database.crud import (
+    get_total_alerts,
+    get_high_risk_alerts,
+    get_playbook_executions,
+    get_open_incidents
+)
 
 app = FastAPI(
     title="SOAR Incident Containment Engine",
     version="1.0.0"
 )
 
-# Static files
+# ----------------------------------------
+# Initialize Database
+# ----------------------------------------
+
+create_alerts_table()
+
+# ----------------------------------------
+# Static Files
+# ----------------------------------------
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Templates
 templates = Jinja2Templates(directory="templates")
 
-
-# -----------------------------
+# ----------------------------------------
 # Dashboard
-# -----------------------------
+# ----------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
@@ -32,6 +50,15 @@ async def dashboard(request: Request):
         name="dashboard.html",
         context={
             "request": request,
+
+            "total_alerts": get_total_alerts(),
+
+            "high_risk": get_high_risk_alerts(),
+
+            "playbooks": get_playbook_executions(),
+
+            "incidents": get_open_incidents(),
+
             "result": None
         }
     )
@@ -56,14 +83,23 @@ async def execute_dashboard(
         name="dashboard.html",
         context={
             "request": request,
+
+            "total_alerts": get_total_alerts(),
+
+            "high_risk": get_high_risk_alerts(),
+
+            "playbooks": get_playbook_executions(),
+
+            "incidents": get_open_incidents(),
+
             "result": result
         }
     )
 
 
-# -----------------------------
+# ----------------------------------------
 # API Endpoint
-# -----------------------------
+# ----------------------------------------
 
 @app.post("/alerts")
 def receive_alert(alert: dict):
@@ -75,25 +111,41 @@ def receive_alert(alert: dict):
     attacker_ip = normalized.get("attacker_ip")
 
     if attacker_ip:
+
         enrichment = enrich_ip(attacker_ip)
+
         normalized.update(enrichment)
 
     abuse_score = normalized.get("abuse_score", 0)
+
     normalized["risk_score"] = abuse_score
 
     if attacker_ip:
+
         playbook_result = execute_playbook({
+
             "ip": attacker_ip,
+
             "risk_score": abuse_score
+
         })
+
     else:
+
         playbook_result = {
+
             "status": "skipped",
+
             "message": "No attacker IP found."
+
         }
 
     return {
+
         "message": "Alert processed successfully",
+
         "alert": normalized,
+
         "playbook": playbook_result
-    }
+
+    } 
