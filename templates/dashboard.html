@@ -117,6 +117,146 @@ SOC Command Center
     </div>
 
 </div>
+<!-- ==========================
+      ALERT SUBMISSION
+========================== -->
+
+<div class="card card-primary">
+
+    <div class="card-header">
+
+        <h3 class="card-title">
+
+            <i class="fas fa-paper-plane mr-2"></i>
+
+            Submit Security Alert
+
+        </h3>
+
+    </div>
+
+    <form method="POST" action="/">
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6">
+
+                    <div class="form-group">
+
+                        <label>Alert ID</label>
+
+                        <input
+                            type="text"
+                            name="alert_id"
+                            class="form-control"
+                            placeholder="ALT-1005"
+                            required>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <div class="form-group">
+
+                        <label>Alert Type</label>
+
+                        <select
+                            name="alert_type"
+                            class="form-control">
+
+                            <option>Malware</option>
+                            <option>Brute Force</option>
+                            <option>Port Scan</option>
+                            <option>Phishing</option>
+                            <option>SQL Injection</option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <div class="form-group">
+
+                        <label>Severity</label>
+
+                        <select
+                            name="severity"
+                            class="form-control">
+
+                            <option>LOW</option>
+                            <option>MEDIUM</option>
+                            <option>HIGH</option>
+                            <option selected>CRITICAL</option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="form-group">
+
+                        <label>Source IP</label>
+
+                        <input
+                            type="text"
+                            name="source_ip"
+                            class="form-control"
+                            placeholder="10.0.0.15">
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="form-group">
+
+                        <label>Attacker IP</label>
+
+                        <input
+                            type="text"
+                            name="attacker_ip"
+                            class="form-control"
+                            placeholder="8.8.8.8">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card-footer">
+
+            <button
+                class="btn btn-primary">
+
+                <i class="fas fa-play mr-2"></i>
+
+                Process Alert
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
 
 
 <!-- ==========================
