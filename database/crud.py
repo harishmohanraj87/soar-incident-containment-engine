@@ -10,6 +10,11 @@ def save_alert(alert):
     conn = create_connection()
     cursor = conn.cursor()
 
+    print("=" * 50)
+    print("SAVING ALERT")
+    print(alert)
+    print("=" * 50)
+
     cursor.execute("""
         INSERT INTO alerts (
             alert_id,
@@ -37,7 +42,6 @@ def save_alert(alert):
 
     conn.commit()
     conn.close()
-
 
 # -----------------------------
 # READ
