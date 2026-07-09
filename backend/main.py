@@ -43,7 +43,11 @@ from database.crud import (
     delete_incident,
 
     log_incident_activity,
-    get_incident_activity
+    get_incident_activity,
+    get_alerts_by_severity,
+    get_incidents_by_status_chart,
+    get_daily_alerts,
+    get_risk_distribution
 )
 
 app = FastAPI(
@@ -70,9 +74,16 @@ templates = Jinja2Templates(directory="templates")
 from pydantic import BaseModel
 
 
-class StatusUpdate(BaseModel):
-    status: str
+from typing import Literal
 
+class StatusUpdate(BaseModel):
+    status: Literal[
+        "NEW",
+        "INVESTIGATING",
+        "CONTAINED",
+        "RESOLVED",
+        "CLOSED"
+    ]
 
 class AnalystAssignment(BaseModel):
     assigned_to: str
@@ -257,9 +268,14 @@ async def dashboard(request: Request):
             "country": "--",
 
             # Playbook Result
-            "result": None
-        }
-    )
+            "result": None,
+
+    "severity_chart": get_alerts_by_severity(),
+    "status_chart": get_incidents_by_status_chart(),
+    "daily_chart": get_daily_alerts(),
+    "risk_chart": get_risk_distribution()
+    }
+        )
 
 
 @app.post("/", response_class=HTMLResponse)
@@ -337,12 +353,21 @@ async def execute_dashboard(
 
             # Playbook Result
 
-            "result": playbook_result
+            "result": playbook_result,
+
+            # Dashboard Analytics
+
+            "severity_chart": get_alerts_by_severity(),
+
+            "status_chart": get_incidents_by_status_chart(),
+
+            "daily_chart": get_daily_alerts(),
+
+            "risk_chart": get_risk_distribution()
 
         }
 
     )
-
 
 # ----------------------------------------
 # REST API
@@ -360,7 +385,7 @@ def receive_alert(alert: dict):
 
         "alert": normalized,
 
-        "playbook": playbook_result
+        "playbook": playbook_result,
 
     }
 # ----------------------------------------

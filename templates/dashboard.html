@@ -8,9 +8,9 @@ SOC Command Center
 
 {% block content %}
 
-<!-- ==========================
-      KPI CARDS
-========================== -->
+<!-- ================================================= -->
+<!-- KPI CARDS -->
+<!-- ================================================= -->
 
 <div class="row">
 
@@ -19,12 +19,17 @@ SOC Command Center
         <div class="small-box bg-info">
 
             <div class="inner">
+
                 <h3>{{ total_alerts|default(0) }}</h3>
+
                 <p>Total Alerts</p>
+
             </div>
 
             <div class="icon">
+
                 <i class="fas fa-bell"></i>
+
             </div>
 
         </div>
@@ -36,12 +41,17 @@ SOC Command Center
         <div class="small-box bg-danger">
 
             <div class="inner">
+
                 <h3>{{ critical_alerts|default(0) }}</h3>
-                <p>Critical</p>
+
+                <p>Critical Alerts</p>
+
             </div>
 
             <div class="icon">
+
                 <i class="fas fa-radiation"></i>
+
             </div>
 
         </div>
@@ -53,12 +63,17 @@ SOC Command Center
         <div class="small-box bg-warning">
 
             <div class="inner">
-                <h3>{{ open_incidents|default(0) }}</h3>
+
+                <h3>{{ incidents|default(0) }}</h3>
+
                 <p>Open Incidents</p>
+
             </div>
 
             <div class="icon">
-                <i class="fas fa-exclamation-circle"></i>
+
+                <i class="fas fa-exclamation-triangle"></i>
+
             </div>
 
         </div>
@@ -70,12 +85,17 @@ SOC Command Center
         <div class="small-box bg-success">
 
             <div class="inner">
+
                 <h3>{{ blocked_ips|default(0) }}</h3>
+
                 <p>Blocked IPs</p>
+
             </div>
 
             <div class="icon">
+
                 <i class="fas fa-ban"></i>
+
             </div>
 
         </div>
@@ -87,12 +107,17 @@ SOC Command Center
         <div class="small-box bg-primary">
 
             <div class="inner">
+
                 <h3>{{ playbooks|default(0) }}</h3>
+
                 <p>Playbooks</p>
+
             </div>
 
             <div class="icon">
+
                 <i class="fas fa-robot"></i>
+
             </div>
 
         </div>
@@ -104,12 +129,17 @@ SOC Command Center
         <div class="small-box bg-secondary">
 
             <div class="inner">
+
                 <h3>{{ mttr|default("2.4m") }}</h3>
-                <p>Avg MTTR</p>
+
+                <p>Average MTTR</p>
+
             </div>
 
             <div class="icon">
+
                 <i class="fas fa-stopwatch"></i>
+
             </div>
 
         </div>
@@ -117,9 +147,10 @@ SOC Command Center
     </div>
 
 </div>
-<!-- ==========================
-      ALERT SUBMISSION
-========================== -->
+
+<!-- ================================================= -->
+<!-- ALERT SUBMISSION -->
+<!-- ================================================= -->
 
 <div class="card card-primary">
 
@@ -151,7 +182,7 @@ SOC Command Center
                             type="text"
                             name="alert_id"
                             class="form-control"
-                            placeholder="ALT-1005"
+                            placeholder="ALT-3001"
                             required>
 
                     </div>
@@ -168,11 +199,17 @@ SOC Command Center
                             name="alert_type"
                             class="form-control">
 
-                            <option>Malware</option>
                             <option>Brute Force</option>
-                            <option>Port Scan</option>
+
+                            <option>Malware</option>
+
                             <option>Phishing</option>
+
                             <option>SQL Injection</option>
+
+                            <option>Port Scan</option>
+
+                            <option>DDoS</option>
 
                         </select>
 
@@ -195,8 +232,11 @@ SOC Command Center
                             class="form-control">
 
                             <option>LOW</option>
+
                             <option>MEDIUM</option>
+
                             <option>HIGH</option>
+
                             <option selected>CRITICAL</option>
 
                         </select>
@@ -215,7 +255,8 @@ SOC Command Center
                             type="text"
                             name="source_ip"
                             class="form-control"
-                            placeholder="10.0.0.15">
+                            placeholder="192.168.1.10"
+                            required>
 
                     </div>
 
@@ -231,7 +272,8 @@ SOC Command Center
                             type="text"
                             name="attacker_ip"
                             class="form-control"
-                            placeholder="8.8.8.8">
+                            placeholder="8.8.8.8"
+                            required>
 
                     </div>
 
@@ -244,6 +286,7 @@ SOC Command Center
         <div class="card-footer">
 
             <button
+                type="submit"
                 class="btn btn-primary">
 
                 <i class="fas fa-play mr-2"></i>
@@ -257,13 +300,13 @@ SOC Command Center
     </form>
 
 </div>
-
-
-<!-- ==========================
-      CHARTS
-========================== -->
+<!-- ================================================= -->
+<!-- DASHBOARD ANALYTICS -->
+<!-- ================================================= -->
 
 <div class="row">
+
+    <!-- Alert Trend -->
 
     <div class="col-lg-8">
 
@@ -290,6 +333,8 @@ SOC Command Center
         </div>
 
     </div>
+
+    <!-- Severity Distribution -->
 
     <div class="col-lg-4">
 
@@ -318,9 +363,125 @@ SOC Command Center
 </div>
 
 
-<!-- ==========================
-      THREAT + PLAYBOOK
-========================== -->
+<div class="row">
+
+    <!-- Incident Status -->
+
+    <div class="col-lg-6">
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3 class="card-title">
+
+                    Incident Status
+
+                </h3>
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="statusChart" height="180"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Risk Distribution -->
+
+    <div class="col-lg-6">
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h3 class="card-title">
+
+                    Risk Distribution
+
+                </h3>
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="riskChart" height="180"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================================================= -->
+<!-- PLAYBOOK RESULT -->
+<!-- ================================================= -->
+
+{% if result %}
+
+<div class="card card-success">
+
+    <div class="card-header">
+
+        <h3 class="card-title">
+
+            Latest Playbook Result
+
+        </h3>
+
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-bordered">
+
+            <tr>
+
+                <th>Status</th>
+
+                <td>{{ result.get("status","-") }}</td>
+
+            </tr>
+
+            <tr>
+
+                <th>Action</th>
+
+                <td>{{ result.get("action","-") }}}</td>
+
+            </tr>
+
+            <tr>
+
+                <th>Target</th>
+
+                <td>{{ result.get("target","-") }}</td>
+
+            </tr>
+
+            <tr>
+
+                <th>Timestamp</th>
+
+                <td>{{ result.get("timestamp","-") }}</td>
+
+            </tr>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endif %}<!-- ================================================= -->
+<!-- THREAT INTELLIGENCE + PLAYBOOK -->
+<!-- ================================================= -->
 
 <div class="row">
 
@@ -343,23 +504,35 @@ SOC Command Center
                 <table class="table table-bordered">
 
                     <tr>
-                        <th>Most Malicious IP</th>
+
+                        <th>Attacker IP</th>
+
                         <td>{{ top_ip|default("N/A") }}</td>
+
                     </tr>
 
                     <tr>
+
                         <th>Abuse Score</th>
+
                         <td>{{ abuse_score|default("--") }}</td>
+
                     </tr>
 
                     <tr>
+
                         <th>VirusTotal</th>
+
                         <td>{{ vt_score|default("--") }}</td>
+
                     </tr>
 
                     <tr>
+
                         <th>Country</th>
+
                         <td>{{ country|default("--") }}</td>
+
                     </tr>
 
                 </table>
@@ -378,7 +551,7 @@ SOC Command Center
 
                 <h3 class="card-title">
 
-                    Latest Playbook Execution
+                    SOAR Automation
 
                 </h3>
 
@@ -388,10 +561,16 @@ SOC Command Center
 
                 <ul class="timeline">
 
-                    <li>✔ Alert Received</li>
-                    <li>✔ Threat Enrichment</li>
+                    <li>✔ Alert Parsed</li>
+
+                    <li>✔ Alert Normalized</li>
+
+                    <li>✔ Threat Intelligence Enrichment</li>
+
                     <li>✔ Risk Score Calculated</li>
-                    <li>✔ Block IP</li>
+
+                    <li>✔ Playbook Executed</li>
+
                     <li>✔ Incident Created</li>
 
                 </ul>
@@ -404,10 +583,9 @@ SOC Command Center
 
 </div>
 
-
-<!-- ==========================
-      RECENT ALERTS
-========================== -->
+<!-- ================================================= -->
+<!-- RECENT ALERTS -->
+<!-- ================================================= -->
 
 <div class="card">
 
@@ -427,35 +605,41 @@ SOC Command Center
 
             <thead>
 
-            <tr>
+                <tr>
 
-                <th>Time</th>
-                <th>Alert ID</th>
-                <th>Source IP</th>
-                <th>Severity</th>
-                <th>Risk</th>
-                <th>Status</th>
+                    <th>Time</th>
 
-            </tr>
+                    <th>Alert ID</th>
+
+                    <th>Source IP</th>
+
+                    <th>Severity</th>
+
+                    <th>Risk</th>
+
+                    <th>Status</th>
+
+                </tr>
 
             </thead>
 
             <tbody>
 
-            {% for alert in recent_alerts %}
+                {% for alert in recent_alerts %}
+                <tr>
+                    <td>{{ alert[5] }}</td>
 
-            <tr>
+                        <td>{{ alert[0] }}</td>
 
-                <td>{{ alert.time }}</td>
-                <td>{{ alert.id }}</td>
-                <td>{{ alert.ip }}</td>
-                <td>{{ alert.severity }}</td>
-                <td>{{ alert.score }}</td>
-                <td>{{ alert.status }}</td>
+                        <td>{{ alert[1] }}</td>
 
-            </tr>
+                        <td>{{ alert[2] }}</td>
 
-            {% endfor %}
+                        <td>{{ alert[3] }}</td>
+
+                        <td>{{ alert[4] }}</td>
+                     </tr>
+                    {% endfor %}
 
             </tbody>
 
@@ -464,5 +648,118 @@ SOC Command Center
     </div>
 
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+
+// ================================
+// Prepare Dashboard Data
+// ================================
+
+const severityData = {{ severity_chart | tojson }};
+const statusData = {{ status_chart | tojson }};
+const dailyData = {{ daily_chart | tojson }};
+const riskData = {{ risk_chart | tojson }};
+
+// ================================
+// Alert Trend
+// ================================
+
+new Chart(document.getElementById("alertChart"), {
+
+    type: "line",
+
+    data: {
+
+        labels: dailyData.map(x => x[0]),
+
+        datasets: [{
+
+            label: "Alerts",
+
+            data: dailyData.map(x => x[1]),
+
+            borderWidth: 2,
+
+            fill: false
+
+        }]
+
+    }
+
+});
+
+// ================================
+// Severity Distribution
+// ================================
+
+new Chart(document.getElementById("severityChart"), {
+
+    type: "pie",
+
+    data: {
+
+        labels: severityData.map(x => x[0]),
+
+        datasets: [{
+
+            data: severityData.map(x => x[1])
+
+        }]
+
+    }
+
+});
+
+// ================================
+// Incident Status
+// ================================
+
+new Chart(document.getElementById("statusChart"), {
+
+    type: "bar",
+
+    data: {
+
+        labels: statusData.map(x => x[0]),
+
+        datasets: [{
+
+            label: "Incidents",
+
+            data: statusData.map(x => x[1])
+
+        }]
+
+    }
+
+});
+
+// ================================
+// Risk Distribution
+// ================================
+
+new Chart(document.getElementById("riskChart"), {
+
+    type: "doughnut",
+
+    data: {
+
+        labels: riskData.map(x => x[0]),
+
+        datasets: [{
+
+            data: riskData.map(x => x[1])
+
+        }]
+
+    }
+
+});
+
+</script>
 
 {% endblock %}
