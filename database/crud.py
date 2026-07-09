@@ -1,19 +1,23 @@
 from database.database import create_connection
 
 
-# -----------------------------
-# CREATE
-# -----------------------------
+# ==========================================================
+# ALERT MANAGEMENT
+# ==========================================================
+
+# ----------------------------------------------------------
+# CREATE ALERT
+# ----------------------------------------------------------
 
 def save_alert(alert):
 
     conn = create_connection()
     cursor = conn.cursor()
 
-    print("=" * 50)
+    print("=" * 60)
     print("SAVING ALERT")
     print(alert)
-    print("=" * 50)
+    print("=" * 60)
 
     cursor.execute("""
         INSERT INTO alerts (
@@ -46,9 +50,11 @@ def save_alert(alert):
     conn.close()
 
     return saved_alert_id
-# -----------------------------
-# READ
-# -----------------------------
+
+
+# ----------------------------------------------------------
+# READ ALERTS
+# ----------------------------------------------------------
 
 def get_all_alerts():
 
@@ -86,9 +92,9 @@ def get_alert_by_id(alert_id):
     return alert
 
 
-# -----------------------------
-# UPDATE
-# -----------------------------
+# ----------------------------------------------------------
+# UPDATE ALERT
+# ----------------------------------------------------------
 
 def update_alert_status(alert_id, status):
 
@@ -120,9 +126,9 @@ def update_action(alert_id, action):
     conn.close()
 
 
-# -----------------------------
-# DELETE
-# -----------------------------
+# ----------------------------------------------------------
+# DELETE ALERT
+# ----------------------------------------------------------
 
 def delete_alert(alert_id):
 
@@ -138,16 +144,19 @@ def delete_alert(alert_id):
     conn.close()
 
 
-# -----------------------------
+# ==========================================================
 # DASHBOARD STATISTICS
-# -----------------------------
+# ==========================================================
 
 def get_total_alerts():
 
     conn = create_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT COUNT(*) FROM alerts")
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM alerts
+    """)
 
     total = cursor.fetchone()[0]
 
@@ -165,6 +174,24 @@ def get_high_risk_alerts():
         SELECT COUNT(*)
         FROM alerts
         WHERE risk_level IN ('HIGH', 'CRITICAL')
+    """)
+
+    total = cursor.fetchone()[0]
+
+    conn.close()
+
+    return total
+
+
+def get_critical_alerts():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM alerts
+        WHERE severity = 'CRITICAL'
     """)
 
     total = cursor.fetchone()[0]
@@ -193,45 +220,6 @@ def get_playbook_executions():
     return total
 
 
-def get_open_incidents():
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM alerts
-        WHERE status IN ('NEW', 'INVESTIGATING')
-    """)
-
-    total = cursor.fetchone()[0]
-
-    conn.close()
-
-    return total
-
-# -----------------------------
-# ADVANCED DASHBOARD STATISTICS
-# -----------------------------
-
-def get_critical_alerts():
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM alerts
-        WHERE severity = 'CRITICAL'
-    """)
-
-    total = cursor.fetchone()[0]
-
-    conn.close()
-
-    return total
-
-
 def get_blocked_ips():
 
     conn = create_connection()
@@ -251,14 +239,11 @@ def get_blocked_ips():
 
 
 def get_mttr():
-
     """
     Placeholder for Mean Time To Respond.
-
-    Later this will be calculated using
-    incident timestamps.
+    Will be calculated from incidents
+    in a future sprint.
     """
-
     return "2.4 min"
 
 
@@ -285,12 +270,16 @@ def get_recent_alerts(limit=10):
     conn.close()
 
     return alerts
-
-# -----------------------------
+# ==========================================================
 # INCIDENT MANAGEMENT
-# -----------------------------
+# ==========================================================
+
+# ----------------------------------------------------------
+# CREATE INCIDENT
+# ----------------------------------------------------------
 
 def create_incident(incident):
+
     conn = create_connection()
     cursor = conn.cursor()
 
@@ -319,7 +308,12 @@ def create_incident(incident):
     conn.close()
 
 
+# ----------------------------------------------------------
+# READ INCIDENTS
+# ----------------------------------------------------------
+
 def get_all_incidents():
+
     conn = create_connection()
     cursor = conn.cursor()
 
@@ -337,6 +331,7 @@ def get_all_incidents():
 
 
 def get_incident_by_id(incident_id):
+
     conn = create_connection()
     cursor = conn.cursor()
 
@@ -353,7 +348,12 @@ def get_incident_by_id(incident_id):
     return incident
 
 
+# ----------------------------------------------------------
+# UPDATE INCIDENT
+# ----------------------------------------------------------
+
 def update_incident_status(incident_id, status):
+
     conn = create_connection()
     cursor = conn.cursor()
 
@@ -369,6 +369,7 @@ def update_incident_status(incident_id, status):
 
 
 def assign_analyst(incident_id, analyst):
+
     conn = create_connection()
     cursor = conn.cursor()
 
@@ -382,13 +383,18 @@ def assign_analyst(incident_id, analyst):
     conn.commit()
     conn.close()
 
+
 def add_analyst_note(incident_id, note):
+
     conn = create_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
         UPDATE incidents
-        SET analyst_notes = COALESCE(analyst_notes, '') || '\n\n' || ?,
+        SET analyst_notes =
+            COALESCE(analyst_notes, '')
+            || '\n\n'
+            || ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE incident_id = ?
     """, (note, incident_id))
@@ -396,18 +402,193 @@ def add_analyst_note(incident_id, note):
     conn.commit()
     conn.close()
 
+
+# ----------------------------------------------------------
+# DELETE INCIDENT
+# ----------------------------------------------------------
+
 def delete_incident(incident_id):
     """
     TODO:
     Replace hard delete with soft delete
-    after Audit Log module is implemented.
+    after the Audit Log module is implemented.
     """
 
     conn = create_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-        DELETE FROM incidents
+        DELETE
+        FROM incidents
+        WHERE incident_id = ?
+    """, (incident_id,))
+
+    conn.commit()
+    conn.close()
+
+
+# ----------------------------------------------------------
+# INCIDENT DASHBOARD STATISTICS
+# ----------------------------------------------------------
+
+def get_open_incidents():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM incidents
+        WHERE incident_status IN (
+            'NEW',
+            'INVESTIGATING',
+            'CONTAINED'
+        )
+    """)
+
+    total = cursor.fetchone()[0]
+
+    conn.close()
+
+    return total
+# ==========================================================
+# INCIDENT API HELPERS
+# ==========================================================
+
+def incident_exists(incident_id):
+    """
+    Check whether an incident exists.
+    """
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT 1
+        FROM incidents
+        WHERE incident_id = ?
+    """, (incident_id,))
+
+    exists = cursor.fetchone() is not None
+
+    conn.close()
+
+    return exists
+
+
+def get_incident_summary():
+    """
+    Lightweight incident information
+    used by dashboards and REST APIs.
+    """
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            incident_id,
+            alert_id,
+            title,
+            priority,
+            incident_status,
+            assigned_to,
+            created_at
+        FROM incidents
+        ORDER BY created_at DESC
+    """)
+
+    incidents = cursor.fetchall()
+
+    conn.close()
+
+    return incidents
+
+
+def get_incidents_by_status(status):
+    """
+    Retrieve incidents by status.
+    """
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM incidents
+        WHERE incident_status = ?
+        ORDER BY created_at DESC
+    """, (status,))
+
+    incidents = cursor.fetchall()
+
+    conn.close()
+
+    return incidents
+
+
+def get_incidents_by_analyst(analyst):
+    """
+    Retrieve incidents assigned
+    to a specific SOC analyst.
+    """
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM incidents
+        WHERE assigned_to = ?
+        ORDER BY created_at DESC
+    """, (analyst,))
+
+    incidents = cursor.fetchall()
+
+    conn.close()
+
+    return incidents
+
+
+def get_incident_counts():
+    """
+    Dashboard statistics for incidents.
+    """
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            incident_status,
+            COUNT(*)
+        FROM incidents
+        GROUP BY incident_status
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return {
+        row[0]: row[1]
+        for row in rows
+    }
+
+
+def resolve_incident(incident_id):
+    """
+    Mark an incident as resolved.
+    """
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE incidents
+        SET incident_status = 'RESOLVED',
+            resolved_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
         WHERE incident_id = ?
     """, (incident_id,))
 
