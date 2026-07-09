@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Incident Management</title>
+
+    <!-- Bootstrap -->
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet">
+
+    <style>
+
+        body{
+
+            background:#f4f6f9;
+
+            font-family:Segoe UI,Arial,sans-serif;
+
+        }
+
+        .navbar{
+
+            background:#343a40;
+
+        }
+
+        .navbar-brand{
+
+            color:white;
+
+            font-weight:bold;
+
+        }
+
+        .navbar-brand:hover{
+
+            color:white;
+
+        }
+
+        .page-title{
+
+            font-size:32px;
+
+            font-weight:700;
+
+            color:#343a40;
+
+        }
+
+        .subtitle{
+
+            color:#6c757d;
+
+        }
+
+        .card-stat{
+
+            border:none;
+
+            border-radius:12px;
+
+            box-shadow:0 3px 10px rgba(0,0,0,.08);
+
+        }
+
+        .card-stat h2{
+
+            font-weight:bold;
+
+        }
+
+        .table-card{
+
+            border:none;
+
+            border-radius:12px;
+
+            box-shadow:0 3px 10px rgba(0,0,0,.08);
+
+        }
+
+        .search-box{
+
+            max-width:350px;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg">
+
+    <div class="container-fluid">
+
+        <a class="navbar-brand" href="/">
+
+            <i class="bi bi-shield-lock-fill"></i>
+
+            SOAR Incident Containment Engine
+
+        </a>
+
+    </div>
+
+</nav>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <div class="page-title">
+
+                Incident Management Dashboard
+
+            </div>
+
+            <div class="subtitle">
+
+                Security Operations Center (SOC)
+
+            </div>
+
+        </div>
+
+        <a href="/"
+           class="btn btn-primary">
+
+            <i class="bi bi-speedometer2"></i>
+
+            Main Dashboard
+
+        </a>
+
+    </div>
+
+    <!-- Summary Cards -->
+
+    <div class="row mb-4">
+
+        <div class="col-md-3">
+
+            <div class="card card-stat">
+
+                <div class="card-body text-center">
+
+                    <h6>Total Incidents</h6>
+
+                    <h2>{{ incidents|length }}</h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card card-stat">
+
+                <div class="card-body text-center">
+
+                    <h6>Open Incidents</h6>
+
+                    <h2>
+
+                        {{ incidents
+                           | selectattr(5,"equalto","NEW")
+                           | list
+                           | length }}
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card card-stat">
+
+                <div class="card-body text-center">
+
+                    <h6>High Priority</h6>
+
+                    <h2>
+
+                        {{ incidents
+                           | selectattr(4,"equalto","P1")
+                           | list
+                           | length }}
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card card-stat">
+
+                <div class="card-body text-center">
+
+                    <h6>Assigned</h6>
+
+                    <h2>
+
+                        {{ incidents
+                           | rejectattr(6,"equalto","Unassigned")
+                           | list
+                           | length }}
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Search -->
+
+    <div class="card table-card mb-3">
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <input
+
+                        id="searchInput"
+
+                        class="form-control search-box"
+
+                        placeholder="Search Incident">
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Incident Table -->
+
+    <div class="card table-card">
+
+        <div class="card-header">
+
+            <strong>
+
+                Incident List
+
+            </strong>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table
+                    id="incidentTable"
+                    class="table table-hover table-striped align-middle">
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>ID</th>
+
+                            <th>Alert</th>
+
+                            <th>Title</th>
+
+                            <th>Priority</th>
+
+                            <th>Status</th>
+
+                            <th>Assigned</th>
+
+                            <th>Created</th>
+
+                            <th>Action</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+                        {% for incident in incidents %}
+
+<tr>
+
+    <!-- Incident ID -->
+
+    <td>
+
+        <strong>
+
+            {{ incident[1] }}
+
+        </strong>
+
+    </td>
+
+    <!-- Alert ID -->
+
+    <td>
+
+        {{ incident[2] }}
+
+    </td>
+
+    <!-- Title -->
+
+    <td>
+
+        {{ incident[3] }}
+
+    </td>
+
+    <!-- Priority -->
+
+    <td>
+
+        {% if incident[4] == "P1" %}
+
+            <span class="badge bg-danger">
+
+                {{ incident[4] }}
+
+            </span>
+
+        {% elif incident[4] == "P2" %}
+
+            <span class="badge bg-warning text-dark">
+
+                {{ incident[4] }}
+
+            </span>
+
+        {% elif incident[4] == "P3" %}
+
+            <span class="badge bg-info text-dark">
+
+                {{ incident[4] }}
+
+            </span>
+
+        {% else %}
+
+            <span class="badge bg-secondary">
+
+                {{ incident[4] }}
+
+            </span>
+
+        {% endif %}
+
+    </td>
+
+    <!-- Status -->
+
+    <td>
+
+        {% if incident[5] == "NEW" %}
+
+            <span class="badge bg-primary">
+
+                {{ incident[5] }}
+
+            </span>
+
+        {% elif incident[5] == "INVESTIGATING" %}
+
+            <span class="badge bg-warning text-dark">
+
+                {{ incident[5] }}
+
+            </span>
+
+        {% elif incident[5] == "CONTAINED" %}
+
+            <span class="badge bg-info text-dark">
+
+                {{ incident[5] }}
+
+            </span>
+
+        {% elif incident[5] == "RESOLVED" %}
+
+            <span class="badge bg-success">
+
+                {{ incident[5] }}
+
+            </span>
+
+        {% elif incident[5] == "CLOSED" %}
+
+            <span class="badge bg-dark">
+
+                {{ incident[5] }}
+
+            </span>
+
+        {% else %}
+
+            <span class="badge bg-secondary">
+
+                {{ incident[5] }}
+
+            </span>
+
+        {% endif %}
+
+    </td>
+
+    <!-- Assigned Analyst -->
+
+    <td>
+
+        {% if incident[6] == "Unassigned" %}
+
+            <span class="text-danger fw-bold">
+
+                {{ incident[6] }}
+
+            </span>
+
+        {% else %}
+
+            <span class="text-success fw-bold">
+
+                {{ incident[6] }}
+
+            </span>
+
+        {% endif %}
+
+    </td>
+
+    <!-- Created -->
+
+    <td>
+
+        {{ incident[8] }}
+
+    </td>
+
+    <!-- Actions -->
+
+    <td>
+
+        <a
+
+            href="/incidents/dashboard/{{ incident[1] }}"
+
+            class="btn btn-sm btn-outline-primary">
+
+            <i class="bi bi-eye-fill"></i>
+
+            View
+
+        </a>
+
+    </td>
+
+</tr>
+
+{% endfor %}
+
+{% if incidents|length == 0 %}
+
+<tr>
+
+    <td colspan="8" class="text-center text-muted">
+
+        <br>
+
+        <i class="bi bi-folder-x fs-1"></i>
+
+        <br><br>
+
+        <strong>
+
+            No incidents found.
+
+        </strong>
+
+        <br>
+
+        Create an alert to automatically generate an incident.
+
+        <br><br>
+
+    </td>
+
+</tr>
+
+{% endif %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<!-- Bootstrap JS -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+const searchInput = document.getElementById("searchInput");
+
+const table = document.getElementById("incidentTable");
+
+searchInput.addEventListener("keyup", function () {
+
+    const filter = this.value.toUpperCase();
+
+    const rows = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < rows.length; i++) {
+
+        const cells = rows[i].getElementsByTagName("td");
+
+        let match = false;
+
+        for (let j = 0; j < cells.length; j++) {
+
+            if (
+
+                cells[j].textContent
+
+                .toUpperCase()
+
+                .indexOf(filter) > -1
+
+            ) {
+
+                match = true;
+
+                break;
+
+            }
+
+        }
+
+        rows[i].style.display = match ? "" : "none";
+
+    }
+
+});
+
+</script>
+
+</body>
+
+</html>
