@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+
+        Incident Details
+
+    </title>
+
+    <!-- Bootstrap -->
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-4">
+
+    <div class="row">
+
+        <div class="col-lg-10 mx-auto">
+
+            <!-- ====================================== -->
+            <!-- PAGE HEADER -->
+            <!-- ====================================== -->
+
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-center">
+
+                        <div>
+
+                            <h2>
+
+                                <i class="bi bi-shield-lock-fill text-primary"></i>
+
+                                Incident Details
+
+                            </h2>
+
+                            <p class="text-muted mb-0">
+
+                                Security Operations Center
+
+                            </p>
+
+                        </div>
+
+                        <a
+                            href="/incidents/dashboard"
+                            class="btn btn-outline-primary">
+
+                            <i class="bi bi-arrow-left"></i>
+
+                            Back
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ====================================== -->
+            <!-- INCIDENT SUMMARY -->
+            <!-- ====================================== -->
+
+            <div class="card shadow-sm">
+
+                <div class="card-header bg-dark text-white">
+
+                    <h5 class="mb-0">
+
+                        Incident Information
+
+                    </h5>
+
+                </div>
+
+                <div class="card-body">
+
+                    {% if error %}
+
+                    <div class="alert alert-danger">
+
+                        {{ error }}
+
+                    </div>
+
+                    {% else %}
+
+                    <div class="row">
+
+                        <div class="col-md-6">
+
+                            <p>
+
+                                <strong>
+
+                                    Incident ID
+
+                                </strong>
+
+                                <br>
+
+                                {{ incident[1] }}
+
+                            </p>
+
+                            <p>
+
+                                <strong>
+
+                                    Alert ID
+
+                                </strong>
+
+                                <br>
+
+                                {{ incident[2] }}
+
+                            </p>
+
+                            <p>
+
+                                <strong>
+
+                                    Title
+
+                                </strong>
+
+                                <br>
+
+                                {{ incident[3] }}
+
+                            </p>
+
+                        </div>
+
+                        <div class="col-md-6">
+                                                        <p>
+
+                                <strong>
+
+                                    Priority
+
+                                </strong>
+
+                                <br>
+
+                                {% if incident[4] == "P1" %}
+
+                                    <span class="badge bg-danger">
+
+                                        {{ incident[4] }}
+
+                                    </span>
+
+                                {% elif incident[4] == "P2" %}
+
+                                    <span class="badge bg-warning text-dark">
+
+                                        {{ incident[4] }}
+
+                                    </span>
+
+                                {% elif incident[4] == "P3" %}
+
+                                    <span class="badge bg-info text-dark">
+
+                                        {{ incident[4] }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+
+                                        {{ incident[4] }}
+
+                                    </span>
+
+                                {% endif %}
+
+                            </p>
+
+                            <p>
+
+                                <strong>
+
+                                    Status
+
+                                </strong>
+
+                                <br>
+
+                                {% if incident[5] == "NEW" %}
+
+                                    <span class="badge bg-primary">
+
+                                        {{ incident[5] }}
+
+                                    </span>
+
+                                {% elif incident[5] == "INVESTIGATING" %}
+
+                                    <span class="badge bg-warning text-dark">
+
+                                        {{ incident[5] }}
+
+                                    </span>
+
+                                {% elif incident[5] == "CONTAINED" %}
+
+                                    <span class="badge bg-info text-dark">
+
+                                        {{ incident[5] }}
+
+                                    </span>
+
+                                {% elif incident[5] == "RESOLVED" %}
+
+                                    <span class="badge bg-success">
+
+                                        {{ incident[5] }}
+
+                                    </span>
+
+                                {% elif incident[5] == "CLOSED" %}
+
+                                    <span class="badge bg-dark">
+
+                                        {{ incident[5] }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+
+                                        {{ incident[5] }}
+
+                                    </span>
+
+                                {% endif %}
+
+                            </p>
+
+                            <p>
+
+                                <strong>
+
+                                    Assigned Analyst
+
+                                </strong>
+
+                                <br>
+
+                                {{ incident[6] }}
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+
+                        <div class="col-md-4">
+
+                            <strong>
+
+                                Created
+
+                            </strong>
+
+                            <br>
+
+                            {{ incident[8] }}
+
+                        </div>
+
+                        <div class="col-md-4">
+
+                            <strong>
+
+                                Updated
+
+                            </strong>
+
+                            <br>
+
+                            {{ incident[9] }}
+
+                        </div>
+
+                        <div class="col-md-4">
+
+                            <strong>
+
+                                Resolved
+
+                            </strong>
+
+                            <br>
+
+                            {{ incident[10] if incident[10] else "Not Resolved" }}
+
+                        </div>
+
+                    </div>
+
+                    <hr><!-- ====================================== -->
+<!-- ANALYST NOTES -->
+<!-- ====================================== -->
+
+<div class="card shadow-sm mt-4">
+
+    <div class="card-header bg-primary text-white">
+
+        <h5 class="mb-0">
+
+            Analyst Notes
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <form>
+
+            <div class="mb-3">
+
+                <textarea
+                    class="form-control"
+                    rows="6"
+                    readonly>{{ incident[7] if incident[7] else "No analyst notes available." }}</textarea>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- ====================================== -->
+<!-- INCIDENT ACTIONS -->
+<!-- ====================================== -->
+
+<div class="card shadow-sm mt-4">
+
+    <div class="card-header bg-success text-white">
+
+        <h5 class="mb-0">
+
+            Incident Actions
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <!-- Status -->
+
+            <div class="col-md-4">
+
+                <label class="form-label">
+
+                    Status
+
+                </label>
+
+                <select class="form-select">
+
+                    <option>NEW</option>
+
+                    <option>INVESTIGATING</option>
+
+                    <option>CONTAINED</option>
+
+                    <option>RESOLVED</option>
+
+                    <option>CLOSED</option>
+
+                </select>
+
+            </div>
+
+            <!-- Analyst -->
+
+            <div class="col-md-4">
+
+                <label class="form-label">
+
+                    Assign Analyst
+
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Analyst Name">
+
+            </div>
+
+            <!-- Priority -->
+
+            <div class="col-md-4">
+
+                <label class="form-label">
+
+                    Priority
+
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    value="{{ incident[4] }}"
+                    readonly>
+
+            </div>
+
+        </div>
+
+        <hr>
+
+        <div class="mb-3">
+
+            <label class="form-label">
+
+                Add Investigation Note
+
+            </label>
+
+            <textarea
+                class="form-control"
+                rows="5"
+                placeholder="Enter investigation findings..."></textarea>
+
+        </div>
+
+        <div class="d-flex gap-2">
+
+            <button
+                class="btn btn-success"
+                disabled>
+
+                <i class="bi bi-check-circle-fill"></i>
+
+                Save Changes
+
+            </button>
+
+            <button
+                class="btn btn-warning"
+                disabled>
+
+                <i class="bi bi-person-fill"></i>
+
+                Assign Analyst
+
+            </button>
+
+            <button
+                class="btn btn-primary"
+                disabled>
+
+                <i class="bi bi-pencil-square"></i>
+
+                Update Status
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ====================================== -->
+<!-- FOOTER -->
+<!-- ====================================== -->
+
+<footer class="mt-5 mb-4">
+
+    <div class="text-center text-muted">
+
+        <hr>
+
+        <small>
+
+            SOAR Incident Containment Engine
+
+            <br>
+
+            Sprint 5 • Incident Management Dashboard
+
+        </small>
+
+    </div>
+
+</footer>
+
+<!-- ====================================== -->
+<!-- Bootstrap JavaScript -->
+<!-- ====================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
