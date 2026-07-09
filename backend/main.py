@@ -12,14 +12,14 @@ from playbooks.engine import execute_playbook
 
 from database.models import (
     create_alerts_table,
-    create_incidents_table
+    create_incidents_table,
+    create_incident_activity_table
 )
 
 from database.crud import (
     save_alert,
     create_incident,
 
-    # Alert Dashboard
     get_total_alerts,
     get_high_risk_alerts,
     get_critical_alerts,
@@ -29,21 +29,21 @@ from database.crud import (
     get_mttr,
     get_recent_alerts,
 
-    # Incident Management
     get_all_incidents,
     get_incident_by_id,
+    get_incident_summary,
+
+    incident_exists,
+
     update_incident_status,
     assign_analyst,
     add_analyst_note,
+    resolve_incident,
+
     delete_incident,
 
-    # Incident API Helpers
-    incident_exists,
-    get_incident_summary,
-    get_incidents_by_status,
-    get_incidents_by_analyst,
-    get_incident_counts,
-    resolve_incident
+    log_incident_activity,
+    get_incident_activity
 )
 
 app = FastAPI(
@@ -57,6 +57,7 @@ app = FastAPI(
 
 create_alerts_table()
 create_incidents_table()
+create_incident_activity_table()
 
 # ----------------------------------------
 # Static Files
@@ -212,6 +213,12 @@ def process_alert(alert: dict):
     }
 
     create_incident(incident)
+    log_incident_activity(
+    incident["incident_id"],
+    "CREATED",
+    "Incident created automatically from alert.",
+    "System"
+)
 
     # ======================================================
     # Return
@@ -388,6 +395,7 @@ async def incident_details_dashboard(
 
 
     incident = get_incident_by_id(incident_id)
+    activity = get_incident_activity(incident_id)
 
     if incident is None:
 
@@ -405,14 +413,16 @@ async def incident_details_dashboard(
         name="incident_details.html",
         context={
             "request": request,
-            "incident": incident
+            "incident": incident,
+            "activity": activity
+
+            
         }
     )
 
  # ----------------------------------------
 # INCIDENT DETAILS ACTIONS (UI)
 # ----------------------------------------
-
 @app.post("/incidents/dashboard/{incident_id}/status")
 async def update_incident_status_ui(
     incident_id: str,
@@ -420,8 +430,23 @@ async def update_incident_status_ui(
 ):
     update_incident_status(incident_id, status)
 
+    log_incident_activity(
+        incident_id,
+        "STATUS",
+        f"Status changed to {status}",
+        "SOC Analyst"
+    )
+
     if status.upper() == "RESOLVED":
+
         resolve_incident(incident_id)
+
+        log_incident_activity(
+            incident_id,
+            "RESOLVED",
+            "Incident resolved.",
+            "SOC Analyst"
+        )
 
     return RedirectResponse(
         url=f"/incidents/dashboard/{incident_id}",
@@ -436,6 +461,13 @@ async def assign_incident_ui(
 ):
     assign_analyst(incident_id, assigned_to)
 
+    log_incident_activity(
+        incident_id,
+        "ASSIGNED",
+        f"Assigned to {assigned_to}",
+        assigned_to
+    )
+
     return RedirectResponse(
         url=f"/incidents/dashboard/{incident_id}",
         status_code=303
@@ -448,6 +480,13 @@ async def save_notes_ui(
     note: str = Form(...)
 ):
     add_analyst_note(incident_id, note)
+
+    log_incident_activity(
+        incident_id,
+        "NOTE",
+        note,
+        "SOC Analyst"
+    )
 
     return RedirectResponse(
         url=f"/incidents/dashboard/{incident_id}",

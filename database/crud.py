@@ -594,3 +594,55 @@ def resolve_incident(incident_id):
 
     conn.commit()
     conn.close()
+    # ----------------------------------------
+# INCIDENT ACTIVITY LOG
+# ----------------------------------------
+
+def log_incident_activity(
+    incident_id,
+    activity_type,
+    activity,
+    performed_by="System"
+):
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO incident_activity (
+            incident_id,
+            activity_type,
+            activity,
+            performed_by
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        incident_id,
+        activity_type,
+        activity,
+        performed_by
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_incident_activity(incident_id):
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            activity_type,
+            activity,
+            performed_by,
+            created_at
+        FROM incident_activity
+        WHERE incident_id = ?
+        ORDER BY created_at DESC
+    """, (incident_id,))
+
+    activities = cursor.fetchall()
+
+    conn.close()
+
+    return activities

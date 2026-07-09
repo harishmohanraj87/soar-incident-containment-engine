@@ -35,6 +35,39 @@ def create_alerts_table():
 
     conn.commit()
     conn.close()
+    # ----------------------------------------
+# INCIDENT ACTIVITY TABLE
+# ----------------------------------------
+
+def create_incident_activity_table():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS incident_activity (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        incident_id TEXT NOT NULL,
+
+        activity_type TEXT NOT NULL,
+
+        activity TEXT NOT NULL,
+
+        performed_by TEXT DEFAULT 'System',
+
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+        FOREIGN KEY (incident_id)
+        REFERENCES incidents(incident_id)
+        ON DELETE CASCADE
+
+    )
+    """)
+
+    conn.commit()
+    conn.close()
 
 
 def create_incidents_table():

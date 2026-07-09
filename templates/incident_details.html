@@ -500,6 +500,89 @@
 <!-- ====================================== -->
 
 <footer class="mt-5 mb-4">
+<!-- ====================================== -->
+<!-- INCIDENT ACTIVITY TIMELINE -->
+<!-- ====================================== -->
+
+<div class="card shadow-sm mt-4">
+
+    <div class="card-header bg-dark text-white">
+
+        <h5 class="mb-0">
+
+            <i class="bi bi-clock-history"></i>
+
+            Incident Activity Timeline
+
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        {% if activity|length == 0 %}
+
+            <div class="text-muted text-center">
+
+                No activity recorded yet.
+
+            </div>
+
+        {% else %}
+
+            {% for item in activity %}
+
+            <div class="border-start border-4 border-primary ps-3 mb-4">
+
+                <h6 class="mb-1">
+
+                    {% if item[0] == "CREATED" %}
+                        🟢 Incident Created
+
+                    {% elif item[0] == "STATUS" %}
+                        🟡 Status Updated
+
+                    {% elif item[0] == "ASSIGNED" %}
+                        👤 Analyst Assigned
+
+                    {% elif item[0] == "NOTE" %}
+                        📝 Investigation Note
+
+                    {% elif item[0] == "RESOLVED" %}
+                        ✅ Incident Resolved
+
+                    {% else %}
+                        ℹ️ Activity
+
+                    {% endif %}
+
+                </h6>
+
+                <div>
+
+                    {{ item[1] }}
+
+                </div>
+
+                <small class="text-muted">
+
+                    {{ item[2] }}
+
+                    |
+
+                    {{ item[3] }}
+
+                </small>
+
+            </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    </div>
+
+</div>
 
     <div class="text-center text-muted">
 
