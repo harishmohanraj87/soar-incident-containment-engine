@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-008",
+    "source": "SIEM",
+    "event_type": "BRUTE_FORCE_DETECTED",
+    "severity": "medium",
+    "timestamp": "2026-07-08T16:05:11Z",
+    "src_ip": "103.45.98.12",
+    "target_user": "jsmith",
+    "failed_attempts": 45
+  }

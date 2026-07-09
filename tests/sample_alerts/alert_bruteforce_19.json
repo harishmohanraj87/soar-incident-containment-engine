@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-007",
+    "source": "Firewall",
+    "event_type": "BRUTE_FORCE_DETECTED",
+    "severity": "critical",
+    "timestamp": "2026-07-08T14:15:33Z",
+    "src_ip": "188.166.25.40",
+    "target_user": "root",
+    "failed_attempts": 152
+  }

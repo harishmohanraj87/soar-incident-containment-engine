@@ -1,0 +1,10 @@
+{
+    "alert_id": "ALT-009",
+    "source": "Active Directory",
+    "event_type": "BRUTE_FORCE_DETECTED",
+    "severity": "low",
+    "timestamp": "2026-07-08T19:50:22Z",
+    "src_ip": "192.168.1.105",
+    "target_user": "guest",
+    "failed_attempts": 15
+  }
