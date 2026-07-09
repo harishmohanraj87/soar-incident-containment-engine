@@ -373,6 +373,41 @@ async def incident_dashboard(request: Request):
             "incidents": incidents
         }
     )
+# ----------------------------------------
+# INCIDENT DETAILS PAGE
+# ----------------------------------------
+
+@app.get(
+    "/incidents/dashboard/{incident_id}",
+    response_class=HTMLResponse
+)
+async def incident_details_dashboard(
+    request: Request,
+    incident_id: str
+):
+
+    incident = get_incident_by_id(incident_id)
+
+    if incident is None:
+
+        return templates.TemplateResponse(
+            request=request,
+            name="incident_details.html",
+            context={
+                "request": request,
+                "error": "Incident not found."
+            }
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="incident_details.html",
+        context={
+            "request": request,
+            "incident": incident
+        }
+    )
+
     
 
 # ----------------------------------------
