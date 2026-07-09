@@ -40,9 +40,12 @@ def save_alert(alert):
         alert.get("status", "NEW")
     ))
 
+    saved_alert_id = alert.get("id")
+
     conn.commit()
     conn.close()
 
+    return saved_alert_id
 # -----------------------------
 # READ
 # -----------------------------
@@ -282,3 +285,131 @@ def get_recent_alerts(limit=10):
     conn.close()
 
     return alerts
+
+# -----------------------------
+# INCIDENT MANAGEMENT
+# -----------------------------
+
+def create_incident(incident):
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO incidents (
+            incident_id,
+            alert_id,
+            title,
+            priority,
+            incident_status,
+            assigned_to,
+            analyst_notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        incident.get("incident_id"),
+        incident.get("alert_id"),
+        incident.get("title"),
+        incident.get("priority", "P3"),
+        incident.get("incident_status", "NEW"),
+        incident.get("assigned_to", "Unassigned"),
+        incident.get("analyst_notes", "")
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_all_incidents():
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM incidents
+        ORDER BY created_at DESC
+    """)
+
+    incidents = cursor.fetchall()
+
+    conn.close()
+
+    return incidents
+
+
+def get_incident_by_id(incident_id):
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM incidents
+        WHERE incident_id = ?
+    """, (incident_id,))
+
+    incident = cursor.fetchone()
+
+    conn.close()
+
+    return incident
+
+
+def update_incident_status(incident_id, status):
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE incidents
+        SET incident_status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE incident_id = ?
+    """, (status, incident_id))
+
+    conn.commit()
+    conn.close()
+
+
+def assign_analyst(incident_id, analyst):
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE incidents
+        SET assigned_to = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE incident_id = ?
+    """, (analyst, incident_id))
+
+    conn.commit()
+    conn.close()
+
+def add_analyst_note(incident_id, note):
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE incidents
+        SET analyst_notes = COALESCE(analyst_notes, '') || '\n\n' || ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE incident_id = ?
+    """, (note, incident_id))
+
+    conn.commit()
+    conn.close()
+
+def delete_incident(incident_id):
+    """
+    TODO:
+    Replace hard delete with soft delete
+    after Audit Log module is implemented.
+    """
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM incidents
+        WHERE incident_id = ?
+    """, (incident_id,))
+
+    conn.commit()
+    conn.close()
