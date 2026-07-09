@@ -369,148 +369,127 @@
 </div>
 
 <!-- ====================================== -->
-<!-- INCIDENT ACTIONS -->
+<!--<!-- ====================================== -->
+<!-- UPDATE STATUS -->
 <!-- ====================================== -->
 
 <div class="card shadow-sm mt-4">
 
-    <div class="card-header bg-success text-white">
-
-        <h5 class="mb-0">
-
-            Incident Actions
-
-        </h5>
-
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Update Status</h5>
     </div>
 
     <div class="card-body">
 
-        <div class="row">
+        <form
+            method="POST"
+            action="/incidents/dashboard/{{ incident[1] }}/status">
 
-            <!-- Status -->
+            <div class="mb-3">
 
-            <div class="col-md-4">
+                <select
+                    class="form-select"
+                    name="status">
 
-                <label class="form-label">
-
-                    Status
-
-                </label>
-
-                <select class="form-select">
-
-                    <option>NEW</option>
-
-                    <option>INVESTIGATING</option>
-
-                    <option>CONTAINED</option>
-
-                    <option>RESOLVED</option>
-
-                    <option>CLOSED</option>
+                    <option value="NEW">NEW</option>
+                    <option value="INVESTIGATING">INVESTIGATING</option>
+                    <option value="CONTAINED">CONTAINED</option>
+                    <option value="RESOLVED">RESOLVED</option>
+                    <option value="CLOSED">CLOSED</option>
 
                 </select>
 
             </div>
 
-            <!-- Analyst -->
-
-            <div class="col-md-4">
-
-                <label class="form-label">
-
-                    Assign Analyst
-
-                </label>
-
-                <input
-                    type="text"
-                    class="form-control"
-                    placeholder="Analyst Name">
-
-            </div>
-
-            <!-- Priority -->
-
-            <div class="col-md-4">
-
-                <label class="form-label">
-
-                    Priority
-
-                </label>
-
-                <input
-                    type="text"
-                    class="form-control"
-                    value="{{ incident[4] }}"
-                    readonly>
-
-            </div>
-
-        </div>
-
-        <hr>
-
-        <div class="mb-3">
-
-            <label class="form-label">
-
-                Add Investigation Note
-
-            </label>
-
-            <textarea
-                class="form-control"
-                rows="5"
-                placeholder="Enter investigation findings..."></textarea>
-
-        </div>
-
-        <div class="d-flex gap-2">
-
-            <button
-                class="btn btn-success"
-                disabled>
-
-                <i class="bi bi-check-circle-fill"></i>
-
-                Save Changes
-
-            </button>
-
-            <button
-                class="btn btn-warning"
-                disabled>
-
-                <i class="bi bi-person-fill"></i>
-
-                Assign Analyst
-
-            </button>
-
             <button
                 class="btn btn-primary"
-                disabled>
-
-                <i class="bi bi-pencil-square"></i>
+                type="submit">
 
                 Update Status
 
             </button>
 
-        </div>
+        </form>
 
     </div>
 
-</div>                    {% endif %}
+</div>
 
-                </div>
+<!-- ====================================== -->
+<!-- ASSIGN ANALYST -->
+<!-- ====================================== -->
+
+<div class="card shadow-sm mt-4">
+
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Assign Analyst</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form
+            method="POST"
+            action="/incidents/dashboard/{{ incident[1] }}/assign">
+
+            <div class="mb-3">
+
+                <input
+                    class="form-control"
+                    type="text"
+                    name="assigned_to"
+                    placeholder="SOC Analyst Name">
 
             </div>
 
-        </div>
+            <button
+                class="btn btn-success"
+                type="submit">
+
+                Assign Analyst
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- ====================================== -->
+<!-- ADD NOTE -->
+<!-- ====================================== -->
+
+<div class="card shadow-sm mt-4">
+
+    <div class="card-header bg-warning">
+        <h5 class="mb-0">Add Investigation Note</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form
+            method="POST"
+            action="/incidents/dashboard/{{ incident[1] }}/notes">
+
+            <div class="mb-3">
+
+                <textarea
+                    class="form-control"
+                    rows="6"
+                    name="note"
+                    placeholder="Write investigation findings..."></textarea>
+
+            </div>
+
+            <button
+                class="btn btn-warning"
+                type="submit">
+
+                Save Note
+
+            </button>
+
+        </form>
 
     </div>
 
@@ -538,11 +517,9 @@
 
     </div>
 
-</footer>
+{% endif %}
 
-<!-- ====================================== -->
-<!-- Bootstrap JavaScript -->
-<!-- ====================================== -->
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
