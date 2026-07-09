@@ -10,10 +10,14 @@ from threat_intel.enricher import enrich_ip
 
 from playbooks.engine import execute_playbook
 
-from database.models import create_alerts_table
+from database.models import (
+    create_alerts_table,
+    create_incidents_table
+)
 
 from database.crud import (
     save_alert,
+    create_incident,
     get_total_alerts,
     get_high_risk_alerts,
     get_critical_alerts,
@@ -34,6 +38,7 @@ app = FastAPI(
 # ----------------------------------------
 
 create_alerts_table()
+create_incidents_table()
 
 # ----------------------------------------
 # Static Files
@@ -43,20 +48,29 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-
 # ----------------------------------------
 # Shared Alert Processing
 # ----------------------------------------
 
 def process_alert(alert: dict):
 
+    # -----------------------------
+    # Parse Alert
+    # -----------------------------
+
     parsed = parse_alert(alert)
+
+    # -----------------------------
+    # Normalize Alert
+    # -----------------------------
 
     normalized = normalize_alert(parsed)
 
     attacker_ip = normalized.get("attacker_ip")
 
-    # Threat Intelligence Enrichment
+    # -----------------------------
+    # Threat Intelligence
+    # -----------------------------
 
     if attacker_ip:
 
@@ -69,13 +83,17 @@ def process_alert(alert: dict):
         if enrichment:
             normalized.update(enrichment)
 
+    # -----------------------------
     # Risk Score
+    # -----------------------------
 
     risk_score = normalized.get("risk_score", 0)
 
     normalized["risk_score"] = risk_score
 
+    # -----------------------------
     # Risk Level
+    # -----------------------------
 
     if "risk_level" not in normalized:
 
@@ -93,7 +111,9 @@ def process_alert(alert: dict):
 
     normalized["status"] = "NEW"
 
+    # -----------------------------
     # Execute Playbook
+    # -----------------------------
 
     if attacker_ip:
 
@@ -122,11 +142,49 @@ def process_alert(alert: dict):
 
         normalized["action_taken"] = "Pending"
 
-    save_alert(normalized)
+    # ======================================================
+    # Save Alert
+    # ======================================================
+
+    saved_alert_id = save_alert(normalized)
+
+    # ======================================================
+    # Automatically Create Incident
+    # ======================================================
+
+    incident = {
+
+        "incident_id": f"INC-{saved_alert_id}",
+
+        "alert_id": saved_alert_id,
+
+        "title": f"{normalized['type']} Alert",
+
+        "priority": (
+            "P1"
+            if normalized["risk_level"] == "CRITICAL"
+            else "P2"
+            if normalized["risk_level"] == "HIGH"
+            else "P3"
+            if normalized["risk_level"] == "MEDIUM"
+            else "P4"
+        ),
+
+        "incident_status": "NEW",
+
+        "assigned_to": "Unassigned",
+
+        "analyst_notes": ""
+
+    }
+
+    create_incident(incident)
+
+    # ======================================================
+    # Return
+    # ======================================================
 
     return normalized, playbook_result
-
-
 # ----------------------------------------
 # Dashboard
 # ----------------------------------------
@@ -135,43 +193,32 @@ def process_alert(alert: dict):
 async def dashboard(request: Request):
 
     return templates.TemplateResponse(
-
         request=request,
-
         name="dashboard.html",
-
         context={
-
             "request": request,
 
+            # KPI Cards
             "total_alerts": get_total_alerts(),
-
             "high_risk": get_high_risk_alerts(),
-
             "critical_alerts": get_critical_alerts(),
-
             "playbooks": get_playbook_executions(),
-
             "incidents": get_open_incidents(),
-
             "blocked_ips": get_blocked_ips(),
-
             "mttr": get_mttr(),
 
+            # Recent Alerts
             "recent_alerts": get_recent_alerts(),
 
+            # Threat Intelligence Panel
             "top_ip": "N/A",
-
             "abuse_score": "--",
-
             "vt_score": "--",
-
             "country": "--",
 
+            # Playbook Result
             "result": None
-
         }
-
     )
 
 
@@ -206,7 +253,8 @@ async def execute_dashboard(
 
     }
 
-    normalized, result = process_alert(raw_alert)
+    normalized, playbook_result = process_alert(raw_alert)
+
     return templates.TemplateResponse(
 
         request=request,
@@ -217,26 +265,39 @@ async def execute_dashboard(
 
             "request": request,
 
-            # KPI Cards
+            # Dashboard KPIs
+
             "total_alerts": get_total_alerts(),
+
             "high_risk": get_high_risk_alerts(),
+
             "critical_alerts": get_critical_alerts(),
+
             "playbooks": get_playbook_executions(),
+
             "incidents": get_open_incidents(),
+
             "blocked_ips": get_blocked_ips(),
+
             "mttr": get_mttr(),
 
             # Recent Alerts
+
             "recent_alerts": get_recent_alerts(),
 
             # Threat Intelligence
+
             "top_ip": normalized.get("attacker_ip", "N/A"),
+
             "abuse_score": normalized.get("abuse_score", "--"),
+
             "vt_score": normalized.get("virustotal_score", "--"),
+
             "country": normalized.get("country", "--"),
 
             # Playbook Result
-            "result": result
+
+            "result": playbook_result
 
         }
 
@@ -244,7 +305,7 @@ async def execute_dashboard(
 
 
 # ----------------------------------------
-# API Endpoint
+# REST API
 # ----------------------------------------
 
 @app.post("/alerts")
@@ -276,7 +337,6 @@ def health():
 
         "service": "SOAR Incident Containment Engine",
 
-        "version": "1.0.0"
+        "version": app.version
 
     }
-    
