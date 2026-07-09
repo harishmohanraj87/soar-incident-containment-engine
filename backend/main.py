@@ -342,6 +342,7 @@ async def execute_dashboard(
 # ----------------------------------------
 
 @app.post("/alerts")
+
 def receive_alert(alert: dict):
 
     normalized, playbook_result = process_alert(alert)
@@ -355,6 +356,25 @@ def receive_alert(alert: dict):
         "playbook": playbook_result
 
     }
+# ----------------------------------------
+# INCIDENT DASHBOARD
+# ----------------------------------------
+
+@app.get("/incidents/dashboard", response_class=HTMLResponse)
+async def incident_dashboard(request: Request):
+
+    incidents = get_all_incidents()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="incident.html",
+        context={
+            "request": request,
+            "incidents": incidents
+        }
+    )
+    
+    
 
 # ----------------------------------------
 # INCIDENT MANAGEMENT REST API
