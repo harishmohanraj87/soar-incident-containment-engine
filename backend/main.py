@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -386,6 +386,7 @@ async def incident_details_dashboard(
     incident_id: str
 ):
 
+
     incident = get_incident_by_id(incident_id)
 
     if incident is None:
@@ -406,6 +407,51 @@ async def incident_details_dashboard(
             "request": request,
             "incident": incident
         }
+    )
+
+ # ----------------------------------------
+# INCIDENT DETAILS ACTIONS (UI)
+# ----------------------------------------
+
+@app.post("/incidents/dashboard/{incident_id}/status")
+async def update_incident_status_ui(
+    incident_id: str,
+    status: str = Form(...)
+):
+    update_incident_status(incident_id, status)
+
+    if status.upper() == "RESOLVED":
+        resolve_incident(incident_id)
+
+    return RedirectResponse(
+        url=f"/incidents/dashboard/{incident_id}",
+        status_code=303
+    )
+
+
+@app.post("/incidents/dashboard/{incident_id}/assign")
+async def assign_incident_ui(
+    incident_id: str,
+    assigned_to: str = Form(...)
+):
+    assign_analyst(incident_id, assigned_to)
+
+    return RedirectResponse(
+        url=f"/incidents/dashboard/{incident_id}",
+        status_code=303
+    )
+
+
+@app.post("/incidents/dashboard/{incident_id}/notes")
+async def save_notes_ui(
+    incident_id: str,
+    note: str = Form(...)
+):
+    add_analyst_note(incident_id, note)
+
+    return RedirectResponse(
+        url=f"/incidents/dashboard/{incident_id}",
+        status_code=303
     )
 
     
@@ -513,6 +559,8 @@ def remove_incident(incident_id: str):
     return {
         "message": "Incident deleted successfully."
     }
+    
+    
 
 # ----------------------------------------
 # Health Check
