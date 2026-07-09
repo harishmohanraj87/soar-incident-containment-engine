@@ -35,3 +35,44 @@ def create_alerts_table():
 
     conn.commit()
     conn.close()
+
+
+def create_incidents_table():
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS incidents (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        incident_id TEXT UNIQUE NOT NULL,
+
+        alert_id TEXT NOT NULL,
+
+        title TEXT NOT NULL,
+
+        priority TEXT DEFAULT 'P3',
+
+        incident_status TEXT DEFAULT 'NEW',
+
+        assigned_to TEXT DEFAULT 'Unassigned',
+
+        analyst_notes TEXT,
+
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+        resolved_at TIMESTAMP,
+
+        CONSTRAINT fk_alert
+        FOREIGN KEY (alert_id)
+        REFERENCES alerts(alert_id)
+        ON DELETE CASCADE
+
+    )
+    """)
+
+    conn.commit()
+    conn.close()
