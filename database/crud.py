@@ -646,3 +646,86 @@ def get_incident_activity(incident_id):
     conn.close()
 
     return activities
+# ==========================================================
+# DASHBOARD ANALYTICS
+# ==========================================================
+
+def get_alerts_by_severity():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            severity,
+            COUNT(*)
+        FROM alerts
+        GROUP BY severity
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return rows
+
+
+def get_incidents_by_status_chart():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            incident_status,
+            COUNT(*)
+        FROM incidents
+        GROUP BY incident_status
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return rows
+
+
+def get_daily_alerts():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            DATE(created_at),
+            COUNT(*)
+        FROM alerts
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at)
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return rows
+
+
+def get_risk_distribution():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            risk_level,
+            COUNT(*)
+        FROM alerts
+        GROUP BY risk_level
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return rows
