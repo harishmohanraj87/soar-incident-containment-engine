@@ -367,13 +367,12 @@ async def incident_dashboard(request: Request):
 
     return templates.TemplateResponse(
         request=request,
-        name="incident.html",
+        name="incidents.html",
         context={
             "request": request,
             "incidents": incidents
         }
     )
-    
     
 
 # ----------------------------------------
