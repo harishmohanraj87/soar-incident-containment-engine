@@ -756,3 +756,88 @@ def export_incidents():
     conn.close()
 
     return rows
+# ==========================================================
+# USER MANAGEMENT
+# ==========================================================
+
+def create_user(user):
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO users (
+            username,
+            password_hash,
+            full_name,
+            role
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        user.get("username"),
+        user.get("password_hash"),
+        user.get("full_name"),
+        user.get("role", "ANALYST")
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_user(username):
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM users
+        WHERE username = ?
+    """, (username,))
+
+    user = cursor.fetchone()
+
+    conn.close()
+
+    return user
+
+
+def get_all_users():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            id,
+            username,
+            full_name,
+            role,
+            created_at
+        FROM users
+        ORDER BY created_at DESC
+    """)
+
+    users = cursor.fetchall()
+
+    conn.close()
+
+    return users
+
+
+def user_exists(username):
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT 1
+        FROM users
+        WHERE username = ?
+    """, (username,))
+
+    exists = cursor.fetchone() is not None
+
+    conn.close()
+
+    return exists

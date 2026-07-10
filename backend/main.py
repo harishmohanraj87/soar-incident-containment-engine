@@ -1,35 +1,47 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import (
+    HTMLResponse,
+    RedirectResponse,
+    StreamingResponse
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from backend.parser import parse_alert
-from backend.normalizer import normalize_alert
-
-from threat_intel.enricher import enrich_ip
-
-from playbooks.engine import execute_playbook
 import csv
 import io
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.lib.enums import TA_CENTER
-
 import tempfile
 import os
-from fastapi.responses import StreamingResponse
+
+from backend.parser import parse_alert
+from backend.normalizer import normalize_alert
+from backend.auth import hash_password
+
+from threat_intel.enricher import enrich_ip
+from playbooks.engine import execute_playbook
+
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Table,
+    TableStyle,
+    Paragraph
+)
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.enums import TA_CENTER
 
 from database.models import (
     create_alerts_table,
     create_incidents_table,
-    create_incident_activity_table
+    create_incident_activity_table,
+    create_users_table
 )
 
 from database.crud import (
     save_alert,
     create_incident,
+
+    create_user,
+    user_exists,
 
     get_total_alerts,
     get_high_risk_alerts,
@@ -56,6 +68,7 @@ from database.crud import (
 
     log_incident_activity,
     get_incident_activity,
+
     get_alerts_by_severity,
     get_incidents_by_status_chart,
     get_daily_alerts,
@@ -67,6 +80,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
+
+
+
+# ----------------------------------------
+# Initialize Database
+# ----------------------------------------
+
 # ----------------------------------------
 # Initialize Database
 # ----------------------------------------
@@ -74,7 +95,25 @@ app = FastAPI(
 create_alerts_table()
 create_incidents_table()
 create_incident_activity_table()
+create_users_table()
 
+# ----------------------------------------
+# Create Default Admin
+# ----------------------------------------
+
+if not user_exists("admin"):
+
+    create_user({
+
+        "username": "admin",
+
+        "password_hash": hash_password("Admin@123"),
+
+        "full_name": "System Administrator",
+
+        "role": "ADMIN"
+
+    })
 # ----------------------------------------
 # Static Files
 # ----------------------------------------
