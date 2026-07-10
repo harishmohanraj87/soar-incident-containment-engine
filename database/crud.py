@@ -729,3 +729,30 @@ def get_risk_distribution():
     conn.close()
 
     return rows
+# ==========================================================
+# REPORTING
+# ==========================================================
+
+def export_incidents():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            incident_id,
+            alert_id,
+            title,
+            priority,
+            incident_status,
+            assigned_to,
+            created_at
+        FROM incidents
+        ORDER BY created_at DESC
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return rows

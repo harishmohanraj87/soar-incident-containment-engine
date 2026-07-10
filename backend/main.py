@@ -9,6 +9,17 @@ from backend.normalizer import normalize_alert
 from threat_intel.enricher import enrich_ip
 
 from playbooks.engine import execute_playbook
+import csv
+import io
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.lib.enums import TA_CENTER
+
+import tempfile
+import os
+from fastapi.responses import StreamingResponse
 
 from database.models import (
     create_alerts_table,
@@ -32,6 +43,7 @@ from database.crud import (
     get_all_incidents,
     get_incident_by_id,
     get_incident_summary,
+    export_incidents,
 
     incident_exists,
 
@@ -623,6 +635,137 @@ def remove_incident(incident_id: str):
     return {
         "message": "Incident deleted successfully."
     }
+    
+# ----------------------------------------
+# EXPORT INCIDENTS (CSV)
+# ----------------------------------------
+
+@app.get("/incidents/export/csv")
+def export_incidents_csv():
+
+    incidents = export_incidents()
+
+    output = io.StringIO()
+
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "Incident ID",
+        "Alert ID",
+        "Title",
+        "Priority",
+        "Status",
+        "Assigned To",
+        "Created At"
+    ])
+
+    for incident in incidents:
+
+        writer.writerow(incident)
+
+    output.seek(0)
+
+    return StreamingResponse(
+
+        iter([output.getvalue()]),
+
+        media_type="text/csv",
+
+        headers={
+            "Content-Disposition":
+            "attachment; filename=incidents_report.csv"
+        }
+
+    )
+    
+@app.get("/incidents/export/pdf")
+def export_incidents_pdf():
+
+    incidents = export_incidents()
+
+    temp = tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=".pdf"
+    )
+
+    pdf = SimpleDocTemplate(temp.name)
+
+    styles = getSampleStyleSheet()
+
+    title_style = styles["Heading1"]
+    title_style.alignment = TA_CENTER
+
+    elements = []
+
+    elements.append(
+        Paragraph(
+            "SOAR Incident Report",
+            title_style
+        )
+    )
+
+    elements.append(
+        Paragraph("<br/><br/>", styles["Normal"])
+    )
+
+    data = [[
+        "Incident ID",
+        "Alert ID",
+        "Priority",
+        "Status",
+        "Assigned",
+        "Created"
+    ]]
+
+    for row in incidents:
+
+        data.append([
+            row[0],
+            row[1],
+            row[3],
+            row[4],
+            row[5],
+            row[6]
+        ])
+
+    table = Table(data)
+
+    table.setStyle(TableStyle([
+
+        ("BACKGROUND", (0,0), (-1,0), colors.darkblue),
+
+        ("TEXTCOLOR", (0,0), (-1,0), colors.white),
+
+        ("GRID", (0,0), (-1,-1), 1, colors.black),
+
+        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+
+        ("ALIGN", (0,0), (-1,-1), "CENTER"),
+
+        ("BOTTOMPADDING", (0,0), (-1,0), 10),
+
+        ("BACKGROUND", (0,1), (-1,-1), colors.beige)
+
+    ]))
+
+    elements.append(table)
+
+    pdf.build(elements)
+
+    return StreamingResponse(
+
+        open(temp.name, "rb"),
+
+        media_type="application/pdf",
+
+        headers={
+
+            "Content-Disposition":
+            "attachment; filename=incident_report.pdf"
+
+        }
+
+    )
     
     
 
