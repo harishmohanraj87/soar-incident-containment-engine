@@ -1,5 +1,6 @@
+import sqlite3
 from database.database import create_connection
-
+from backend.auth import verify_password
 
 # ==========================================================
 # ALERT MANAGEMENT
@@ -756,3 +757,134 @@ def export_incidents():
     conn.close()
 
     return rows
+# ==========================================================
+# USER MANAGEMENT
+# ==========================================================
+
+def create_user(user):
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO users (
+            username,
+            password_hash,
+            full_name,
+            role
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        user.get("username"),
+        user.get("password_hash"),
+        user.get("full_name"),
+        user.get("role", "ANALYST")
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_user(username):
+
+    conn = create_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM users
+        WHERE username = ?
+    """, (username,))
+
+    row = cursor.fetchone()
+
+    conn.close()
+
+    if row is None:
+        return None
+
+    return dict(row)
+
+
+def get_all_users():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            id,
+            username,
+            full_name,
+            role,
+            created_at
+        FROM users
+        ORDER BY created_at DESC
+    """)
+
+    users = cursor.fetchall()
+
+    conn.close()
+
+    return users
+
+
+def user_exists(username):
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT 1
+        FROM users
+        WHERE username = ?
+    """, (username,))
+
+    exists = cursor.fetchone() is not None
+
+    conn.close()
+
+    return exists
+
+# ----------------------------------------
+# AUTHENTICATE USER
+# ----------------------------------------
+
+def authenticate_user(username: str, password: str):
+
+    user = get_user(username)
+
+    if not user:
+        return None
+
+    if not verify_password(password, user["password_hash"]):
+        return None
+
+    return user
+
+# ----------------------------------------
+# GET ALL USERS
+# ----------------------------------------
+
+def get_all_users():
+
+    conn = create_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            username,
+            full_name,
+            role,
+            created_at
+        FROM users
+        ORDER BY username
+    """)
+
+    users = cursor.fetchall()
+
+    conn.close()
+
+    return [dict(user) for user in users]

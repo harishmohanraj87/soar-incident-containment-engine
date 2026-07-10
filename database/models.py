@@ -69,7 +69,41 @@ def create_incident_activity_table():
     conn.commit()
     conn.close()
 
+# ----------------------------------------
+# USERS TABLE
+# ----------------------------------------
 
+# ----------------------------------------
+# USERS TABLE
+# ----------------------------------------
+
+def create_users_table():
+
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        username TEXT UNIQUE NOT NULL,
+
+        password_hash TEXT NOT NULL,
+
+        full_name TEXT NOT NULL,
+
+        role TEXT NOT NULL DEFAULT 'ANALYST',
+
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+    )
+    """)
+
+
+
+    conn.commit()
+    conn.close()
 def create_incidents_table():
     conn = create_connection()
     cursor = conn.cursor()
