@@ -56,6 +56,7 @@ from database.crud import (
     get_incident_by_id,
     get_incident_summary,
     export_incidents,
+    get_all_users,
 
     incident_exists,
 
@@ -72,14 +73,19 @@ from database.crud import (
     get_alerts_by_severity,
     get_incidents_by_status_chart,
     get_daily_alerts,
+    authenticate_user,
     get_risk_distribution
 )
-
+from starlette.middleware.sessions import SessionMiddleware
 app = FastAPI(
     title="SOAR Incident Containment Engine",
     version="1.0.0"
 )
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="soar-super-secret-key"
+)
 
 
 
@@ -114,6 +120,28 @@ if not user_exists("admin"):
         "role": "ADMIN"
 
     })
+# ----------------------------------------
+# USER MANAGEMENT
+# ----------------------------------------
+
+@app.get("/admin/users", response_class=HTMLResponse)
+async def user_management(request: Request):
+
+    redirect = require_admin(request)
+
+    if redirect:
+        return redirect
+
+    users = get_all_users()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="users.html",
+        context={
+            "request": request,
+            "users": users
+        }
+    )
 # ----------------------------------------
 # Static Files
 # ----------------------------------------
@@ -287,6 +315,81 @@ def process_alert(alert: dict):
     # ======================================================
 
     return normalized, playbook_result
+
+# ----------------------------------------
+# LOGIN PAGE
+# ----------------------------------------
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={
+            "request": request,
+            "error": None
+        }
+    )
+
+# ----------------------------------------
+# LOGOUT
+# ----------------------------------------
+
+@app.get("/logout")
+async def logout(request: Request):
+
+    request.session.clear()
+
+    return RedirectResponse(
+        url="/login",
+        status_code=303
+    )
+# ----------------------------------------
+# LOGIN
+# ----------------------------------------
+
+@app.post("/login")
+async def login(
+
+    request: Request,
+
+    username: str = Form(...),
+
+    password: str = Form(...)
+
+):
+
+    user = authenticate_user(
+        username,
+        password
+    )
+
+    if not user:
+
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "request": request,
+                "error": "Invalid username or password."
+            }
+        )
+
+    request.session["username"] = user["username"]
+    request.session["role"] = user["role"]
+
+    return RedirectResponse(
+        url="/",
+        status_code=303
+    ) 
+
+
+
+
+
+
+
 # ----------------------------------------
 # Dashboard
 # ----------------------------------------
@@ -294,13 +397,17 @@ def process_alert(alert: dict):
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
 
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
     return templates.TemplateResponse(
         request=request,
         name="dashboard.html",
         context={
             "request": request,
 
-            # KPI Cards
             "total_alerts": get_total_alerts(),
             "high_risk": get_high_risk_alerts(),
             "critical_alerts": get_critical_alerts(),
@@ -309,24 +416,40 @@ async def dashboard(request: Request):
             "blocked_ips": get_blocked_ips(),
             "mttr": get_mttr(),
 
-            # Recent Alerts
             "recent_alerts": get_recent_alerts(),
 
-            # Threat Intelligence Panel
             "top_ip": "N/A",
             "abuse_score": "--",
             "vt_score": "--",
             "country": "--",
 
-            # Playbook Result
             "result": None,
 
-    "severity_chart": get_alerts_by_severity(),
-    "status_chart": get_incidents_by_status_chart(),
-    "daily_chart": get_daily_alerts(),
-    "risk_chart": get_risk_distribution()
-    }
+            "severity_chart": get_alerts_by_severity(),
+            "status_chart": get_incidents_by_status_chart(),
+            "daily_chart": get_daily_alerts(),
+            "risk_chart": get_risk_distribution()
+        }
+    )
+# ----------------------------------------
+# ADMIN CHECK
+# ----------------------------------------
+
+def require_admin(request: Request):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    if request.session.get("role") != "ADMIN":
+
+        return RedirectResponse(
+            url="/",
+            status_code=303
         )
+
+    return None
 
 
 @app.post("/", response_class=HTMLResponse)
@@ -446,6 +569,11 @@ def receive_alert(alert: dict):
 @app.get("/incidents/dashboard", response_class=HTMLResponse)
 async def incident_dashboard(request: Request):
 
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
     incidents = get_all_incidents()
 
     return templates.TemplateResponse(
@@ -465,6 +593,7 @@ async def incident_dashboard(request: Request):
     response_class=HTMLResponse
 )
 async def incident_details_dashboard(
+    
     request: Request,
     incident_id: str
 ):
@@ -570,7 +699,20 @@ async def save_notes_ui(
     )
 
     
+# ----------------------------------------
+# AUTHENTICATION HELPER
+# ----------------------------------------
 
+def require_login(request: Request):
+
+    if "username" not in request.session:
+
+        return RedirectResponse(
+            url="/login",
+            status_code=303
+        )
+
+    return None
 # ----------------------------------------
 # INCIDENT MANAGEMENT REST API
 # ----------------------------------------
@@ -662,7 +804,15 @@ def update_notes(
 
 
 @app.delete("/incidents/{incident_id}")
-def remove_incident(incident_id: str):
+def remove_incident(
+    request: Request,
+    incident_id: str
+):
+
+    redirect = require_admin(request)
+
+    if redirect:
+        return redirect
 
     if not incident_exists(incident_id):
         return {
@@ -718,7 +868,15 @@ def export_incidents_csv():
     )
     
 @app.get("/incidents/export/pdf")
-def export_incidents_pdf():
+def export_incidents_pdf(request: Request):
+
+    redirect = require_admin(request)
+
+    if redirect:
+        return redirect
+
+    incidents = export_incidents()
+
 
     incidents = export_incidents()
 

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}
+User Management
+{% endblock %}
+
+{% block page_title %}
+User Management
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <div class="card-header">
+
+        <h3 class="card-title">
+
+            SOC Users
+
+        </h3>
+
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-bordered table-striped">
+
+            <thead>
+
+                <tr>
+
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Role</th>
+                    <th>Created</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for user in users %}
+
+                <tr>
+
+                    <td>{{ user.username }}</td>
+
+                    <td>{{ user.full_name }}</td>
+
+                    <td>
+
+                        {% if user.role == "ADMIN" %}
+
+                            <span class="badge badge-danger">
+
+                                ADMIN
+
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge badge-info">
+
+                                ANALYST
+
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>{{ user.created_at }}</td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

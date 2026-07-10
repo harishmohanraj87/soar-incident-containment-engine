@@ -1,5 +1,6 @@
+import sqlite3
 from database.database import create_connection
-
+from backend.auth import verify_password
 
 # ==========================================================
 # ALERT MANAGEMENT
@@ -787,6 +788,7 @@ def create_user(user):
 def get_user(username):
 
     conn = create_connection()
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -795,11 +797,14 @@ def get_user(username):
         WHERE username = ?
     """, (username,))
 
-    user = cursor.fetchone()
+    row = cursor.fetchone()
 
     conn.close()
 
-    return user
+    if row is None:
+        return None
+
+    return dict(row)
 
 
 def get_all_users():
@@ -841,3 +846,45 @@ def user_exists(username):
     conn.close()
 
     return exists
+
+# ----------------------------------------
+# AUTHENTICATE USER
+# ----------------------------------------
+
+def authenticate_user(username: str, password: str):
+
+    user = get_user(username)
+
+    if not user:
+        return None
+
+    if not verify_password(password, user["password_hash"]):
+        return None
+
+    return user
+
+# ----------------------------------------
+# GET ALL USERS
+# ----------------------------------------
+
+def get_all_users():
+
+    conn = create_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            username,
+            full_name,
+            role,
+            created_at
+        FROM users
+        ORDER BY username
+    """)
+
+    users = cursor.fetchall()
+
+    conn.close()
+
+    return [dict(user) for user in users]
