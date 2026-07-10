@@ -1,42 +1,111 @@
 # 🛡️ SOAR Incident Containment Engine
 
-## 🔍 Overview
+## 📌 Overview
 
-The SOAR Incident Containment Engine is a Security Orchestration, Automation, and Response (SOAR) platform designed to automate security alert processing, threat intelligence enrichment, incident tracking, and response workflows.
+The **SOAR Incident Containment Engine** is a Security Orchestration, Automation, and Response (SOAR) platform that automates the complete incident response lifecycle.
 
-The system receives security alerts from SIEM platforms, enriches them using external Threat Intelligence sources, calculates risk scores, and prepares incidents for automated response actions.
-
----
-
-## 🎯 Objective
-
-This project aims to:
-
-- Automate security alert processing
-- Normalize alerts from different sources
-- Enrich Indicators of Compromise (IOCs)
-- Integrate external Threat Intelligence feeds
-- Calculate threat risk scores
-- Track incidents and audit events
-- Prepare alerts for automated containment actions
+The system receives security alerts from SIEM platforms, normalizes incoming events, enriches Indicators of Compromise (IOCs) using Threat Intelligence, calculates risk scores, executes automated playbooks, creates incidents, and provides SOC analysts with a professional dashboard for monitoring and investigation.
 
 ---
 
-## ⚙️ Tech Stack
+# 🎯 Objectives
 
-### Backend
+The project demonstrates how a modern SOAR platform can:
+
+- Ingest SIEM alerts
+- Normalize heterogeneous alert formats
+- Enrich attacker information
+- Calculate automated risk scores
+- Execute response playbooks
+- Create and manage incidents
+- Track analyst activities
+- Generate incident reports
+- Authenticate users securely
+- Enforce Role-Based Access Control (RBAC)
+
+---
+
+# 🏗 System Architecture
+
+```text
+SIEM Alert (JSON)
+        │
+        ▼
+Alert Parser
+        │
+        ▼
+Alert Normalizer
+        │
+        ▼
+Threat Intelligence Enrichment
+   ├── AbuseIPDB
+   ├── VirusTotal
+   └── IPInfo
+        │
+        ▼
+Risk Scoring Engine
+        │
+        ▼
+Playbook Automation
+        │
+        ▼
+Incident Creation
+        │
+        ▼
+SQLite Database
+        │
+        ▼
+Dashboard & Analytics
+        │
+        ▼
+SOC Analyst
+        │
+        ▼
+Authentication & RBAC
+```
+
+---
+
+# ⚙ Technology Stack
+
+## Backend
+
 - Python
 - FastAPI
+- Pydantic
 
-### Database
+## Frontend
+
+- HTML
+- Jinja2
+- Bootstrap
+- AdminLTE
+- Chart.js
+
+## Database
+
 - SQLite
 
-### Threat Intelligence
+## Threat Intelligence
+
 - AbuseIPDB
 - VirusTotal
 - IPInfo
 
-### Development Tools
+## Reporting
+
+- CSV Export
+- PDF Export (ReportLab)
+
+## Security
+
+- Passlib
+- bcrypt
+- Session Authentication
+- Role-Based Access Control (RBAC)
+
+## Development
+
 - Git
 - GitHub
 - Pull Requests
@@ -44,238 +113,441 @@ This project aims to:
 
 ---
 
-## 🧠 How It Works (Pipeline)
+# 🚀 Features
 
-```text
-SIEM Alert
-    ↓
-FastAPI Alert Endpoint
-    ↓
-Parser
-    ↓
-Normalizer
-    ↓
-Threat Intelligence Enrichment
-    ├── AbuseIPDB
-    ├── VirusTotal
-    └── IPInfo
-    ↓
-Risk Scoring Engine
-    ↓
-Database
-    ↓
-Audit Logs
-    ↓
-Response Playbooks
-```
+## Alert Management
+
+- Alert Submission
+- Alert Parsing
+- Alert Normalization
+- Alert Storage
+- Risk Classification
 
 ---
 
-# 📅 Project Progress
+## Threat Intelligence
 
-## ✅ Week 1 – Foundation & Architecture
-
-### Completed
-
-- Repository Setup
-- GitHub Workflow Setup
-- Team Role Assignment
-- FastAPI Backend Setup
-- Alert Parser Development
-- Alert Normalizer Development
-- SQLite Database Setup
-- Threat Intelligence Research
-- Audit Logging Research
-- Event Schema Design
-- Sample Alert Dataset Creation
-
-### Deliverables
-
-```text
-backend/
-├── main.py
-├── parser.py
-└── normalizer.py
-
-database/
-├── database.py
-└── models.py
-
-docs/
-├── logging_research.md
-└── event_schema.md
-```
+- AbuseIPDB Enrichment
+- VirusTotal Enrichment
+- IPInfo Enrichment
+- Reputation Lookup
+- Risk Calculation
 
 ---
 
-## ✅ Week 2 – Automated Threat Enrichment
+## Playbook Automation
 
-### Completed
-
-- Threat Intelligence Enrichment Engine
-- AbuseIPDB Integration
-- VirusTotal Integration
-- IPInfo Integration
-- Risk Score Engine
-- FastAPI Integration
-- End-to-End Alert Processing
-
-### Workflow Implemented
-
-```text
-Alert
- ↓
-Parser
- ↓
-Normalizer
- ↓
-Threat Enrichment
- ↓
-Risk Score
- ↓
-Response
-```
-
-### Example Alert
-
-```json
-{
-  "alert_id": "ALT-1001",
-  "alert_type": "Brute Force",
-  "severity": "High",
-  "attacker_ip": "1.1.1.1"
-}
-```
-
-### Example Response
-
-```json
-{
-  "message": "alert processed",
-  "risk_level": "LOW",
-  "risk_score": 0
-}
-```
+- Automated Playbook Execution
+- Response Decision Engine
+- Incident Creation
+- Automation Status Tracking
 
 ---
 
-## 🚧 Week 3 – Incident Tracking & Audit Logging
+## Incident Management
 
-### Planned
-
-- Store alerts in SQLite
-- Audit Logging Engine
-- Incident Timeline Tracking
-- Event Persistence
-- Case Management Foundation
-
----
-
-## ⏳ Week 4 – Response Automation
-
-### Planned
-
-- Automated Playbooks
-- IP Blocking Simulation
-- Host Isolation Simulation
-- Dashboard Development
-- Final Integration Testing
+- Incident Dashboard
+- Incident Details
+- Incident Timeline
+- Analyst Assignment
+- Status Updates
+- Investigation Notes
+- Incident Resolution
 
 ---
 
-## 📁 Project Structure
+## Dashboard Analytics
+
+- Total Alerts
+- Critical Alerts
+- Open Incidents
+- Blocked IPs
+- Average MTTR
+
+Charts
+
+- Alert Trend
+- Severity Distribution
+- Incident Status
+- Risk Distribution
+
+---
+
+## Reporting
+
+- CSV Export
+- PDF Export
+- Incident Summary Reports
+
+---
+
+## Authentication
+
+- Secure Login
+- Logout
+- Password Hashing (bcrypt)
+- Session Authentication
+
+---
+
+## Role-Based Access Control
+
+### ADMIN
+
+- Dashboard Access
+- Incident Management
+- Export Reports
+- User Management
+
+### ANALYST
+
+- Dashboard Access
+- Incident Investigation
+- Update Status
+- Assign Incidents
+- Add Notes
+
+---
+
+## User Management
+
+- View Users
+- View Roles
+- Administrator Account Initialization
+
+---
+
+# 📂 Project Structure
 
 ```text
 SOAR-Incident-Containment-Engine/
 
-├── backend/
-│   ├── main.py
-│   ├── parser.py
-│   └── normalizer.py
+backend/
 │
-├── threat_intel/
-│   ├── enricher.py
-│   ├── abuseipdb_research.md
-│   ├── virustotal_research.md
-│   └── ipinfo_research.md
+├── main.py
+├── parser.py
+├── normalizer.py
+└── auth.py
+
+database/
 │
-├── database/
-│   ├── database.py
-│   └── models.py
+├── database.py
+├── models.py
+└── crud.py
+
+playbooks/
 │
-├── docs/
-│   ├── logging_research.md
-│   └── event_schema.md
+└── engine.py
+
+threat_intel/
 │
-└── tests/
+└── enricher.py
+
+templates/
+│
+├── dashboard.html
+├── incidents.html
+├── incident_details.html
+├── login.html
+├── users.html
+└── base.html
+
+static/
+
+docs/
+
+tests/
 ```
 
 ---
 
-## ▶️ How To Run
+# 📊 Database Design
 
-Install dependencies:
+## alerts
+
+Stores all ingested alerts.
+
+Fields include:
+
+- Alert ID
+- Severity
+- Source IP
+- Attacker IP
+- Risk Score
+- Risk Level
+- Status
+
+---
+
+## incidents
+
+Stores generated incidents.
+
+Fields include:
+
+- Incident ID
+- Alert ID
+- Priority
+- Status
+- Assigned Analyst
+- Notes
+- Created Time
+
+---
+
+## incident_activity
+
+Stores chronological investigation activities.
+
+Examples
+
+- Incident Created
+- Assigned
+- Status Updated
+- Notes Added
+- Resolved
+
+---
+
+## users
+
+Stores authentication information.
+
+Fields include
+
+- Username
+- Password Hash
+- Full Name
+- Role
+
+---
+
+# 🔄 SOAR Workflow
+
+```text
+Receive Alert
+      │
+      ▼
+Parse Alert
+      │
+      ▼
+Normalize Alert
+      │
+      ▼
+Threat Intelligence Lookup
+      │
+      ▼
+Risk Score Calculation
+      │
+      ▼
+Execute Playbook
+      │
+      ▼
+Create Incident
+      │
+      ▼
+Display Dashboard
+      │
+      ▼
+SOC Investigation
+```
+
+---
+
+# ▶ Running the Project
+
+## Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run backend:
+## Start the server
 
 ```bash
 python -m uvicorn backend.main:app --reload
 ```
 
-Open Swagger UI:
+---
 
-```text
+## Open
+
+Dashboard
+
+```
+http://127.0.0.1:8000/
+```
+
+Swagger
+
+```
 http://127.0.0.1:8000/docs
 ```
 
+Login
+
+```
+http://127.0.0.1:8000/login
+```
+
+User Management
+
+```
+http://127.0.0.1:8000/admin/users
+```
+
 ---
 
-## 🔐 Cybersecurity Relevance
+# 🎬 Demo Workflow
+
+1. Login as Administrator
+
+↓
+
+2. Submit Security Alert
+
+↓
+
+3. Alert Parsing
+
+↓
+
+4. Alert Normalization
+
+↓
+
+5. Threat Intelligence Enrichment
+
+↓
+
+6. Risk Score Calculation
+
+↓
+
+7. Playbook Execution
+
+↓
+
+8. Incident Creation
+
+↓
+
+9. View Dashboard Analytics
+
+↓
+
+10. Investigate Incident
+
+↓
+
+11. Export CSV/PDF Report
+
+↓
+
+12. Logout
+
+---
+
+# 🔐 Security Features
+
+- Password Hashing (bcrypt)
+- Session Authentication
+- Route Protection
+- Role-Based Access Control
+- Secure User Management
+
+---
+
+# 📚 Learning Outcomes
 
 This project demonstrates:
 
-- Security Operations Center (SOC) workflows
+- Security Operations Center (SOC) workflow
+- Security Orchestration Automation and Response (SOAR)
 - Threat Intelligence Integration
-- Incident Response Automation
-- Security Alert Processing
+- Incident Response
 - Risk-Based Decision Making
-- SOAR Architecture Design
+- Security Dashboard Development
+- Authentication & Authorization
+- Python Backend Development
+- REST API Development
 
 ---
 
-## 👨‍💻 Team
+# 👨‍💻 Team
 
 ### Harish Mohanraj
+
 Project Lead
+
 - Backend Development
-- Database Development
+- FastAPI Development
+- Database Design
+- Dashboard Development
+- Incident Management
+- Authentication & RBAC
+- Reporting Module
 - System Integration
-
-### Yash Prashant Kulkarni
-Threat Intelligence Lead
-- AbuseIPDB Integration
-- VirusTotal Integration
-- IPInfo Integration
-
-### Surya
-SIEM Alert Simulator Developer
-- Alert Dataset Creation
-- Testing Scenarios
-- Event Simulation
 
 ---
 
-## 📊 Current Status
+### Yash Prashant Kulkarni
+
+Threat Intelligence
+
+- AbuseIPDB Research
+- VirusTotal Research
+- Threat Intelligence Integration
+
+---
+
+### Surya
+
+SIEM Alert Simulation
+
+- Alert Dataset
+- Testing
+- Simulation
+
+---
+
+# 📈 Current Status
 
 ```text
-Week 1  ✅ Completed
-Week 2  ✅ Completed
-Week 3  🚧 In Progress
-Week 4  ⏳ Planned
+Sprint 1  ✅ Alert Ingestion
+
+Sprint 2  ✅ Threat Intelligence
+
+Sprint 3  ✅ Playbook Automation
+
+Sprint 4  ✅ Dashboard Development
+
+Sprint 5  ✅ Incident Management
+
+Sprint 6  ✅ Dashboard Analytics
+
+Sprint 7  ✅ Reporting Module
+
+Sprint 8  ✅ Authentication Foundation
+
+Sprint 9  ✅ RBAC & User Management
+
+Sprint 10 🚀 Planned (Audit Logs, Notifications & Advanced SOC Features)
 ```
 
-**Current Project Completion:** 50%
+---
+
+
+
+## 🎯 Future Enhancements
+
+- PostgreSQL Integration
+- Docker Deployment
+- Kubernetes Support
+- Email Notifications
+- Slack Integration
+- Real SIEM Integration
+- EDR Integration
+- Firewall Automation
+- Multi-Factor Authentication (MFA)
+- Audit Log Dashboard
