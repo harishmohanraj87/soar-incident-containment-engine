@@ -4,6 +4,7 @@ from fastapi.responses import (
     RedirectResponse,
     StreamingResponse
 )
+from wazuh.webhook import router as wazuh_router
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -81,7 +82,7 @@ app = FastAPI(
     title="SOAR Incident Containment Engine",
     version="1.0.0"
 )
-
+app.include_router(wazuh_router)
 app.add_middleware(
     SessionMiddleware,
     secret_key="soar-super-secret-key"
