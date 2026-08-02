@@ -10,6 +10,8 @@ from backend.auth import verify_password
 # CREATE ALERT
 # ----------------------------------------------------------
 
+import sqlite3
+
 def save_alert(alert):
 
     conn = create_connection()
@@ -20,37 +22,46 @@ def save_alert(alert):
     print(alert)
     print("=" * 60)
 
-    cursor.execute("""
-        INSERT INTO alerts (
-            alert_id,
-            alert_type,
-            severity,
-            source_ip,
-            attacker_ip,
-            risk_score,
-            risk_level,
-            action_taken,
-            status
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        alert.get("id"),
-        alert.get("type"),
-        alert.get("severity"),
-        alert.get("source_ip"),
-        alert.get("attacker_ip"),
-        alert.get("risk_score", 0),
-        alert.get("risk_level", "LOW"),
-        alert.get("action_taken", "Pending"),
-        alert.get("status", "NEW")
-    ))
+    try:
 
-    saved_alert_id = alert.get("id")
+        cursor.execute("""
+            INSERT INTO alerts (
+                alert_id,
+                alert_type,
+                severity,
+                source_ip,
+                attacker_ip,
+                risk_score,
+                risk_level,
+                action_taken,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            alert.get("id"),
+            alert.get("type"),
+            alert.get("severity"),
+            alert.get("source_ip"),
+            alert.get("attacker_ip"),
+            alert.get("risk_score", 0),
+            alert.get("risk_level", "LOW"),
+            alert.get("action_taken", "Pending"),
+            alert.get("status", "NEW")
+        ))
 
-    conn.commit()
-    conn.close()
+        conn.commit()
 
-    return saved_alert_id
+        return alert.get("id")
+
+    except sqlite3.IntegrityError:
+
+        print(f"Alert {alert.get('id')} already exists.")
+
+        return alert.get("id")
+
+    finally:
+
+        conn.close()
 
 
 # ----------------------------------------------------------
@@ -279,34 +290,45 @@ def get_recent_alerts(limit=10):
 # CREATE INCIDENT
 # ----------------------------------------------------------
 
+import sqlite3
+
 def create_incident(incident):
 
     conn = create_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        INSERT INTO incidents (
-            incident_id,
-            alert_id,
-            title,
-            priority,
-            incident_status,
-            assigned_to,
-            analyst_notes
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (
-        incident.get("incident_id"),
-        incident.get("alert_id"),
-        incident.get("title"),
-        incident.get("priority", "P3"),
-        incident.get("incident_status", "NEW"),
-        incident.get("assigned_to", "Unassigned"),
-        incident.get("analyst_notes", "")
-    ))
+    try:
 
-    conn.commit()
-    conn.close()
+        cursor.execute("""
+            INSERT INTO incidents (
+                incident_id,
+                alert_id,
+                title,
+                priority,
+                incident_status,
+                assigned_to,
+                analyst_notes
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            incident.get("incident_id"),
+            incident.get("alert_id"),
+            incident.get("title"),
+            incident.get("priority", "P3"),
+            incident.get("incident_status", "NEW"),
+            incident.get("assigned_to", "Unassigned"),
+            incident.get("analyst_notes", "")
+        ))
+
+        conn.commit()
+
+    except sqlite3.IntegrityError:
+
+        print(f"Incident {incident.get('incident_id')} already exists.")
+
+    finally:
+
+        conn.close()
 
 
 # ----------------------------------------------------------
@@ -605,27 +627,32 @@ def log_incident_activity(
     activity,
     performed_by="System"
 ):
+
     conn = create_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        INSERT INTO incident_activity (
+    try:
+
+        cursor.execute("""
+            INSERT INTO incident_activity (
+                incident_id,
+                activity_type,
+                activity,
+                performed_by
+            )
+            VALUES (?, ?, ?, ?)
+        """, (
             incident_id,
             activity_type,
             activity,
             performed_by
-        )
-        VALUES (?, ?, ?, ?)
-    """, (
-        incident_id,
-        activity_type,
-        activity,
-        performed_by
-    ))
+        ))
 
-    conn.commit()
-    conn.close()
+        conn.commit()
 
+    finally:
+
+        conn.close()
 
 def get_incident_activity(incident_id):
     conn = create_connection()
