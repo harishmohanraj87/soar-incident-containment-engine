@@ -1,17 +1,40 @@
-from fastapi import FastAPI, Request, Form
+# ==========================================================
+# SOAR INCIDENT CONTAINMENT ENGINE
+# backend/main.py
+# PART 1
+# ==========================================================
+
+from datetime import datetime
+import csv
+import io
+import tempfile
+import time
+
+from fastapi import (
+    FastAPI,
+    Request,
+    Form,
+    HTTPException
+)
+
 from fastapi.responses import (
     HTMLResponse,
     RedirectResponse,
     StreamingResponse
 )
-from wazuh.webhook import router as wazuh_router
+
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-import csv
-import io
-import tempfile
-import os
+from pydantic import BaseModel
+from typing import Literal, Optional
+
+from starlette.middleware.sessions import SessionMiddleware
+
+
+# ==========================================================
+# PROJECT IMPORTS
+# ==========================================================
 
 from backend.parser import parse_alert
 from backend.normalizer import normalize_alert
@@ -20,15 +43,26 @@ from backend.auth import hash_password
 from threat_intel.enricher import enrich_ip
 from playbooks.engine import execute_playbook
 
+
+# ==========================================================
+# REPORTING IMPORTS
+# ==========================================================
+
 from reportlab.platypus import (
     SimpleDocTemplate,
     Table,
     TableStyle,
     Paragraph
 )
+
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
+
+
+# ==========================================================
+# DATABASE MODELS
+# ==========================================================
 
 from database.models import (
     create_alerts_table,
@@ -37,12 +71,18 @@ from database.models import (
     create_users_table
 )
 
+
+# ==========================================================
+# DATABASE CRUD
+# ==========================================================
+
 from database.crud import (
     save_alert,
     create_incident,
 
     create_user,
     user_exists,
+    authenticate_user,
 
     get_total_alerts,
     get_high_risk_alerts,
@@ -74,367 +114,134 @@ from database.crud import (
     get_alerts_by_severity,
     get_incidents_by_status_chart,
     get_daily_alerts,
-    authenticate_user,
     get_risk_distribution
 )
-from starlette.middleware.sessions import SessionMiddleware
+
+
+# ==========================================================
+# FASTAPI APPLICATION
+# ==========================================================
+
 app = FastAPI(
     title="SOAR Incident Containment Engine",
     version="1.0.0"
 )
-app.include_router(wazuh_router)
+
+
+# ==========================================================
+# SESSION MIDDLEWARE
+# ==========================================================
+
 app.add_middleware(
     SessionMiddleware,
     secret_key="soar-super-secret-key"
 )
 
 
+# ==========================================================
+# STATIC FILES
+# ==========================================================
+
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static"
+)
 
 
-# ----------------------------------------
-# Initialize Database
-# ----------------------------------------
+# ==========================================================
+# TEMPLATES
+# ==========================================================
 
-# ----------------------------------------
-# Initialize Database
-# ----------------------------------------
+templates = Jinja2Templates(
+    directory="templates"
+)
+
+
+# ==========================================================
+# DATABASE INITIALIZATION
+# ==========================================================
 
 create_alerts_table()
 create_incidents_table()
 create_incident_activity_table()
 create_users_table()
 
-# ----------------------------------------
-# Create Default Admin
-# ----------------------------------------
+
+# ==========================================================
+# DEFAULT ADMIN ACCOUNT
+# ==========================================================
 
 if not user_exists("admin"):
 
     create_user({
-
         "username": "admin",
-
         "password_hash": hash_password("Admin@123"),
-
         "full_name": "System Administrator",
-
         "role": "ADMIN"
-
     })
-# ----------------------------------------
-# USER MANAGEMENT
-# ----------------------------------------
-
-@app.get("/admin/users", response_class=HTMLResponse)
-async def user_management(request: Request):
-
-    redirect = require_admin(request)
-
-    if redirect:
-        return redirect
-
-    users = get_all_users()
-
-    return templates.TemplateResponse(
-        request=request,
-        name="users.html",
-        context={
-            "request": request,
-            "users": users
-        }
-    )
-# ----------------------------------------
-# Static Files
-# ----------------------------------------
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-templates = Jinja2Templates(directory="templates")
-
-from pydantic import BaseModel
 
 
-from typing import Literal
+# ==========================================================
+# REQUEST MODELS
+# ==========================================================
 
-class StatusUpdate(BaseModel):
-    status: Literal[
-        "NEW",
-        "INVESTIGATING",
-        "CONTAINED",
-        "RESOLVED",
-        "CLOSED"
-    ]
+class AlertRequest(BaseModel):
 
-class AnalystAssignment(BaseModel):
+    alert_id: str
+    alert_type: str
+    severity: str
+
+    source_ip: Optional[str] = None
+    attacker_ip: Optional[str] = None
+
+    description: Optional[str] = None
+    timestamp: Optional[str] = None
+
+
+class WazuhAlertRequest(BaseModel):
+
+    timestamp: Optional[str] = None
+
+    rule: dict = {}
+    agent: dict = {}
+    data: dict = {}
+
+    full_log: Optional[str] = None
+
+
+class IncidentStatusRequest(BaseModel):
+
+    status: str
+
+
+class AssignRequest(BaseModel):
+
     assigned_to: str
 
 
-class AnalystNote(BaseModel):
-    note: str
+class NotesRequest(BaseModel):
+
+    notes: str
 
 
-# ----------------------------------------
-# Shared Alert Processing
-# ----------------------------------------
+# ==========================================================
+# AUTHENTICATION HELPERS
+# ==========================================================
 
-def process_alert(alert: dict):
+def require_login(request: Request):
 
-    # -----------------------------
-    # Parse Alert
-    # -----------------------------
+    username = request.session.get("username")
 
-    parsed = parse_alert(alert)
+    if not username:
 
-    # -----------------------------
-    # Normalize Alert
-    # -----------------------------
-
-    normalized = normalize_alert(parsed)
-
-    attacker_ip = normalized.get("attacker_ip")
-
-    # -----------------------------
-    # Threat Intelligence
-    # -----------------------------
-
-    if attacker_ip:
-
-        enrichment = enrich_ip(
-            ip_address=attacker_ip,
-            alert_type=normalized["type"],
-            severity=normalized["severity"]
+        return RedirectResponse(
+            url="/login",
+            status_code=303
         )
 
-        if enrichment:
-            normalized.update(enrichment)
+    return None
 
-    # -----------------------------
-    # Risk Score
-    # -----------------------------
-
-    risk_score = normalized.get("risk_score", 0)
-
-    normalized["risk_score"] = risk_score
-
-    # -----------------------------
-    # Risk Level
-    # -----------------------------
-
-    if "risk_level" not in normalized:
-
-        if risk_score >= 90:
-            normalized["risk_level"] = "CRITICAL"
-
-        elif risk_score >= 70:
-            normalized["risk_level"] = "HIGH"
-
-        elif risk_score >= 40:
-            normalized["risk_level"] = "MEDIUM"
-
-        else:
-            normalized["risk_level"] = "LOW"
-
-    normalized["status"] = "NEW"
-
-    # -----------------------------
-    # Execute Playbook
-    # -----------------------------
-
-    if attacker_ip:
-
-        playbook_result = execute_playbook({
-
-            "ip": attacker_ip,
-
-            "risk_score": normalized["risk_score"]
-
-        })
-
-        normalized["action_taken"] = playbook_result.get(
-            "action",
-            "Pending"
-        )
-
-    else:
-
-        playbook_result = {
-
-            "status": "skipped",
-
-            "message": "No attacker IP found."
-
-        }
-
-        normalized["action_taken"] = "Pending"
-
-    # ======================================================
-    # Save Alert
-    # ======================================================
-
-    saved_alert_id = save_alert(normalized)
-
-    # ======================================================
-    # Automatically Create Incident
-    # ======================================================
-
-    incident = {
-
-        "incident_id": f"INC-{saved_alert_id}",
-
-        "alert_id": saved_alert_id,
-
-        "title": f"{normalized['type']} Alert",
-
-        "priority": (
-            "P1"
-            if normalized["risk_level"] == "CRITICAL"
-            else "P2"
-            if normalized["risk_level"] == "HIGH"
-            else "P3"
-            if normalized["risk_level"] == "MEDIUM"
-            else "P4"
-        ),
-
-        "incident_status": "NEW",
-
-        "assigned_to": "Unassigned",
-
-        "analyst_notes": ""
-
-    }
-
-    create_incident(incident)
-    log_incident_activity(
-    incident["incident_id"],
-    "CREATED",
-    "Incident created automatically from alert.",
-    "System"
-)
-
-    # ======================================================
-    # Return
-    # ======================================================
-
-    return normalized, playbook_result
-
-# ----------------------------------------
-# LOGIN PAGE
-# ----------------------------------------
-
-@app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-
-    return templates.TemplateResponse(
-        request=request,
-        name="login.html",
-        context={
-            "request": request,
-            "error": None
-        }
-    )
-
-# ----------------------------------------
-# LOGOUT
-# ----------------------------------------
-
-@app.get("/logout")
-async def logout(request: Request):
-
-    request.session.clear()
-
-    return RedirectResponse(
-        url="/login",
-        status_code=303
-    )
-# ----------------------------------------
-# LOGIN
-# ----------------------------------------
-
-@app.post("/login")
-async def login(
-
-    request: Request,
-
-    username: str = Form(...),
-
-    password: str = Form(...)
-
-):
-
-    user = authenticate_user(
-        username,
-        password
-    )
-
-    if not user:
-
-        return templates.TemplateResponse(
-            request=request,
-            name="login.html",
-            context={
-                "request": request,
-                "error": "Invalid username or password."
-            }
-        )
-
-    request.session["username"] = user["username"]
-    request.session["role"] = user["role"]
-
-    return RedirectResponse(
-        url="/",
-        status_code=303
-    ) 
-
-
-
-
-
-
-
-# ----------------------------------------
-# Dashboard
-# ----------------------------------------
-
-@app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request):
-
-    redirect = require_login(request)
-
-    if redirect:
-        return redirect
-
-    return templates.TemplateResponse(
-        request=request,
-        name="dashboard.html",
-        context={
-            "request": request,
-
-            "total_alerts": get_total_alerts(),
-            "high_risk": get_high_risk_alerts(),
-            "critical_alerts": get_critical_alerts(),
-            "playbooks": get_playbook_executions(),
-            "incidents": get_open_incidents(),
-            "blocked_ips": get_blocked_ips(),
-            "mttr": get_mttr(),
-
-            "recent_alerts": get_recent_alerts(),
-
-            "top_ip": "N/A",
-            "abuse_score": "--",
-            "vt_score": "--",
-            "country": "--",
-
-            "result": None,
-
-            "severity_chart": get_alerts_by_severity(),
-            "status_chart": get_incidents_by_status_chart(),
-            "daily_chart": get_daily_alerts(),
-            "risk_chart": get_risk_distribution()
-        }
-    )
-# ----------------------------------------
-# ADMIN CHECK
-# ----------------------------------------
 
 def require_admin(request: Request):
 
@@ -443,132 +250,796 @@ def require_admin(request: Request):
     if redirect:
         return redirect
 
-    if request.session.get("role") != "ADMIN":
+    role = request.session.get("role")
 
-        return RedirectResponse(
-            url="/",
-            status_code=303
+    if role != "ADMIN":
+
+        raise HTTPException(
+            status_code=403,
+            detail="Administrator access required"
         )
 
     return None
 
 
-@app.post("/", response_class=HTMLResponse)
+# ==========================================================
+# HELPER FUNCTIONS
+# ==========================================================
+
+def get_risk_level(risk_score: int):
+
+    if risk_score >= 90:
+        return "CRITICAL"
+
+    elif risk_score >= 70:
+        return "HIGH"
+
+    elif risk_score >= 40:
+        return "MEDIUM"
+
+    return "LOW"
+
+
+def get_incident_priority(risk_level: str):
+
+    priority_map = {
+        "CRITICAL": "P1",
+        "HIGH": "P2",
+        "MEDIUM": "P3",
+        "LOW": "P4",
+        "SAFE": "P4"
+    }
+
+    return priority_map.get(
+        str(risk_level).upper(),
+        "P4"
+    )
+
+
+def make_json_safe(data):
+
+    """
+    Convert SQLite rows or other non-JSON
+    serializable objects into normal dictionaries.
+    """
+
+    if data is None:
+        return []
+
+    safe_data = []
+
+    for item in data:
+
+        if isinstance(item, dict):
+
+            safe_data.append(item)
+
+        else:
+
+            try:
+                safe_data.append(dict(item))
+
+            except Exception:
+                safe_data.append(item)
+
+    return safe_data
+
+
+# ==========================================================
+# SHARED ALERT PROCESSING PIPELINE
+# ==========================================================
+
+def process_alert(alert: dict):
+
+    """
+    Main SOAR processing pipeline.
+
+    Alert
+        ↓
+    Parser
+        ↓
+    Normalizer
+        ↓
+    Threat Intelligence
+        ↓
+    Risk Score
+        ↓
+    Playbook
+        ↓
+    Alert Storage
+        ↓
+    Incident Creation
+    """
+
+    # ------------------------------------------------------
+    # PARSE ALERT
+    # ------------------------------------------------------
+
+    parsed = parse_alert(alert)
+
+    if not parsed:
+        raise ValueError(
+            "Unable to parse alert"
+        )
+
+
+    # ------------------------------------------------------
+    # NORMALIZE ALERT
+    # ------------------------------------------------------
+
+    normalized = normalize_alert(parsed)
+
+    if not normalized:
+        raise ValueError(
+            "Unable to normalize alert"
+        )
+
+
+    # ------------------------------------------------------
+    # VALIDATE REQUIRED FIELDS
+    # ------------------------------------------------------
+
+    alert_id = normalized.get("id")
+
+    if not alert_id:
+
+        raise ValueError(
+            "Alert ID is required"
+        )
+
+
+    alert_type = normalized.get(
+        "type",
+        "Unknown Alert"
+    )
+
+    severity = str(
+        normalized.get(
+            "severity",
+            "LOW"
+        )
+    ).upper()
+
+    source_ip = normalized.get(
+        "source_ip"
+    )
+
+    attacker_ip = normalized.get(
+        "attacker_ip"
+    )
+
+
+    # ------------------------------------------------------
+    # THREAT INTELLIGENCE
+    # ------------------------------------------------------
+
+    enrichment_result = {}
+
+    if attacker_ip:
+
+        try:
+
+            enrichment_result = enrich_ip(
+                attacker_ip,
+                alert_type,
+                severity
+            )
+
+            if enrichment_result is None:
+                enrichment_result = {}
+
+        except Exception as error:
+
+            print(
+                f"Threat intelligence error: "
+                f"{error}"
+            )
+
+            enrichment_result = {}
+
+    else:
+
+        print(
+            "No attacker IP available. "
+            "Skipping threat intelligence enrichment."
+        )
+
+
+    # ------------------------------------------------------
+    # MERGE ENRICHMENT DATA
+    # ------------------------------------------------------
+
+    if isinstance(
+        enrichment_result,
+        dict
+    ):
+
+        normalized.update(
+            enrichment_result
+        )
+
+
+    # ------------------------------------------------------
+    # RISK SCORE
+    # ------------------------------------------------------
+
+    risk_score = normalized.get(
+        "risk_score",
+        0
+    )
+
+    try:
+
+        risk_score = int(
+            float(risk_score)
+        )
+
+    except (
+        ValueError,
+        TypeError
+    ):
+
+        risk_score = 0
+
+
+    risk_score = max(
+        0,
+        min(
+            risk_score,
+            100
+        )
+    )
+
+
+    normalized["risk_score"] = risk_score
+
+
+    risk_level = normalized.get(
+        "risk_level"
+    )
+
+    if not risk_level:
+
+        risk_level = get_risk_level(
+            risk_score
+        )
+
+    normalized["risk_level"] = str(
+        risk_level
+    ).upper()
+
+
+    # ------------------------------------------------------
+    # PLAYBOOK EXECUTION
+    # ------------------------------------------------------
+
+    try:
+
+        playbook_result = execute_playbook(
+            attacker_ip,
+            risk_score
+        )
+
+    except Exception as error:
+
+        print(
+            f"Playbook execution error: "
+            f"{error}"
+        )
+
+        playbook_result = {
+            "status": "FAILED",
+            "action": "No action executed",
+            "error": str(error)
+        }
+
+
+    # ------------------------------------------------------
+    # DETERMINE ACTION
+    # ------------------------------------------------------
+
+    if isinstance(
+        playbook_result,
+        dict
+    ):
+
+        action_taken = (
+            playbook_result.get("action")
+            or playbook_result.get("playbook")
+            or playbook_result.get("message")
+            or "Processed"
+        )
+
+    else:
+
+        action_taken = str(
+            playbook_result
+        )
+
+
+    normalized["action_taken"] = (
+        action_taken
+    )
+
+    normalized["status"] = (
+        normalized.get("status")
+        or "NEW"
+    )
+
+
+    # ------------------------------------------------------
+    # SAVE ALERT
+    # ------------------------------------------------------
+
+    try:
+
+        save_alert(
+            normalized
+        )
+
+        alert_saved = True
+
+    except Exception as error:
+
+        error_message = str(error)
+
+        if (
+            "UNIQUE constraint failed"
+            in error_message
+        ):
+
+            print(
+                f"Alert {alert_id} already exists."
+            )
+
+            alert_saved = False
+
+        else:
+
+            raise
+
+
+    # ------------------------------------------------------
+    # CREATE INCIDENT
+    # ------------------------------------------------------
+
+    incident_id = (
+        f"INC-{alert_id}"
+    )
+
+    incident_created = False
+
+    try:
+
+        if not incident_exists(
+            incident_id
+        ):
+
+            incident_data = {
+
+                "incident_id":
+                    incident_id,
+
+                "alert_id":
+                    alert_id,
+
+                "title":
+                    f"{alert_type} - {alert_id}",
+
+                "priority":
+                    get_incident_priority(
+                        normalized[
+                            "risk_level"
+                        ]
+                    ),
+
+                "incident_status":
+                    "NEW",
+
+                "assigned_to":
+                    "Unassigned",
+
+                "analyst_notes":
+                    None
+            }
+
+            create_incident(
+                incident_data
+            )
+
+            incident_created = True
+
+
+            # ----------------------------------------------
+            # INCIDENT ACTIVITY
+            # ----------------------------------------------
+
+            log_incident_activity(
+                incident_id,
+                "INCIDENT_CREATED",
+                "Incident automatically created "
+                "by SOAR processing pipeline"
+            )
+
+            log_incident_activity(
+                incident_id,
+                "ALERT_PROCESSED",
+                f"Alert {alert_id} processed "
+                f"with risk score {risk_score}"
+            )
+
+            log_incident_activity(
+                incident_id,
+                "PLAYBOOK_EXECUTED",
+                f"Automated response executed: "
+                f"{action_taken}"
+            )
+
+        else:
+
+            print(
+                f"Incident {incident_id} "
+                f"already exists."
+            )
+
+    except Exception as error:
+
+        print(
+            f"Incident creation error: "
+            f"{error}"
+        )
+
+
+    # ------------------------------------------------------
+    # FINAL RESPONSE
+    # ------------------------------------------------------
+
+    return {
+
+        "message":
+            "Alert processed successfully",
+
+        "alert":
+            normalized,
+
+        "playbook":
+            playbook_result,
+
+        "incident": {
+            "incident_id":
+                incident_id,
+
+            "created":
+                incident_created
+        },
+
+        "alert_saved":
+            alert_saved
+    }
+
+
+# ==========================================================
+# HOME DASHBOARD
+# ==========================================================
+
+@app.get(
+    "/",
+    response_class=HTMLResponse
+)
+
+async def dashboard(
+    request: Request
+):
+
+    redirect = require_login(
+        request
+    )
+
+    if redirect:
+        return redirect
+
+
+    total_alerts = get_total_alerts()
+    high_risk = get_high_risk_alerts()
+    critical_alerts = get_critical_alerts()
+    playbooks = get_playbook_executions()
+    incidents = get_open_incidents()
+    blocked_ips = get_blocked_ips()
+    mttr = get_mttr()
+
+    recent_alerts = get_recent_alerts()
+
+    severity_data = make_json_safe(
+        get_alerts_by_severity()
+    )
+
+    incident_status_data = make_json_safe(
+        get_incidents_by_status_chart()
+    )
+
+    daily_alerts = make_json_safe(
+        get_daily_alerts()
+    )
+
+    risk_distribution = make_json_safe(
+        get_risk_distribution()
+    )
+
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+
+            "total_alerts":
+                total_alerts,
+
+            "high_risk":
+                high_risk,
+
+            "critical_alerts":
+                critical_alerts,
+
+            "playbooks":
+                playbooks,
+
+            "incidents":
+                incidents,
+
+            "blocked_ips":
+                blocked_ips,
+
+            "mttr":
+                mttr,
+
+            "recent_alerts":
+                recent_alerts,
+
+            # Chart aliases
+            "severity_chart":
+                severity_data,
+
+            "status_chart":
+                incident_status_data,
+
+            "daily_chart":
+                daily_alerts,
+
+            "risk_chart":
+                risk_distribution,
+
+            # Alternative variable names
+            "severity_data":
+                severity_data,
+
+            "incident_status_data":
+                incident_status_data,
+
+            "daily_alerts":
+                daily_alerts,
+
+            "risk_distribution":
+                risk_distribution
+        }
+    )
+
+
+# ==========================================================
+# DASHBOARD ALERT SUBMISSION
+# ==========================================================
+
+@app.post(
+    "/",
+    response_class=HTMLResponse
+)
+
 async def execute_dashboard(
 
     request: Request,
 
     alert_id: str = Form(...),
-
     alert_type: str = Form(...),
-
     severity: str = Form(...),
 
     source_ip: str = Form(...),
 
     attacker_ip: str = Form(...)
-
 ):
+
+    redirect = require_login(
+        request
+    )
+
+    if redirect:
+        return redirect
+
 
     raw_alert = {
 
-        "alert_id": alert_id,
+        "alert_id":
+            alert_id,
 
-        "alert_type": alert_type,
+        "alert_type":
+            alert_type,
 
-        "severity": severity,
+        "severity":
+            severity,
 
-        "source_ip": source_ip,
+        "source_ip":
+            source_ip,
 
-        "attacker_ip": attacker_ip
-
+        "attacker_ip":
+            attacker_ip
     }
 
-    normalized, playbook_result = process_alert(raw_alert)
 
-    return templates.TemplateResponse(
+    try:
 
-        request=request,
+        process_alert(
+            raw_alert
+        )
 
-        name="dashboard.html",
+    except Exception as error:
 
-        context={
+        print(
+            f"Dashboard alert error: "
+            f"{error}"
+        )
 
-            "request": request,
 
-            # Dashboard KPIs
+    # Redirect instead of rendering the
+    # dashboard with potentially stale data
 
-            "total_alerts": get_total_alerts(),
-
-            "high_risk": get_high_risk_alerts(),
-
-            "critical_alerts": get_critical_alerts(),
-
-            "playbooks": get_playbook_executions(),
-
-            "incidents": get_open_incidents(),
-
-            "blocked_ips": get_blocked_ips(),
-
-            "mttr": get_mttr(),
-
-            # Recent Alerts
-
-            "recent_alerts": get_recent_alerts(),
-
-            # Threat Intelligence
-
-            "top_ip": normalized.get("attacker_ip", "N/A"),
-
-            "abuse_score": normalized.get("abuse_score", "--"),
-
-            "vt_score": normalized.get("virustotal_score", "--"),
-
-            "country": normalized.get("country", "--"),
-
-            # Playbook Result
-
-            "result": playbook_result,
-
-            # Dashboard Analytics
-
-            "severity_chart": get_alerts_by_severity(),
-
-            "status_chart": get_incidents_by_status_chart(),
-
-            "daily_chart": get_daily_alerts(),
-
-            "risk_chart": get_risk_distribution()
-
-        }
-
+    return RedirectResponse(
+        url="/",
+        status_code=303
     )
 
-# ----------------------------------------
-# REST API
-# ----------------------------------------
 
-@app.post("/alerts")
+# ==========================================================
+# ALERT INGESTION API
+# ==========================================================
 
-def receive_alert(alert: dict):
+@app.post(
+    "/alerts"
+)
 
-    normalized, playbook_result = process_alert(alert)
+async def receive_alert(
+    alert: AlertRequest
+):
 
-    return {
+    try:
 
-        "message": "Alert processed successfully",
+        result = process_alert(
+            alert.model_dump()
+        )
 
-        "alert": normalized,
+        return result
 
-        "playbook": playbook_result,
 
+    except ValueError as error:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+
+
+    except Exception as error:
+
+        print(
+            f"Alert processing error: "
+            f"{error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="SOAR alert processing failed"
+        )
+
+
+# ==========================================================
+# END OF PART 1
+# PART 2 CONTINUES DIRECTLY BELOW
+# ==========================================================
+# ==========================================================
+# WAZUH WEBHOOK
+# ==========================================================
+
+@app.post("/wazuh/webhook")
+async def wazuh_webhook(alert: WazuhAlertRequest):
+
+    wazuh_data = alert.model_dump()
+
+    rule = wazuh_data.get("rule", {})
+    agent = wazuh_data.get("agent", {})
+    data = wazuh_data.get("data", {})
+
+    rule_level = rule.get("level", 0)
+
+    # ------------------------------------------------------
+    # MAP WAZUH LEVEL TO SOAR SEVERITY
+    # ------------------------------------------------------
+
+    try:
+        rule_level = int(rule_level)
+    except (ValueError, TypeError):
+        rule_level = 0
+
+    if rule_level >= 12:
+        severity = "CRITICAL"
+    elif rule_level >= 8:
+        severity = "HIGH"
+    elif rule_level >= 5:
+        severity = "MEDIUM"
+    else:
+        severity = "LOW"
+
+    # ------------------------------------------------------
+    # CREATE SOAR ALERT
+    # ------------------------------------------------------
+
+    timestamp = wazuh_data.get("timestamp")
+
+    if not timestamp:
+        timestamp = datetime.now().isoformat()
+
+    alert_id = (
+        f"WAZUH-"
+        f"{rule.get('id', 'UNKNOWN')}-"
+        f"{int(time.time() * 1000)}"
+    )
+
+    soar_alert = {
+        "alert_id": alert_id,
+        "alert_type": rule.get(
+            "description",
+            "Wazuh Security Alert"
+        ),
+        "severity": severity,
+        "source_ip": agent.get("ip"),
+        "attacker_ip": (
+            data.get("srcip")
+            or data.get("src_ip")
+            or data.get("source_ip")
+        ),
+        "description": wazuh_data.get("full_log"),
+        "timestamp": timestamp
     }
-# ----------------------------------------
-# INCIDENT DASHBOARD
-# ----------------------------------------
 
-@app.get("/incidents/dashboard", response_class=HTMLResponse)
-async def incident_dashboard(request: Request):
+    try:
+
+        result = process_alert(
+            soar_alert
+        )
+
+        return {
+            "message": "Wazuh alert received and processed",
+            "wazuh_alert": wazuh_data,
+            "soar_result": result
+        }
+
+    except Exception as error:
+
+        print(
+            f"Wazuh processing error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to process Wazuh alert"
+        )
+
+
+# ==========================================================
+# INCIDENT LIST
+# ==========================================================
+
+@app.get(
+    "/incidents",
+    response_class=HTMLResponse
+)
+async def incidents_page(request: Request):
 
     redirect = require_login(request)
 
@@ -581,97 +1052,143 @@ async def incident_dashboard(request: Request):
         request=request,
         name="incidents.html",
         context={
-            "request": request,
             "incidents": incidents
         }
     )
-# ----------------------------------------
-# INCIDENT DETAILS PAGE
-# ----------------------------------------
+
+
+# ==========================================================
+# INCIDENT API DETAILS
+# ==========================================================
+
+@app.get("/incidents/{incident_id}")
+async def incident_details(
+    incident_id: str,
+    request: Request
+):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    incident = get_incident_by_id(
+        incident_id
+    )
+
+    if not incident:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Incident not found"
+        )
+
+    return dict(incident)
+
+
+# ==========================================================
+# INCIDENT DASHBOARD / INVESTIGATION PAGE
+# ==========================================================
 
 @app.get(
     "/incidents/dashboard/{incident_id}",
     response_class=HTMLResponse
 )
-async def incident_details_dashboard(
-    
-    request: Request,
-    incident_id: str
+async def incident_dashboard(
+    incident_id: str,
+    request: Request
 ):
 
+    redirect = require_login(request)
 
-    incident = get_incident_by_id(incident_id)
-    activity = get_incident_activity(incident_id)
+    if redirect:
+        return redirect
 
-    if incident is None:
+    incident = get_incident_by_id(
+        incident_id
+    )
 
-        return templates.TemplateResponse(
-            request=request,
-            name="incident_details.html",
-            context={
-                "request": request,
-                "error": "Incident not found."
-            }
+    if not incident:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Incident not found"
         )
+
+    activity = get_incident_activity(
+        incident_id
+    )
 
     return templates.TemplateResponse(
         request=request,
-        name="incident_details.html",
+        name="incident_dashboard.html",
         context={
-            "request": request,
             "incident": incident,
             "activity": activity
-
-            
         }
     )
 
- # ----------------------------------------
-# INCIDENT DETAILS ACTIONS (UI)
-# ----------------------------------------
-@app.post("/incidents/dashboard/{incident_id}/status")
-async def update_incident_status_ui(
+
+# ==========================================================
+# INCIDENT DASHBOARD REDIRECT / SUMMARY
+# ==========================================================
+
+@app.get(
+    "/incidents/dashboard",
+    response_class=HTMLResponse
+)
+async def incidents_dashboard(
+    request: Request
+):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    incidents = get_all_incidents()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="incidents.html",
+        context={
+            "incidents": incidents
+        }
+    )
+
+
+# ==========================================================
+# UPDATE INCIDENT STATUS
+# ==========================================================
+
+@app.post(
+    "/incidents/dashboard/{incident_id}/status"
+)
+async def dashboard_update_status(
+
     incident_id: str,
+    request: Request,
     status: str = Form(...)
 ):
-    update_incident_status(incident_id, status)
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    update_incident_status(
+        incident_id,
+        status
+    )
 
     log_incident_activity(
         incident_id,
-        "STATUS",
-        f"Status changed to {status}",
-        "SOC Analyst"
-    )
-
-    if status.upper() == "RESOLVED":
-
-        resolve_incident(incident_id)
-
-        log_incident_activity(
-            incident_id,
-            "RESOLVED",
-            "Incident resolved.",
-            "SOC Analyst"
+        "STATUS_UPDATED",
+        f"Incident status changed to {status}",
+        request.session.get(
+            "username",
+            "Analyst"
         )
-
-    return RedirectResponse(
-        url=f"/incidents/dashboard/{incident_id}",
-        status_code=303
-    )
-
-
-@app.post("/incidents/dashboard/{incident_id}/assign")
-async def assign_incident_ui(
-    incident_id: str,
-    assigned_to: str = Form(...)
-):
-    assign_analyst(incident_id, assigned_to)
-
-    log_incident_activity(
-        incident_id,
-        "ASSIGNED",
-        f"Assigned to {assigned_to}",
-        assigned_to
     )
 
     return RedirectResponse(
@@ -680,158 +1197,233 @@ async def assign_incident_ui(
     )
 
 
-@app.post("/incidents/dashboard/{incident_id}/notes")
-async def save_notes_ui(
+@app.patch(
+    "/incidents/{incident_id}/status"
+)
+async def api_update_status(
+
     incident_id: str,
-    note: str = Form(...)
-):
-    add_analyst_note(incident_id, note)
-
-    log_incident_activity(
-        incident_id,
-        "NOTE",
-        note,
-        "SOC Analyst"
-    )
-
-    return RedirectResponse(
-        url=f"/incidents/dashboard/{incident_id}",
-        status_code=303
-    )
-
-    
-# ----------------------------------------
-# AUTHENTICATION HELPER
-# ----------------------------------------
-
-def require_login(request: Request):
-
-    if "username" not in request.session:
-
-        return RedirectResponse(
-            url="/login",
-            status_code=303
-        )
-
-    return None
-# ----------------------------------------
-# INCIDENT MANAGEMENT REST API
-# ----------------------------------------
-
-@app.get("/incidents")
-def list_incidents():
-
-    return {
-        "count": len(get_incident_summary()),
-        "incidents": get_incident_summary()
-    }
-
-
-@app.get("/incidents/{incident_id}")
-def incident_details(incident_id: str):
-
-    if not incident_exists(incident_id):
-        return {
-            "error": "Incident not found."
-        }
-
-    return get_incident_by_id(incident_id)
-
-
-@app.patch("/incidents/{incident_id}/status")
-def change_status(
-    incident_id: str,
-    data: StatusUpdate
+    data: IncidentStatusRequest,
+    request: Request
 ):
 
-    if not incident_exists(incident_id):
-        return {
-            "error": "Incident not found."
-        }
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
 
     update_incident_status(
         incident_id,
         data.status
     )
 
-    if data.status.upper() == "RESOLVED":
-        resolve_incident(incident_id)
+    log_incident_activity(
+        incident_id,
+        "STATUS_UPDATED",
+        f"Incident status changed to {data.status}",
+        request.session.get(
+            "username",
+            "Analyst"
+        )
+    )
 
     return {
-        "message": "Incident status updated."
+        "message": "Incident status updated",
+        "incident_id": incident_id,
+        "status": data.status
     }
 
 
-@app.patch("/incidents/{incident_id}/assign")
-def assign_incident(
+# ==========================================================
+# ASSIGN ANALYST
+# ==========================================================
+
+@app.post(
+    "/incidents/dashboard/{incident_id}/assign"
+)
+async def dashboard_assign_analyst(
+
     incident_id: str,
-    data: AnalystAssignment
+    request: Request,
+    assigned_to: str = Form(...)
 ):
 
-    if not incident_exists(incident_id):
-        return {
-            "error": "Incident not found."
-        }
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    assign_analyst(
+        incident_id,
+        assigned_to
+    )
+
+    log_incident_activity(
+        incident_id,
+        "ANALYST_ASSIGNED",
+        f"Incident assigned to {assigned_to}",
+        request.session.get(
+            "username",
+            "System"
+        )
+    )
+
+    return RedirectResponse(
+        url=f"/incidents/dashboard/{incident_id}",
+        status_code=303
+    )
+
+
+@app.patch(
+    "/incidents/{incident_id}/assign"
+)
+async def api_assign_analyst(
+
+    incident_id: str,
+    data: AssignRequest,
+    request: Request
+):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
 
     assign_analyst(
         incident_id,
         data.assigned_to
     )
 
-    return {
-        "message": "Incident assigned successfully."
-    }
-
-
-@app.patch("/incidents/{incident_id}/notes")
-def update_notes(
-    incident_id: str,
-    data: AnalystNote
-):
-
-    if not incident_exists(incident_id):
-        return {
-            "error": "Incident not found."
-        }
-
-    add_analyst_note(
+    log_incident_activity(
         incident_id,
-        data.note
+        "ANALYST_ASSIGNED",
+        f"Incident assigned to {data.assigned_to}",
+        request.session.get(
+            "username",
+            "System"
+        )
     )
 
     return {
-        "message": "Analyst note added."
+        "message": "Analyst assigned",
+        "incident_id": incident_id,
+        "assigned_to": data.assigned_to
     }
 
 
-@app.delete("/incidents/{incident_id}")
-def remove_incident(
+# ==========================================================
+# ADD ANALYST NOTES
+# ==========================================================
+
+@app.post(
+    "/incidents/dashboard/{incident_id}/notes"
+)
+async def dashboard_add_notes(
+
+    incident_id: str,
     request: Request,
-    incident_id: str
+    notes: str = Form(...)
 ):
 
-    redirect = require_admin(request)
+    redirect = require_login(request)
 
     if redirect:
         return redirect
 
-    if not incident_exists(incident_id):
-        return {
-            "error": "Incident not found."
-        }
+    add_analyst_note(
+        incident_id,
+        notes
+    )
 
-    delete_incident(incident_id)
+    log_incident_activity(
+        incident_id,
+        "NOTE_ADDED",
+        "Analyst added an investigation note",
+        request.session.get(
+            "username",
+            "Analyst"
+        )
+    )
+
+    return RedirectResponse(
+        url=f"/incidents/dashboard/{incident_id}",
+        status_code=303
+    )
+
+
+@app.patch(
+    "/incidents/{incident_id}/notes"
+)
+async def api_add_notes(
+
+    incident_id: str,
+    data: NotesRequest,
+    request: Request
+):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    add_analyst_note(
+        incident_id,
+        data.notes
+    )
+
+    log_incident_activity(
+        incident_id,
+        "NOTE_ADDED",
+        "Analyst added an investigation note",
+        request.session.get(
+            "username",
+            "Analyst"
+        )
+    )
 
     return {
-        "message": "Incident deleted successfully."
+        "message": "Analyst note added",
+        "incident_id": incident_id
     }
-    
-# ----------------------------------------
-# EXPORT INCIDENTS (CSV)
-# ----------------------------------------
+
+
+# ==========================================================
+# DELETE INCIDENT
+# ==========================================================
+
+@app.delete("/incidents/{incident_id}")
+async def remove_incident(
+
+    incident_id: str,
+    request: Request
+):
+
+    admin_check = require_admin(request)
+
+    if admin_check:
+        return admin_check
+
+    delete_incident(
+        incident_id
+    )
+
+    return {
+        "message": "Incident deleted",
+        "incident_id": incident_id
+    }
+
+
+# ==========================================================
+# CSV EXPORT
+# ==========================================================
 
 @app.get("/incidents/export/csv")
-def export_incidents_csv():
+async def export_csv(request: Request):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
 
     incidents = export_incidents()
 
@@ -851,59 +1443,55 @@ def export_incidents_csv():
 
     for incident in incidents:
 
-        writer.writerow(incident)
+        row = dict(incident)
+
+        writer.writerow([
+            row.get("incident_id"),
+            row.get("alert_id"),
+            row.get("title"),
+            row.get("priority"),
+            row.get("incident_status"),
+            row.get("assigned_to"),
+            row.get("created_at")
+        ])
 
     output.seek(0)
 
     return StreamingResponse(
-
         iter([output.getvalue()]),
-
         media_type="text/csv",
-
         headers={
             "Content-Disposition":
-            "attachment; filename=incidents_report.csv"
+                "attachment; filename=soar_incidents.csv"
         }
-
     )
-    
-@app.get("/incidents/export/pdf")
-def export_incidents_pdf(request: Request):
 
-    redirect = require_admin(request)
+
+# ==========================================================
+# PDF EXPORT
+# ==========================================================
+
+@app.get("/incidents/export/pdf")
+async def export_pdf(request: Request):
+
+    redirect = require_login(request)
 
     if redirect:
         return redirect
 
     incidents = export_incidents()
 
+    buffer = io.BytesIO()
 
-    incidents = export_incidents()
-
-    temp = tempfile.NamedTemporaryFile(
-        delete=False,
-        suffix=".pdf"
+    document = SimpleDocTemplate(
+        buffer
     )
-
-    pdf = SimpleDocTemplate(temp.name)
 
     styles = getSampleStyleSheet()
 
-    title_style = styles["Heading1"]
-    title_style.alignment = TA_CENTER
-
-    elements = []
-
-    elements.append(
-        Paragraph(
-            "SOAR Incident Report",
-            title_style
-        )
-    )
-
-    elements.append(
-        Paragraph("<br/><br/>", styles["Normal"])
+    title = Paragraph(
+        "SOAR Incident Report",
+        styles["Title"]
     )
 
     data = [[
@@ -911,75 +1499,190 @@ def export_incidents_pdf(request: Request):
         "Alert ID",
         "Priority",
         "Status",
-        "Assigned",
-        "Created"
+        "Assigned To"
     ]]
 
-    for row in incidents:
+    for incident in incidents:
+
+        row = dict(incident)
 
         data.append([
-            row[0],
-            row[1],
-            row[3],
-            row[4],
-            row[5],
-            row[6]
+            str(row.get("incident_id", "")),
+            str(row.get("alert_id", "")),
+            str(row.get("priority", "")),
+            str(row.get("incident_status", "")),
+            str(row.get("assigned_to", ""))
         ])
 
     table = Table(data)
 
-    table.setStyle(TableStyle([
+    table.setStyle(
+        TableStyle([
+            (
+                "GRID",
+                (0, 0),
+                (-1, -1),
+                1,
+                colors.black
+            ),
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, 0),
+                colors.lightgrey
+            )
+        ])
+    )
 
-        ("BACKGROUND", (0,0), (-1,0), colors.darkblue),
+    document.build([
+        title,
+        table
+    ])
 
-        ("TEXTCOLOR", (0,0), (-1,0), colors.white),
-
-        ("GRID", (0,0), (-1,-1), 1, colors.black),
-
-        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-
-        ("ALIGN", (0,0), (-1,-1), "CENTER"),
-
-        ("BOTTOMPADDING", (0,0), (-1,0), 10),
-
-        ("BACKGROUND", (0,1), (-1,-1), colors.beige)
-
-    ]))
-
-    elements.append(table)
-
-    pdf.build(elements)
+    buffer.seek(0)
 
     return StreamingResponse(
-
-        open(temp.name, "rb"),
-
+        buffer,
         media_type="application/pdf",
-
         headers={
-
             "Content-Disposition":
-            "attachment; filename=incident_report.pdf"
-
+                "attachment; filename=soar_incidents.pdf"
         }
-
     )
-    
-    
 
-# ----------------------------------------
-# Health Check
-# ----------------------------------------
+
+# ==========================================================
+# ADMIN - USER MANAGEMENT
+# ==========================================================
+
+@app.get(
+    "/admin/users",
+    response_class=HTMLResponse
+)
+async def admin_users(
+    request: Request
+):
+
+    admin_check = require_admin(
+        request
+    )
+
+    if admin_check:
+        return admin_check
+
+    users = get_all_users()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="users.html",
+        context={
+            "users": users
+        }
+    )
+
+
+# ==========================================================
+# LOGIN PAGE
+# ==========================================================
+
+@app.get(
+    "/login",
+    response_class=HTMLResponse
+)
+async def login_page(
+    request: Request
+):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={}
+    )
+
+
+# ==========================================================
+# LOGIN ACTION
+# ==========================================================
+
+@app.post("/login")
+async def login(
+
+    request: Request,
+
+    username: str = Form(...),
+    password: str = Form(...)
+):
+
+    user = authenticate_user(
+        username,
+        password
+    )
+
+    if not user:
+
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "error":
+                    "Invalid username or password"
+            },
+            status_code=401
+        )
+
+    user_data = dict(user)
+
+    request.session["username"] = (
+        user_data.get("username")
+    )
+
+    request.session["role"] = (
+        user_data.get("role")
+    )
+
+    request.session["full_name"] = (
+        user_data.get("full_name")
+    )
+
+    return RedirectResponse(
+        url="/",
+        status_code=303
+    )
+
+
+# ==========================================================
+# LOGOUT
+# ==========================================================
+
+@app.get("/logout")
+async def logout(
+    request: Request
+):
+
+    request.session.clear()
+
+    return RedirectResponse(
+        url="/login",
+        status_code=303
+    )
+
+
+# ==========================================================
+# HEALTH CHECK
+# ==========================================================
 
 @app.get("/health")
-def health():
+async def health_check():
 
     return {
-
         "status": "healthy",
-
-        "service": "SOAR Incident Containment Engine",
-
-        "version": app.version
-
+        "service":
+            "SOAR Incident Containment Engine",
+        "timestamp":
+            datetime.now().isoformat()
     }
+
+
+# ==========================================================
+# END OF SOAR APPLICATION
+# ==========================================================
