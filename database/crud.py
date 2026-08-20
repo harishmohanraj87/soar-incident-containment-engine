@@ -1,30 +1,75 @@
 import sqlite3
+
 from database.database import create_connection
 from backend.auth import verify_password
+
+
+# ==========================================================
+# HELPER
+# ==========================================================
+
+def rows_to_dicts(rows):
+    """
+    Convert SQLite rows to dictionaries.
+    """
+
+    return [
+        dict(row)
+        for row in rows
+    ]
+
 
 # ==========================================================
 # ALERT MANAGEMENT
 # ==========================================================
 
-# ----------------------------------------------------------
-# CREATE ALERT
-# ----------------------------------------------------------
+def save_alert(alert: dict):
+    """
+    Save a normalized alert.
 
-import sqlite3
+    Returns:
+        {
+            "alert_id": "...",
+            "created": True/False,
+            "duplicate": True/False
+        }
+    """
 
-def save_alert(alert):
+    alert_id = alert.get("id")
+
+    if not alert_id:
+        raise ValueError(
+            "Cannot save alert: missing alert ID"
+        )
 
     conn = create_connection()
-    cursor = conn.cursor()
-
-    print("=" * 60)
-    print("SAVING ALERT")
-    print(alert)
-    print("=" * 60)
 
     try:
+        cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
+            SELECT 1
+            FROM alerts
+            WHERE alert_id = ?
+            """,
+            (alert_id,)
+        )
+
+        if cursor.fetchone():
+
+            print(
+                f"Alert {alert_id} already exists."
+            )
+
+            return {
+                "alert_id": alert_id,
+                "created": False,
+                "duplicate": True
+            }
+
+        cursor.execute(
+            """
             INSERT INTO alerts (
                 alert_id,
                 alert_type,
@@ -37,269 +82,303 @@ def save_alert(alert):
                 status
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            alert.get("id"),
-            alert.get("type"),
-            alert.get("severity"),
-            alert.get("source_ip"),
-            alert.get("attacker_ip"),
-            alert.get("risk_score", 0),
-            alert.get("risk_level", "LOW"),
-            alert.get("action_taken", "Pending"),
-            alert.get("status", "NEW")
-        ))
+            """,
+            (
+                alert_id,
+                alert.get("type"),
+                alert.get("severity"),
+                alert.get("source_ip"),
+                alert.get("attacker_ip"),
+                alert.get("risk_score", 0),
+                alert.get("risk_level", "LOW"),
+                alert.get(
+                    "action_taken",
+                    "Pending"
+                ),
+                alert.get("status", "NEW")
+            )
+        )
 
         conn.commit()
 
-        return alert.get("id")
+        print(
+            f"Alert {alert_id} "
+            "saved successfully."
+        )
 
-    except sqlite3.IntegrityError:
+        return {
+            "alert_id": alert_id,
+            "created": True,
+            "duplicate": False
+        }
 
-        print(f"Alert {alert.get('id')} already exists.")
+    except Exception:
 
-        return alert.get("id")
+        conn.rollback()
+        raise
 
     finally:
 
         conn.close()
 
 
-# ----------------------------------------------------------
-# READ ALERTS
-# ----------------------------------------------------------
-
-def get_all_alerts():
+def delete_alert(alert_id: str):
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT *
-        FROM alerts
-        ORDER BY created_at DESC
-    """)
+    try:
 
-    alerts = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            DELETE FROM alerts
+            WHERE alert_id = ?
+            """,
+            (alert_id,)
+        )
 
-    return alerts
+        conn.commit()
 
+        return cursor.rowcount > 0
 
-def get_alert_by_id(alert_id):
+    except Exception:
 
-    conn = create_connection()
-    cursor = conn.cursor()
+        conn.rollback()
+        raise
 
-    cursor.execute("""
-        SELECT *
-        FROM alerts
-        WHERE alert_id = ?
-    """, (alert_id,))
+    finally:
 
-    alert = cursor.fetchone()
-
-    conn.close()
-
-    return alert
-
-
-# ----------------------------------------------------------
-# UPDATE ALERT
-# ----------------------------------------------------------
-
-def update_alert_status(alert_id, status):
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        UPDATE alerts
-        SET status = ?
-        WHERE alert_id = ?
-    """, (status, alert_id))
-
-    conn.commit()
-    conn.close()
-
-
-def update_action(alert_id, action):
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        UPDATE alerts
-        SET action_taken = ?
-        WHERE alert_id = ?
-    """, (action, alert_id))
-
-    conn.commit()
-    conn.close()
-
-
-# ----------------------------------------------------------
-# DELETE ALERT
-# ----------------------------------------------------------
-
-def delete_alert(alert_id):
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        DELETE FROM alerts
-        WHERE alert_id = ?
-    """, (alert_id,))
-
-    conn.commit()
-    conn.close()
+        conn.close()
 
 
 # ==========================================================
-# DASHBOARD STATISTICS
+# ALERT QUERIES
 # ==========================================================
 
 def get_total_alerts():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM alerts
-    """)
+    try:
 
-    total = cursor.fetchone()[0]
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM alerts
+            """
+        )
 
-    return total
+        return cursor.fetchone()[0]
+
+    finally:
+
+        conn.close()
 
 
 def get_high_risk_alerts():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM alerts
-        WHERE risk_level IN ('HIGH', 'CRITICAL')
-    """)
+    try:
 
-    total = cursor.fetchone()[0]
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM alerts
+            WHERE risk_level
+            IN ('HIGH', 'CRITICAL')
+            """
+        )
 
-    return total
+        return cursor.fetchone()[0]
+
+    finally:
+
+        conn.close()
 
 
 def get_critical_alerts():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM alerts
-        WHERE severity = 'CRITICAL'
-    """)
+    try:
 
-    total = cursor.fetchone()[0]
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM alerts
+            WHERE severity = 'CRITICAL'
+            """
+        )
 
-    return total
+        return cursor.fetchone()[0]
+
+    finally:
+
+        conn.close()
 
 
 def get_playbook_executions():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM alerts
-        WHERE action_taken IS NOT NULL
-          AND action_taken != 'Pending'
-    """)
+    try:
 
-    total = cursor.fetchone()[0]
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM alerts
+            WHERE action_taken IS NOT NULL
+            AND action_taken != 'Pending'
+            """
+        )
 
-    return total
+        return cursor.fetchone()[0]
+
+    finally:
+
+        conn.close()
 
 
 def get_blocked_ips():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM alerts
-        WHERE action_taken = 'Block IP'
-    """)
+    try:
 
-    total = cursor.fetchone()[0]
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM alerts
+            WHERE action_taken = 'Block IP'
+            """
+        )
 
-    return total
+        return cursor.fetchone()[0]
+
+    finally:
+
+        conn.close()
 
 
 def get_mttr():
     """
-    Placeholder for Mean Time To Respond.
-    Will be calculated from incidents
-    in a future sprint.
+    Current placeholder.
+
+    This will be replaced with actual
+    Detection -> Containment / Resolution
+    time calculation in a later sprint.
     """
+
     return "2.4 min"
 
 
 def get_recent_alerts(limit=10):
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            alert_id,
-            source_ip,
-            severity,
-            risk_score,
-            status,
-            created_at
-        FROM alerts
-        ORDER BY created_at DESC
-        LIMIT ?
-    """, (limit,))
+    try:
 
-    alerts = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT
+                alert_id,
+                alert_type,
+                source_ip,
+                attacker_ip,
+                severity,
+                risk_score,
+                risk_level,
+                status,
+                action_taken,
+                created_at
+            FROM alerts
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (limit,)
+        )
 
-    return alerts
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
+
+
 # ==========================================================
 # INCIDENT MANAGEMENT
 # ==========================================================
 
-# ----------------------------------------------------------
-# CREATE INCIDENT
-# ----------------------------------------------------------
+def create_incident(incident: dict):
 
-import sqlite3
+    incident_id = incident.get(
+        "incident_id"
+    )
 
-def create_incident(incident):
+    alert_id = incident.get(
+        "alert_id"
+    )
+
+    if not incident_id:
+
+        raise ValueError(
+            "Cannot create incident: "
+            "missing incident ID"
+        )
+
+    if not alert_id:
+
+        raise ValueError(
+            "Cannot create incident: "
+            "missing alert ID"
+        )
 
     conn = create_connection()
-    cursor = conn.cursor()
 
     try:
 
-        cursor.execute("""
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT 1
+            FROM incidents
+            WHERE incident_id = ?
+            """,
+            (incident_id,)
+        )
+
+        if cursor.fetchone():
+
+            print(
+                f"Incident {incident_id} "
+                "already exists."
+            )
+
+            return {
+                "incident_id": incident_id,
+                "created": False,
+                "duplicate": True
+            }
+
+        cursor.execute(
+            """
             INSERT INTO incidents (
                 incident_id,
                 alert_id,
@@ -310,330 +389,530 @@ def create_incident(incident):
                 analyst_notes
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            incident.get("incident_id"),
-            incident.get("alert_id"),
-            incident.get("title"),
-            incident.get("priority", "P3"),
-            incident.get("incident_status", "NEW"),
-            incident.get("assigned_to", "Unassigned"),
-            incident.get("analyst_notes", "")
-        ))
+            """,
+            (
+                incident_id,
+                alert_id,
+                incident.get(
+                    "title",
+                    "Security Incident"
+                ),
+                incident.get(
+                    "priority",
+                    "P3"
+                ),
+                incident.get(
+                    "incident_status",
+                    "NEW"
+                ),
+                incident.get(
+                    "assigned_to",
+                    "Unassigned"
+                ),
+                incident.get(
+                    "analyst_notes",
+                    ""
+                )
+            )
+        )
 
         conn.commit()
 
-    except sqlite3.IntegrityError:
+        print(
+            f"Incident {incident_id} "
+            "created successfully."
+        )
 
-        print(f"Incident {incident.get('incident_id')} already exists.")
+        return {
+            "incident_id": incident_id,
+            "created": True,
+            "duplicate": False
+        }
+
+    except Exception:
+
+        conn.rollback()
+        raise
 
     finally:
 
         conn.close()
 
 
-# ----------------------------------------------------------
-# READ INCIDENTS
-# ----------------------------------------------------------
-
 def get_all_incidents():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT *
-        FROM incidents
-        ORDER BY created_at DESC
-    """)
+    try:
 
-    incidents = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT *
+            FROM incidents
+            ORDER BY created_at DESC
+            """
+        )
 
-    return incidents
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
 
+    finally:
 
-def get_incident_by_id(incident_id):
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT *
-        FROM incidents
-        WHERE incident_id = ?
-    """, (incident_id,))
-
-    incident = cursor.fetchone()
-
-    conn.close()
-
-    return incident
+        conn.close()
 
 
-# ----------------------------------------------------------
-# UPDATE INCIDENT
-# ----------------------------------------------------------
-
-def update_incident_status(incident_id, status):
+def get_incident_by_id(incident_id: str):
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        UPDATE incidents
-        SET incident_status = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE incident_id = ?
-    """, (status, incident_id))
+    try:
 
-    conn.commit()
-    conn.close()
+        cursor = conn.cursor()
 
+        cursor.execute(
+            """
+            SELECT *
+            FROM incidents
+            WHERE incident_id = ?
+            """,
+            (incident_id,)
+        )
 
-def assign_analyst(incident_id, analyst):
+        row = cursor.fetchone()
 
-    conn = create_connection()
-    cursor = conn.cursor()
+        if row is None:
+            return None
 
-    cursor.execute("""
-        UPDATE incidents
-        SET assigned_to = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE incident_id = ?
-    """, (analyst, incident_id))
+        return dict(row)
 
-    conn.commit()
-    conn.close()
+    finally:
+
+        conn.close()
 
 
-def add_analyst_note(incident_id, note):
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        UPDATE incidents
-        SET analyst_notes =
-            COALESCE(analyst_notes, '')
-            || '\n\n'
-            || ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE incident_id = ?
-    """, (note, incident_id))
-
-    conn.commit()
-    conn.close()
-
-
-# ----------------------------------------------------------
-# DELETE INCIDENT
-# ----------------------------------------------------------
-
-def delete_incident(incident_id):
-    """
-    TODO:
-    Replace hard delete with soft delete
-    after the Audit Log module is implemented.
-    """
+def update_incident_status(
+    incident_id: str,
+    status: str
+):
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        DELETE
-        FROM incidents
-        WHERE incident_id = ?
-    """, (incident_id,))
+    try:
 
-    conn.commit()
-    conn.close()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE incidents
+            SET incident_status = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE incident_id = ?
+            """,
+            (
+                status,
+                incident_id
+            )
+        )
+
+        conn.commit()
+
+        return cursor.rowcount > 0
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+
+        conn.close()
 
 
-# ----------------------------------------------------------
-# INCIDENT DASHBOARD STATISTICS
-# ----------------------------------------------------------
+def assign_analyst(
+    incident_id: str,
+    analyst: str
+):
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE incidents
+            SET assigned_to = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE incident_id = ?
+            """,
+            (
+                analyst,
+                incident_id
+            )
+        )
+
+        conn.commit()
+
+        return cursor.rowcount > 0
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+
+        conn.close()
+
+
+def add_analyst_note(
+    incident_id: str,
+    note: str
+):
+
+    if not note or not note.strip():
+
+        raise ValueError(
+            "Analyst note cannot be empty"
+        )
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE incidents
+            SET analyst_notes =
+                CASE
+                    WHEN analyst_notes IS NULL
+                    OR analyst_notes = ''
+                    THEN ?
+                    ELSE analyst_notes
+                    || '\n\n'
+                    || ?
+                END,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE incident_id = ?
+            """,
+            (
+                note.strip(),
+                note.strip(),
+                incident_id
+            )
+        )
+
+        conn.commit()
+
+        return cursor.rowcount > 0
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+
+        conn.close()
+
+
+def delete_incident(
+    incident_id: str
+):
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        # Delete related activity first
+
+        cursor.execute(
+            """
+            DELETE FROM incident_activity
+            WHERE incident_id = ?
+            """,
+            (incident_id,)
+        )
+
+        # Delete incident
+
+        cursor.execute(
+            """
+            DELETE FROM incidents
+            WHERE incident_id = ?
+            """,
+            (incident_id,)
+        )
+
+        deleted = (
+            cursor.rowcount > 0
+        )
+
+        conn.commit()
+
+        return deleted
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+
+        conn.close()
+
 
 def get_open_incidents():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM incidents
-        WHERE incident_status IN (
-            'NEW',
-            'INVESTIGATING',
-            'CONTAINED'
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM incidents
+            WHERE incident_status IN (
+                'NEW',
+                'INVESTIGATING',
+                'CONTAINED'
+            )
+            """
         )
-    """)
 
-    total = cursor.fetchone()[0]
+        return cursor.fetchone()[0]
 
-    conn.close()
+    finally:
 
-    return total
+        conn.close()
+
+
 # ==========================================================
 # INCIDENT API HELPERS
 # ==========================================================
 
-def incident_exists(incident_id):
-    """
-    Check whether an incident exists.
-    """
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT 1
-        FROM incidents
-        WHERE incident_id = ?
-    """, (incident_id,))
-
-    exists = cursor.fetchone() is not None
-
-    conn.close()
-
-    return exists
-
-
-def get_incident_summary():
-    """
-    Lightweight incident information
-    used by dashboards and REST APIs.
-    """
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT
-            incident_id,
-            alert_id,
-            title,
-            priority,
-            incident_status,
-            assigned_to,
-            created_at
-        FROM incidents
-        ORDER BY created_at DESC
-    """)
-
-    incidents = cursor.fetchall()
-
-    conn.close()
-
-    return incidents
-
-
-def get_incidents_by_status(status):
-    """
-    Retrieve incidents by status.
-    """
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT *
-        FROM incidents
-        WHERE incident_status = ?
-        ORDER BY created_at DESC
-    """, (status,))
-
-    incidents = cursor.fetchall()
-
-    conn.close()
-
-    return incidents
-
-
-def get_incidents_by_analyst(analyst):
-    """
-    Retrieve incidents assigned
-    to a specific SOC analyst.
-    """
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT *
-        FROM incidents
-        WHERE assigned_to = ?
-        ORDER BY created_at DESC
-    """, (analyst,))
-
-    incidents = cursor.fetchall()
-
-    conn.close()
-
-    return incidents
-
-
-def get_incident_counts():
-    """
-    Dashboard statistics for incidents.
-    """
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT
-            incident_status,
-            COUNT(*)
-        FROM incidents
-        GROUP BY incident_status
-    """)
-
-    rows = cursor.fetchall()
-
-    conn.close()
-
-    return {
-        row[0]: row[1]
-        for row in rows
-    }
-
-
-def resolve_incident(incident_id):
-    """
-    Mark an incident as resolved.
-    """
-
-    conn = create_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        UPDATE incidents
-        SET incident_status = 'RESOLVED',
-            resolved_at = CURRENT_TIMESTAMP,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE incident_id = ?
-    """, (incident_id,))
-
-    conn.commit()
-    conn.close()
-    # ----------------------------------------
-# INCIDENT ACTIVITY LOG
-# ----------------------------------------
-
-def log_incident_activity(
-    incident_id,
-    activity_type,
-    activity,
-    performed_by="System"
+def incident_exists(
+    incident_id: str
 ):
 
     conn = create_connection()
-    cursor = conn.cursor()
 
     try:
 
-        cursor.execute("""
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT 1
+            FROM incidents
+            WHERE incident_id = ?
+            """,
+            (incident_id,)
+        )
+
+        return (
+            cursor.fetchone()
+            is not None
+        )
+
+    finally:
+
+        conn.close()
+
+
+def get_incident_summary():
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                incident_id,
+                alert_id,
+                title,
+                priority,
+                incident_status,
+                assigned_to,
+                created_at,
+                updated_at
+            FROM incidents
+            ORDER BY created_at DESC
+            """
+        )
+
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
+
+
+def get_incidents_by_status(
+    status: str
+):
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM incidents
+            WHERE incident_status = ?
+            ORDER BY created_at DESC
+            """,
+            (status,)
+        )
+
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
+
+
+def get_incidents_by_analyst(
+    analyst: str
+):
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM incidents
+            WHERE assigned_to = ?
+            ORDER BY created_at DESC
+            """,
+            (analyst,)
+        )
+
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
+
+
+def get_incident_counts():
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                incident_status,
+                COUNT(*) AS count
+            FROM incidents
+            GROUP BY incident_status
+            """
+        )
+
+        rows = cursor.fetchall()
+
+        return {
+            row["incident_status"]:
+            row["count"]
+            for row in rows
+        }
+
+    finally:
+
+        conn.close()
+
+
+def resolve_incident(
+    incident_id: str
+):
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE incidents
+            SET incident_status = 'RESOLVED',
+                resolved_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE incident_id = ?
+            """,
+            (incident_id,)
+        )
+
+        conn.commit()
+
+        return cursor.rowcount > 0
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+
+        conn.close()
+
+
+# ==========================================================
+# INCIDENT ACTIVITY LOG
+# ==========================================================
+
+def log_incident_activity(
+    incident_id: str,
+    activity_type: str,
+    activity: str,
+    performed_by="System"
+):
+
+    if not incident_id:
+
+        raise ValueError(
+            "Cannot log activity: "
+            "missing incident ID"
+        )
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
             INSERT INTO incident_activity (
                 incident_id,
                 activity_type,
@@ -641,39 +920,62 @@ def log_incident_activity(
                 performed_by
             )
             VALUES (?, ?, ?, ?)
-        """, (
-            incident_id,
-            activity_type,
-            activity,
-            performed_by
-        ))
+            """,
+            (
+                incident_id,
+                activity_type,
+                activity,
+                performed_by
+            )
+        )
 
         conn.commit()
+
+        return True
+
+    except Exception:
+
+        conn.rollback()
+        raise
 
     finally:
 
         conn.close()
 
-def get_incident_activity(incident_id):
+
+def get_incident_activity(
+    incident_id: str
+):
+
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            activity_type,
-            activity,
-            performed_by,
-            created_at
-        FROM incident_activity
-        WHERE incident_id = ?
-        ORDER BY created_at DESC
-    """, (incident_id,))
+    try:
 
-    activities = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT
+                activity_type,
+                activity,
+                performed_by,
+                created_at
+            FROM incident_activity
+            WHERE incident_id = ?
+            ORDER BY created_at ASC
+            """,
+            (incident_id,)
+        )
 
-    return activities
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
+
+
 # ==========================================================
 # DASHBOARD ANALYTICS
 # ==========================================================
@@ -681,82 +983,112 @@ def get_incident_activity(incident_id):
 def get_alerts_by_severity():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            severity,
-            COUNT(*)
-        FROM alerts
-        GROUP BY severity
-    """)
+    try:
 
-    rows = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT
+                severity,
+                COUNT(*) AS count
+            FROM alerts
+            GROUP BY severity
+            """
+        )
 
-    return rows
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
 
 
 def get_incidents_by_status_chart():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            incident_status,
-            COUNT(*)
-        FROM incidents
-        GROUP BY incident_status
-    """)
+    try:
 
-    rows = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT
+                incident_status,
+                COUNT(*) AS count
+            FROM incidents
+            GROUP BY incident_status
+            """
+        )
 
-    return rows
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
 
 
 def get_daily_alerts():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            DATE(created_at),
-            COUNT(*)
-        FROM alerts
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at)
-    """)
+    try:
 
-    rows = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT
+                DATE(created_at) AS date,
+                COUNT(*) AS count
+            FROM alerts
+            GROUP BY DATE(created_at)
+            ORDER BY DATE(created_at)
+            """
+        )
 
-    return rows
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
 
 
 def get_risk_distribution():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            risk_level,
-            COUNT(*)
-        FROM alerts
-        GROUP BY risk_level
-    """)
+    try:
 
-    rows = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT
+                risk_level,
+                COUNT(*) AS count
+            FROM alerts
+            GROUP BY risk_level
+            """
+        )
 
-    return rows
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
+
+
 # ==========================================================
 # REPORTING
 # ==========================================================
@@ -764,154 +1096,218 @@ def get_risk_distribution():
 def export_incidents():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            incident_id,
-            alert_id,
-            title,
-            priority,
-            incident_status,
-            assigned_to,
-            created_at
-        FROM incidents
-        ORDER BY created_at DESC
-    """)
+    try:
 
-    rows = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT
+                incident_id,
+                alert_id,
+                title,
+                priority,
+                incident_status,
+                assigned_to,
+                analyst_notes,
+                created_at,
+                updated_at
+            FROM incidents
+            ORDER BY created_at DESC
+            """
+        )
 
-    return rows
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
+
+
 # ==========================================================
 # USER MANAGEMENT
 # ==========================================================
 
-def create_user(user):
+def create_user(user: dict):
 
-    conn = create_connection()
-    cursor = conn.cursor()
+    username = user.get("username")
 
-    cursor.execute("""
-        INSERT INTO users (
-            username,
-            password_hash,
-            full_name,
-            role
+    if not username:
+
+        raise ValueError(
+            "Cannot create user: "
+            "missing username"
         )
-        VALUES (?, ?, ?, ?)
-    """, (
-        user.get("username"),
-        user.get("password_hash"),
-        user.get("full_name"),
-        user.get("role", "ANALYST")
-    ))
 
-    conn.commit()
-    conn.close()
+    if user_exists(username):
 
-
-def get_user(username):
+        return False
 
     conn = create_connection()
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT *
-        FROM users
-        WHERE username = ?
-    """, (username,))
+    try:
 
-    row = cursor.fetchone()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            INSERT INTO users (
+                username,
+                password_hash,
+                full_name,
+                role
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                username,
+                user.get(
+                    "password_hash"
+                ),
+                user.get(
+                    "full_name",
+                    username
+                ),
+                user.get(
+                    "role",
+                    "ANALYST"
+                )
+            )
+        )
 
-    if row is None:
-        return None
+        conn.commit()
 
-    return dict(row)
+        return True
+
+    except sqlite3.IntegrityError:
+
+        conn.rollback()
+
+        return False
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+
+        conn.close()
+
+
+def get_user(
+    username: str
+):
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE username = ?
+            """,
+            (username,)
+        )
+
+        row = cursor.fetchone()
+
+        if row is None:
+
+            return None
+
+        return dict(row)
+
+    finally:
+
+        conn.close()
 
 
 def get_all_users():
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT
-            id,
-            username,
-            full_name,
-            role,
-            created_at
-        FROM users
-        ORDER BY created_at DESC
-    """)
+    try:
 
-    users = cursor.fetchall()
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT
+                username,
+                full_name,
+                role,
+                created_at
+            FROM users
+            ORDER BY username
+            """
+        )
 
-    return users
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+
+        conn.close()
 
 
-def user_exists(username):
+def user_exists(
+    username: str
+):
 
     conn = create_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT 1
-        FROM users
-        WHERE username = ?
-    """, (username,))
+    try:
 
-    exists = cursor.fetchone() is not None
+        cursor = conn.cursor()
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT 1
+            FROM users
+            WHERE username = ?
+            """,
+            (username,)
+        )
 
-    return exists
+        return (
+            cursor.fetchone()
+            is not None
+        )
 
-# ----------------------------------------
-# AUTHENTICATE USER
-# ----------------------------------------
+    finally:
 
-def authenticate_user(username: str, password: str):
+        conn.close()
+
+
+# ==========================================================
+# AUTHENTICATION
+# ==========================================================
+
+def authenticate_user(
+    username: str,
+    password: str
+):
 
     user = get_user(username)
 
     if not user:
+
         return None
 
-    if not verify_password(password, user["password_hash"]):
+    if not verify_password(
+        password,
+        user["password_hash"]
+    ):
+
         return None
 
     return user
-
-# ----------------------------------------
-# GET ALL USERS
-# ----------------------------------------
-
-def get_all_users():
-
-    conn = create_connection()
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT
-            username,
-            full_name,
-            role,
-            created_at
-        FROM users
-        ORDER BY username
-    """)
-
-    users = cursor.fetchall()
-
-    conn.close()
-
-    return [dict(user) for user in users]
