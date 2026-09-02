@@ -1445,6 +1445,410 @@ SOC Command Center
     background: #ff526b;
 }
 
+
+/* ==========================================================
+   REAL-TIME NOTIFICATION CENTER
+   SPRINT 2 - FEATURE 4
+   ========================================================== */
+
+.soc-hero {
+    overflow: visible;
+}
+
+.notification-center {
+    position: relative;
+    margin-left: auto;
+}
+
+.notification-bell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(125,145,190,.18);
+    border-radius: 9px;
+    color: #aebbd4;
+    background: rgba(93,124,255,.06);
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.notification-bell:hover,
+.notification-bell.active {
+    color: #ffffff;
+    border-color: rgba(93,124,255,.42);
+    background: rgba(93,124,255,.13);
+    box-shadow: 0 0 18px rgba(93,124,255,.12);
+}
+
+.notification-bell.has-unread {
+    color: #ffffff;
+}
+
+.notification-bell.has-unread i {
+    animation: notificationBellPulse 2s infinite;
+}
+
+@keyframes notificationBellPulse {
+    0%, 75%, 100% { transform: rotate(0deg); }
+    80% { transform: rotate(8deg); }
+    85% { transform: rotate(-8deg); }
+    90% { transform: rotate(5deg); }
+    95% { transform: rotate(-3deg); }
+}
+
+.notification-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    display: none;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #101729;
+    border-radius: 20px;
+    color: #fff;
+    background: #ff4d67;
+    box-shadow: 0 0 12px rgba(255,77,103,.55);
+    font-size: 8px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.notification-count.visible {
+    display: flex;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    z-index: 5000;
+    display: none;
+    width: min(390px, calc(100vw - 32px));
+    max-height: 520px;
+    overflow: hidden;
+    border: 1px solid rgba(125,145,190,.22);
+    border-radius: 15px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(17,24,40,.98),
+            rgba(7,12,22,.99)
+        );
+    box-shadow: 0 24px 70px rgba(0,0,0,.48);
+    backdrop-filter: blur(18px);
+}
+
+.notification-dropdown.open {
+    display: block;
+    animation: notificationDropIn .18s ease-out;
+}
+
+@keyframes notificationDropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification-dropdown::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(93,124,255,.7),
+        rgba(37,217,255,.45),
+        transparent
+    );
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid rgba(125,145,190,.11);
+}
+
+.notification-header-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.notification-header-title i {
+    color: #6f83ff;
+    font-size: 13px;
+}
+
+.notification-header-title strong {
+    color: #e8eefb;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.notification-header-title span {
+    color: #68758e;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: .7px;
+}
+
+.notification-mark-all {
+    padding: 6px 8px;
+    border: 1px solid rgba(93,124,255,.16);
+    border-radius: 7px;
+    color: #8492b0;
+    background: rgba(93,124,255,.04);
+    cursor: pointer;
+    font-size: 8px;
+    font-weight: 800;
+    transition: .2s ease;
+}
+
+.notification-mark-all:hover {
+    color: #fff;
+    border-color: rgba(93,124,255,.38);
+    background: rgba(93,124,255,.10);
+}
+
+.notification-list {
+    max-height: 435px;
+    overflow-y: auto;
+}
+
+.notification-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: rgba(125,145,190,.22);
+}
+
+.notification-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 31px 1fr;
+    gap: 10px;
+    padding: 13px 15px;
+    border-bottom: 1px solid rgba(125,145,190,.07);
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.notification-item:hover {
+    background: rgba(93,124,255,.055);
+}
+
+.notification-item.unread {
+    background: rgba(93,124,255,.035);
+}
+
+.notification-item.unread::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    background: #6c7cff;
+    box-shadow: 0 0 10px rgba(108,124,255,.55);
+}
+
+.notification-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 31px;
+    height: 31px;
+    border-radius: 9px;
+    color: #8c9cff;
+    background: rgba(93,124,255,.10);
+    font-size: 11px;
+}
+
+.notification-icon.critical {
+    color: #ff657c;
+    background: rgba(255,77,103,.11);
+}
+
+.notification-icon.high {
+    color: #ffad58;
+    background: rgba(255,159,67,.11);
+}
+
+.notification-icon.medium {
+    color: #f6ce55;
+    background: rgba(246,201,69,.10);
+}
+
+.notification-icon.incident {
+    color: #b38aff;
+    background: rgba(155,108,255,.10);
+}
+
+.notification-icon.playbook {
+    color: #48e394;
+    background: rgba(43,213,118,.10);
+}
+
+.notification-content {
+    min-width: 0;
+}
+
+.notification-content strong {
+    display: block;
+    overflow: hidden;
+    color: #dce4f4;
+    font-size: 10px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.notification-content p {
+    margin: 4px 0 0;
+    color: #78859f;
+    font-size: 9px;
+    line-height: 1.45;
+}
+
+.notification-meta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 6px;
+    color: #56627b;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+.notification-severity {
+    font-size: 7px;
+    font-weight: 900;
+}
+
+.notification-severity.critical {
+    color: #ff657c;
+}
+
+.notification-severity.high {
+    color: #ffad58;
+}
+
+.notification-severity.medium {
+    color: #f6ce55;
+}
+
+.notification-severity.info {
+    color: #7f91ff;
+}
+
+.notification-empty,
+.notification-loading,
+.notification-error {
+    padding: 38px 20px;
+    color: #64718a;
+    text-align: center;
+    font-size: 9px;
+}
+
+.notification-empty i,
+.notification-loading i,
+.notification-error i {
+    display: block;
+    margin-bottom: 9px;
+    color: #46546d;
+    font-size: 21px;
+}
+
+.notification-error i {
+    color: #ff6178;
+}
+
+.notification-toast {
+    position: fixed;
+    top: 22px;
+    right: 22px;
+    z-index: 10000;
+    display: none;
+    width: min(360px, calc(100vw - 30px));
+    padding: 14px;
+    border: 1px solid rgba(255,77,103,.25);
+    border-radius: 13px;
+    background: rgba(12,18,31,.96);
+    box-shadow: 0 18px 55px rgba(0,0,0,.45);
+    backdrop-filter: blur(15px);
+}
+
+.notification-toast.show {
+    display: block;
+    animation: notificationToastIn .22s ease-out;
+}
+
+@keyframes notificationToastIn {
+    from {
+        opacity: 0;
+        transform: translateX(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.notification-toast-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ff7185;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .8px;
+}
+
+.notification-toast-message {
+    margin-top: 6px;
+    color: #c8d2e5;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .notification-dropdown {
+        position: fixed;
+        top: 78px;
+        right: 16px;
+    }
+
+    .notification-toast {
+        top: 15px;
+        right: 15px;
+    }
+}
+
+
 /* ==========================================================
    RESPONSIVE
    ========================================================== */
@@ -1576,6 +1980,77 @@ SOC Command Center
             <span class="status-indicator"></span>
 
             <span>ALL SYSTEMS OPERATIONAL</span>
+
+            <div class="notification-center">
+
+                <button
+                    type="button"
+                    id="notificationBell"
+                    class="notification-bell"
+                    aria-label="Open security notifications"
+                    aria-expanded="false">
+
+                    <i class="fas fa-bell"></i>
+
+                    <span
+                        id="notificationCount"
+                        class="notification-count">
+                        0
+                    </span>
+
+                </button>
+
+                <div
+                    id="notificationDropdown"
+                    class="notification-dropdown"
+                    aria-hidden="true">
+
+                    <div class="notification-header">
+
+                        <div class="notification-header-title">
+
+                            <i class="fas fa-shield-alt"></i>
+
+                            <div>
+
+                                <strong>Security Notifications</strong>
+
+                                <span id="notificationHeaderStatus">
+                                    LIVE SOC FEED
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            id="markAllNotifications"
+                            class="notification-mark-all">
+
+                            Mark all read
+
+                        </button>
+
+                    </div>
+
+                    <div
+                        id="notificationList"
+                        class="notification-list">
+
+                        <div class="notification-loading">
+
+                            <i class="fas fa-spinner fa-spin"></i>
+
+                            Loading security notifications...
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 
@@ -2900,6 +3375,28 @@ SOC Command Center
     </div>
 
 </section>
+
+
+<div
+    id="notificationToast"
+    class="notification-toast"
+    role="status"
+    aria-live="polite">
+
+    <div class="notification-toast-title">
+
+        <i class="fas fa-bell"></i>
+
+        NEW SECURITY EVENT
+
+    </div>
+
+    <div
+        id="notificationToastMessage"
+        class="notification-toast-message">
+    </div>
+
+</div>
 
 
 <!-- ==========================================================
@@ -5418,10 +5915,802 @@ document.addEventListener(
         }
 
 
+        initializeNotificationCenter();
+
         initializeSocDashboard();
 
     }
 );
+
+
+
+/* ==========================================================
+   REAL-TIME SOC NOTIFICATIONS
+   SPRINT 2 - FEATURE 4
+   ========================================================== */
+
+let notificationRefreshTimer = null;
+let lastNotificationIds = new Set();
+let notificationInitialized = false;
+let notificationToastTimer = null;
+
+
+/* ----------------------------------------------------------
+   NOTIFICATION HELPERS
+   ---------------------------------------------------------- */
+
+function notificationSeverityClass(severity) {
+
+    const value =
+        String(severity || "INFO").toLowerCase();
+
+    if (value === "critical") return "critical";
+    if (value === "high") return "high";
+    if (value === "medium") return "medium";
+
+    return "info";
+}
+
+
+function notificationIconClass(notification) {
+
+    const type =
+        String(
+            notification.notification_type || "INFO"
+        ).toUpperCase();
+
+    const severity =
+        notificationSeverityClass(
+            notification.severity
+        );
+
+    if (type === "ALERT") {
+        return severity;
+    }
+
+    if (type === "INCIDENT") {
+        return "incident";
+    }
+
+    if (type === "PLAYBOOK") {
+        return "playbook";
+    }
+
+    return "info";
+}
+
+
+function notificationIcon(notification) {
+
+    const type =
+        String(
+            notification.notification_type || "INFO"
+        ).toUpperCase();
+
+    if (type === "ALERT") {
+        return "fa-radiation";
+    }
+
+    if (type === "INCIDENT") {
+        return "fa-exclamation-triangle";
+    }
+
+    if (type === "PLAYBOOK") {
+        return "fa-robot";
+    }
+
+    return "fa-info-circle";
+}
+
+
+function formatNotificationTime(value) {
+
+    if (!value) {
+        return "Just now";
+    }
+
+    const parsed =
+        new Date(
+            String(value).replace(" ", "T")
+        );
+
+    if (Number.isNaN(parsed.getTime())) {
+        return String(value);
+    }
+
+    const now = Date.now();
+    const diffSeconds =
+        Math.max(
+            0,
+            Math.floor(
+                (now - parsed.getTime()) / 1000
+            )
+        );
+
+    if (diffSeconds < 60) {
+        return `${diffSeconds || 1}s ago`;
+    }
+
+    if (diffSeconds < 3600) {
+        return `${Math.floor(diffSeconds / 60)}m ago`;
+    }
+
+    if (diffSeconds < 86400) {
+        return `${Math.floor(diffSeconds / 3600)}h ago`;
+    }
+
+    return parsed.toLocaleString();
+}
+
+
+function setNotificationCount(count) {
+
+    const badge =
+        document.getElementById(
+            "notificationCount"
+        );
+
+    const bell =
+        document.getElementById(
+            "notificationBell"
+        );
+
+    if (!badge) {
+        return;
+    }
+
+    const numericCount =
+        Math.max(
+            0,
+            Number(count) || 0
+        );
+
+    if (numericCount > 0) {
+
+        badge.textContent =
+            numericCount > 99
+                ? "99+"
+                : String(numericCount);
+
+        badge.classList.add(
+            "visible"
+        );
+
+        if (bell) {
+            bell.classList.add(
+                "has-unread"
+            );
+        }
+
+    } else {
+
+        badge.classList.remove(
+            "visible"
+        );
+
+        badge.textContent = "0";
+
+        if (bell) {
+            bell.classList.remove(
+                "has-unread"
+            );
+        }
+
+    }
+
+}
+
+
+function showNotificationToast(
+    notification
+) {
+
+    const toast =
+        document.getElementById(
+            "notificationToast"
+        );
+
+    const message =
+        document.getElementById(
+            "notificationToastMessage"
+        );
+
+    if (!toast || !message) {
+        return;
+    }
+
+    const title =
+        notification.title ||
+        "New security event";
+
+    const body =
+        notification.message ||
+        "";
+
+    message.textContent =
+        `${title}${body ? " — " + body : ""}`;
+
+    toast.classList.add("show");
+
+    clearTimeout(
+        notificationToastTimer
+    );
+
+    notificationToastTimer =
+        setTimeout(
+            function() {
+                toast.classList.remove("show");
+            },
+            5000
+        );
+
+}
+
+
+function renderNotifications(
+    notifications
+) {
+
+    const container =
+        document.getElementById(
+            "notificationList"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    if (
+        !Array.isArray(notifications) ||
+        notifications.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div class="notification-empty">
+
+                <i class="fas fa-check-circle"></i>
+
+                No security notifications.
+
+                <div style="margin-top:5px;">
+                    The SOC notification stream is clear.
+                </div>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        notifications
+            .slice(0, 20)
+            .map(
+                notification => {
+
+                    const type =
+                        String(
+                            notification.notification_type ||
+                            "INFO"
+                        ).toUpperCase();
+
+                    const severity =
+                        String(
+                            notification.severity ||
+                            "INFO"
+                        ).toUpperCase();
+
+                    const severityClass =
+                        notificationSeverityClass(
+                            severity
+                        );
+
+                    const iconClass =
+                        notificationIconClass(
+                            notification
+                        );
+
+                    const icon =
+                        notificationIcon(
+                            notification
+                        );
+
+                    const unread =
+                        Number(
+                            notification.is_read || 0
+                        ) === 0;
+
+                    const notificationId =
+                        Number(
+                            notification.id
+                        );
+
+                    return `
+
+                        <div
+                            class="notification-item ${unread ? "unread" : ""}"
+                            data-notification-id="${notificationId}">
+
+                            <div
+                                class="notification-icon ${iconClass}">
+
+                                <i class="fas ${icon}"></i>
+
+                            </div>
+
+                            <div class="notification-content">
+
+                                <strong>
+                                    ${escapeHtml(
+                                        notification.title ||
+                                        "Security Notification"
+                                    )}
+                                </strong>
+
+                                <p>
+                                    ${escapeHtml(
+                                        notification.message ||
+                                        ""
+                                    )}
+                                </p>
+
+                                <div class="notification-meta">
+
+                                    <span class="notification-severity ${severityClass}">
+                                        ${escapeHtml(severity)}
+                                    </span>
+
+                                    <span>•</span>
+
+                                    <span>
+                                        ${escapeHtml(type)}
+                                    </span>
+
+                                    <span>•</span>
+
+                                    <span>
+                                        ${escapeHtml(
+                                            formatNotificationTime(
+                                                notification.created_at
+                                            )
+                                        )}
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+
+    container
+        .querySelectorAll(
+            ".notification-item"
+        )
+        .forEach(
+            item => {
+
+                item.addEventListener(
+                    "click",
+                    function() {
+
+                        const id =
+                            Number(
+                                item.dataset.notificationId
+                            );
+
+                        if (
+                            Number.isFinite(id) &&
+                            id > 0
+                        ) {
+
+                            markNotificationRead(
+                                id
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+async function loadNotificationCount() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/notifications/unread-count",
+                {
+                    method: "GET",
+                    credentials: "same-origin",
+                    cache: "no-store",
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                `Notification count returned ${response.status}`
+            );
+        }
+
+        const payload =
+            await response.json();
+
+        setNotificationCount(
+            payload.unread_count || 0
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Unable to load notification count:",
+            error
+        );
+
+    }
+
+}
+
+
+async function loadNotifications(
+    showToast = false
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/notifications?limit=20&unread_only=false",
+                {
+                    method: "GET",
+                    credentials: "same-origin",
+                    cache: "no-store",
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                `Notification API returned ${response.status}`
+            );
+        }
+
+        const payload =
+            await response.json();
+
+        if (
+            !payload ||
+            payload.status !== "success"
+        ) {
+            throw new Error(
+                "Invalid notification API response"
+            );
+        }
+
+        const notifications =
+            Array.isArray(payload.notifications)
+                ? payload.notifications
+                : [];
+
+        const currentIds =
+            new Set(
+                notifications.map(
+                    item => Number(item.id)
+                )
+            );
+
+        if (
+            showToast &&
+            notificationInitialized
+        ) {
+
+            const newNotification =
+                notifications.find(
+                    item =>
+                        Number(item.is_read || 0) === 0 &&
+                        !lastNotificationIds.has(
+                            Number(item.id)
+                        )
+                );
+
+            if (newNotification) {
+                showNotificationToast(
+                    newNotification
+                );
+            }
+
+        }
+
+        lastNotificationIds =
+            currentIds;
+
+        renderNotifications(
+            notifications
+        );
+
+        setNotificationCount(
+            notifications.filter(
+                item =>
+                    Number(item.is_read || 0) === 0
+            ).length
+        );
+
+        notificationInitialized = true;
+
+    } catch (error) {
+
+        console.error(
+            "Unable to load notifications:",
+            error
+        );
+
+        const container =
+            document.getElementById(
+                "notificationList"
+            );
+
+        if (container) {
+
+            container.innerHTML = `
+
+                <div class="notification-error">
+
+                    <i class="fas fa-triangle-exclamation"></i>
+
+                    Notification service temporarily unavailable.
+
+                </div>
+
+            `;
+
+        }
+
+    }
+
+}
+
+
+async function markNotificationRead(
+    notificationId
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/notifications/${notificationId}/read`,
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                `Mark-read returned ${response.status}`
+            );
+        }
+
+        await loadNotifications(false);
+
+    } catch (error) {
+
+        console.error(
+            "Unable to mark notification as read:",
+            error
+        );
+
+    }
+
+}
+
+
+async function markAllNotificationsRead() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/notifications/read-all",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                `Mark-all-read returned ${response.status}`
+            );
+        }
+
+        await loadNotifications(false);
+
+    } catch (error) {
+
+        console.error(
+            "Unable to mark all notifications as read:",
+            error
+        );
+
+    }
+
+}
+
+
+function toggleNotificationCenter(
+    force
+) {
+
+    const dropdown =
+        document.getElementById(
+            "notificationDropdown"
+        );
+
+    const bell =
+        document.getElementById(
+            "notificationBell"
+        );
+
+    if (!dropdown || !bell) {
+        return;
+    }
+
+    const shouldOpen =
+        typeof force === "boolean"
+            ? force
+            : !dropdown.classList.contains("open");
+
+    dropdown.classList.toggle(
+        "open",
+        shouldOpen
+    );
+
+    bell.classList.toggle(
+        "active",
+        shouldOpen
+    );
+
+    bell.setAttribute(
+        "aria-expanded",
+        shouldOpen ? "true" : "false"
+    );
+
+    dropdown.setAttribute(
+        "aria-hidden",
+        shouldOpen ? "false" : "true"
+    );
+
+    if (shouldOpen) {
+        loadNotifications(false);
+    }
+
+}
+
+
+function initializeNotificationCenter() {
+
+    const bell =
+        document.getElementById(
+            "notificationBell"
+        );
+
+    const markAll =
+        document.getElementById(
+            "markAllNotifications"
+        );
+
+    const dropdown =
+        document.getElementById(
+            "notificationDropdown"
+        );
+
+    if (!bell || !dropdown) {
+        return;
+    }
+
+    bell.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
+
+            toggleNotificationCenter();
+
+        }
+    );
+
+
+    if (markAll) {
+
+        markAll.addEventListener(
+            "click",
+            function(event) {
+
+                event.stopPropagation();
+
+                markAllNotificationsRead();
+
+            }
+        );
+
+    }
+
+
+    dropdown.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
+
+        }
+    );
+
+
+    document.addEventListener(
+        "click",
+        function() {
+
+            toggleNotificationCenter(
+                false
+            );
+
+        }
+    );
+
+
+    loadNotifications(false);
+    loadNotificationCount();
+
+
+    /*
+       Feature 4 real-time notification polling.
+       Ten seconds keeps the SOC feed responsive without
+       creating excessive API traffic.
+    */
+
+    notificationRefreshTimer =
+        setInterval(
+            function() {
+
+                loadNotifications(true);
+                loadNotificationCount();
+
+            },
+            10000
+        );
+
+}
 
 
 /* ==========================================================
