@@ -1773,7 +1773,305 @@ def get_dashboard_overview():
 
         "threat_map_summary": get_threat_map_summary()
     }
+    
+    
+# ==========================================================
+# REAL-TIME SOC NOTIFICATIONS
+# ==========================================================
 
+def create_notification(
+    notification_type: str,
+    title: str,
+    message: str,
+    severity: str = "INFO",
+    alert_id: str = None,
+    incident_id: str = None
+):
+    """
+    Create a SOC notification.
+
+    Notification types can include:
+        - ALERT
+        - INCIDENT
+        - PLAYBOOK
+        - CONTAINMENT
+        - SYSTEM
+
+    Notifications start as unread.
+    """
+
+    if not notification_type:
+        raise ValueError(
+            "Notification type is required"
+        )
+
+    if not title:
+        raise ValueError(
+            "Notification title is required"
+        )
+
+    if not message:
+        raise ValueError(
+            "Notification message is required"
+        )
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO notifications (
+                notification_type,
+                severity,
+                title,
+                message,
+                alert_id,
+                incident_id,
+                is_read
+            )
+            VALUES (?, ?, ?, ?, ?, ?, 0)
+            """,
+            (
+                notification_type,
+                severity,
+                title,
+                message,
+                alert_id,
+                incident_id
+            )
+        )
+
+        notification_id = cursor.lastrowid
+
+        conn.commit()
+
+        print(
+            f"Notification {notification_id} created."
+        )
+
+        return {
+            "id": notification_id,
+            "notification_type": notification_type,
+            "severity": severity,
+            "title": title,
+            "message": message,
+            "alert_id": alert_id,
+            "incident_id": incident_id,
+            "is_read": 0
+        }
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+
+def get_notifications(
+    limit=20,
+    unread_only=False
+):
+    """
+    Return recent SOC notifications.
+
+    unread_only=True returns only unread notifications.
+    """
+
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 20
+
+    limit = max(1, min(limit, 100))
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        if unread_only:
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    notification_type,
+                    severity,
+                    title,
+                    message,
+                    alert_id,
+                    incident_id,
+                    is_read,
+                    created_at
+                FROM notifications
+                WHERE is_read = 0
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (limit,)
+            )
+
+        else:
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    notification_type,
+                    severity,
+                    title,
+                    message,
+                    alert_id,
+                    incident_id,
+                    is_read,
+                    created_at
+                FROM notifications
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (limit,)
+            )
+
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+        conn.close()
+
+
+def get_unread_notification_count():
+    """
+    Return the number of unread SOC notifications.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM notifications
+            WHERE is_read = 0
+            """
+        )
+
+        return cursor.fetchone()[0]
+
+    finally:
+        conn.close()
+
+
+def mark_notification_read(
+    notification_id: int
+):
+    """
+    Mark one notification as read.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE notifications
+            SET is_read = 1
+            WHERE id = ?
+            """,
+            (notification_id,)
+        )
+
+        updated = cursor.rowcount > 0
+
+        conn.commit()
+
+        return updated
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+
+def mark_all_notifications_read():
+    """
+    Mark every unread SOC notification as read.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE notifications
+            SET is_read = 1
+            WHERE is_read = 0
+            """
+        )
+
+        updated_count = cursor.rowcount
+
+        conn.commit()
+
+        return {
+            "updated": updated_count
+        }
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+
+def delete_notification(
+    notification_id: int
+):
+    """
+    Delete a notification.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            DELETE FROM notifications
+            WHERE id = ?
+            """,
+            (notification_id,)
+        )
+
+        deleted = cursor.rowcount > 0
+
+        conn.commit()
+
+        return deleted
+
+    except Exception:
+
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
 # ==========================================================
 # REPORTING
 # ==========================================================

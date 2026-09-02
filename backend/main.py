@@ -1,8 +1,8 @@
 # ==========================================================
 # SOAR INCIDENT CONTAINMENT ENGINE
 # backend/main.py
-# SPRINT 2 - FEATURE 3
-# Advanced SOC Dashboard Analytics API
+# SPRINT 2 - FEATURE 4
+# Real-Time SOC Notifications + Advanced SOC Dashboard
 # ==========================================================
 
 from datetime import datetime
@@ -67,7 +67,8 @@ from database.models import (
     create_alerts_table,
     create_incidents_table,
     create_incident_activity_table,
-    create_users_table
+    create_users_table,
+    create_notifications_table
 )
 
 
@@ -132,7 +133,17 @@ from database.crud import (
     # SPRINT 2 - FEATURE 3
     # Advanced SOC Dashboard Analytics
     # ------------------------------------------------------
-    get_dashboard_overview
+    get_dashboard_overview,
+
+    # ------------------------------------------------------
+    # SPRINT 2 - FEATURE 4
+    # Real-Time SOC Notifications
+    # ------------------------------------------------------
+    create_notification,
+    get_notifications,
+    get_unread_notification_count,
+    mark_notification_read,
+    mark_all_notifications_read
 )
 
 
@@ -184,6 +195,7 @@ create_alerts_table()
 create_incidents_table()
 create_incident_activity_table()
 create_users_table()
+create_notifications_table()
 
 
 # ==========================================================
@@ -636,11 +648,16 @@ def process_alert(alert: dict):
 
     try:
 
-        save_alert(
+        save_result = save_alert(
             normalized
         )
 
-        alert_saved = True
+        alert_saved = bool(
+            save_result.get(
+                "created",
+                False
+            )
+        )
 
     except Exception as error:
 
@@ -662,6 +679,46 @@ def process_alert(alert: dict):
         else:
 
             raise
+
+
+    # ------------------------------------------------------
+    # REAL-TIME ALERT NOTIFICATION
+    # ------------------------------------------------------
+
+    if alert_saved and severity.upper() in (
+        "HIGH",
+        "CRITICAL"
+    ):
+
+        try:
+
+            create_notification(
+
+                notification_type="ALERT",
+
+                title=(
+                    f"{severity.upper()} Security Alert"
+                ),
+
+                message=(
+                    f"{alert_type} detected from "
+                    f"{attacker_ip or 'unknown source'} "
+                    f"(Alert {alert_id}). "
+                    f"Risk score: {risk_score}."
+                ),
+
+                severity=severity.upper(),
+
+                alert_id=alert_id
+
+            )
+
+        except Exception as error:
+
+            print(
+                f"Alert notification error: "
+                f"{error}"
+            )
 
 
     # ------------------------------------------------------
@@ -754,6 +811,84 @@ def process_alert(alert: dict):
                 f"{action_taken}"
 
             )
+
+
+            # --------------------------------------------------
+            # REAL-TIME INCIDENT NOTIFICATION
+            # --------------------------------------------------
+
+            try:
+
+                create_notification(
+
+                    notification_type="INCIDENT",
+
+                    title="New Security Incident",
+
+                    message=(
+                        f"Incident {incident_id} created "
+                        f"for {alert_type} "
+                        f"(Alert {alert_id}). "
+                        f"Priority: "
+                        f"{get_incident_priority(risk_level)}."
+                    ),
+
+                    severity=(
+                        "CRITICAL"
+                        if risk_level.upper() == "CRITICAL"
+                        else "HIGH"
+                        if risk_level.upper() == "HIGH"
+                        else "INFO"
+                    ),
+
+                    alert_id=alert_id,
+
+                    incident_id=incident_id
+
+                )
+
+            except Exception as error:
+
+                print(
+                    f"Incident notification error: "
+                    f"{error}"
+                )
+
+
+            # --------------------------------------------------
+            # REAL-TIME PLAYBOOK NOTIFICATION
+            # --------------------------------------------------
+
+            if action_taken and action_taken != "Pending":
+
+                try:
+
+                    create_notification(
+
+                        notification_type="PLAYBOOK",
+
+                        title="SOAR Playbook Executed",
+
+                        message=(
+                            f"Automated response for "
+                            f"{alert_id}: "
+                            f"{action_taken}"
+                        ),
+
+                        severity=severity.upper(),
+
+                        alert_id=alert_id,
+
+                        incident_id=incident_id
+
+                    )
+
+                except Exception as error:
+
+                    print(
+                        f"Playbook notification error: "
+                        f"{error}"
+                    )
 
         else:
 
@@ -1759,6 +1894,153 @@ async def wazuh_webhook(
             detail=
                 "Failed to process Wazuh alert"
 
+        )
+
+
+# ==========================================================
+# SPRINT 2 - FEATURE 4
+# REAL-TIME SOC NOTIFICATIONS API
+# ==========================================================
+
+@app.get("/api/notifications")
+async def notifications_api(
+    request: Request,
+    limit: int = 20,
+    unread_only: bool = False
+):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    try:
+
+        notifications = get_notifications(
+            limit=limit,
+            unread_only=unread_only
+        )
+
+        return {
+            "status": "success",
+            "count": len(notifications),
+            "notifications": notifications
+        }
+
+    except Exception as error:
+
+        print(
+            f"Notifications API error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load notifications"
+        )
+
+
+@app.get("/api/notifications/unread-count")
+async def unread_notification_count_api(
+    request: Request
+):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    try:
+
+        return {
+            "status": "success",
+            "unread_count": get_unread_notification_count()
+        }
+
+    except Exception as error:
+
+        print(
+            f"Unread notification count error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load unread notification count"
+        )
+
+
+@app.post("/api/notifications/{notification_id}/read")
+async def mark_notification_read_api(
+    notification_id: int,
+    request: Request
+):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    try:
+
+        updated = mark_notification_read(
+            notification_id
+        )
+
+        if not updated:
+            raise HTTPException(
+                status_code=404,
+                detail="Notification not found"
+            )
+
+        return {
+            "status": "success",
+            "message": "Notification marked as read",
+            "notification_id": notification_id
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+
+        print(
+            f"Mark notification read error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to mark notification as read"
+        )
+
+
+@app.post("/api/notifications/read-all")
+async def mark_all_notifications_read_api(
+    request: Request
+):
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    try:
+
+        result = mark_all_notifications_read()
+
+        return {
+            "status": "success",
+            "message": "All notifications marked as read",
+            **result
+        }
+
+    except Exception as error:
+
+        print(
+            f"Mark all notifications read error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to mark all notifications as read"
         )
 
 
