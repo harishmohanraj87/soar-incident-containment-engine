@@ -1,13 +1,13 @@
 # ==========================================================
 # SOAR INCIDENT CONTAINMENT ENGINE
 # backend/main.py
-# PART 1
+# SPRINT 2 - FEATURE 1
+# Geographic Threat Intelligence / Attack Map
 # ==========================================================
 
 from datetime import datetime
 import csv
 import io
-import tempfile
 import time
 
 from fastapi import (
@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from pydantic import BaseModel
-from typing import Literal, Optional
+from typing import Optional
 
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -57,7 +57,6 @@ from reportlab.platypus import (
 
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.enums import TA_CENTER
 
 
 # ==========================================================
@@ -114,7 +113,20 @@ from database.crud import (
     get_alerts_by_severity,
     get_incidents_by_status_chart,
     get_daily_alerts,
-    get_risk_distribution
+    get_risk_distribution,
+
+    # ------------------------------------------------------
+    # SPRINT 2 - FEATURE 1
+    # Geographic Threat Intelligence / Attack Map
+    # ------------------------------------------------------
+    get_threat_map_data,
+    get_threat_map_summary,
+
+    # ------------------------------------------------------
+    # SPRINT 2 - FEATURE 2
+    # Advanced Alert Search & Filtering
+    # ------------------------------------------------------
+    search_alerts
 )
 
 
@@ -342,6 +354,8 @@ def process_alert(alert: dict):
         ↓
     Threat Intelligence
         ↓
+    Geographic Enrichment
+        ↓
     Risk Score
         ↓
     Playbook
@@ -358,6 +372,7 @@ def process_alert(alert: dict):
     parsed = parse_alert(alert)
 
     if not parsed:
+
         raise ValueError(
             "Unable to parse alert"
         )
@@ -370,6 +385,7 @@ def process_alert(alert: dict):
     normalized = normalize_alert(parsed)
 
     if not normalized:
+
         raise ValueError(
             "Unable to normalize alert"
         )
@@ -426,6 +442,7 @@ def process_alert(alert: dict):
             )
 
             if enrichment_result is None:
+
                 enrichment_result = {}
 
         except Exception as error:
@@ -493,6 +510,10 @@ def process_alert(alert: dict):
 
     normalized["risk_score"] = risk_score
 
+
+    # ------------------------------------------------------
+    # RISK LEVEL
+    # ------------------------------------------------------
 
     risk_level = normalized.get(
         "risk_level"
@@ -706,6 +727,7 @@ def process_alert(alert: dict):
             playbook_result,
 
         "incident": {
+
             "incident_id":
                 incident_id,
 
@@ -726,7 +748,6 @@ def process_alert(alert: dict):
     "/",
     response_class=HTMLResponse
 )
-
 async def dashboard(
     request: Request
 ):
@@ -739,15 +760,35 @@ async def dashboard(
         return redirect
 
 
+    # ------------------------------------------------------
+    # CORE SOC METRICS
+    # ------------------------------------------------------
+
     total_alerts = get_total_alerts()
+
     high_risk = get_high_risk_alerts()
+
     critical_alerts = get_critical_alerts()
+
     playbooks = get_playbook_executions()
+
     incidents = get_open_incidents()
+
     blocked_ips = get_blocked_ips()
+
     mttr = get_mttr()
 
+
+    # ------------------------------------------------------
+    # RECENT ALERTS
+    # ------------------------------------------------------
+
     recent_alerts = get_recent_alerts()
+
+
+    # ------------------------------------------------------
+    # CHART DATA
+    # ------------------------------------------------------
 
     severity_data = make_json_safe(
         get_alerts_by_severity()
@@ -766,10 +807,73 @@ async def dashboard(
     )
 
 
+    # ------------------------------------------------------
+    # SPRINT 2 - FEATURE 1
+    # THREAT MAP DATA
+    # ------------------------------------------------------
+
+    try:
+
+        threat_map_data = make_json_safe(
+            get_threat_map_data(
+                limit=500
+            )
+        )
+
+    except Exception as error:
+
+        print(
+            f"Threat map data error: {error}"
+        )
+
+        threat_map_data = []
+
+
+    # ------------------------------------------------------
+    # SPRINT 2 - FEATURE 1
+    # THREAT MAP SUMMARY
+    # ------------------------------------------------------
+
+    try:
+
+        threat_map_summary = (
+            get_threat_map_summary()
+        )
+
+    except Exception as error:
+
+        print(
+            f"Threat map summary error: "
+            f"{error}"
+        )
+
+        threat_map_summary = {
+
+            "total_mapped_threats": 0,
+
+            "unique_countries": 0,
+
+            "critical_threats": 0,
+
+            "high_risk_threats": 0
+        }
+
+
+    # ------------------------------------------------------
+    # RENDER DASHBOARD
+    # ------------------------------------------------------
+
     return templates.TemplateResponse(
+
         request=request,
+
         name="dashboard.html",
+
         context={
+
+            # ------------------------------------------
+            # CORE METRICS
+            # ------------------------------------------
 
             "total_alerts":
                 total_alerts,
@@ -792,10 +896,19 @@ async def dashboard(
             "mttr":
                 mttr,
 
+
+            # ------------------------------------------
+            # RECENT ALERTS
+            # ------------------------------------------
+
             "recent_alerts":
                 recent_alerts,
 
-            # Chart aliases
+
+            # ------------------------------------------
+            # CHART ALIASES
+            # ------------------------------------------
+
             "severity_chart":
                 severity_data,
 
@@ -808,7 +921,11 @@ async def dashboard(
             "risk_chart":
                 risk_distribution,
 
-            # Alternative variable names
+
+            # ------------------------------------------
+            # ALTERNATIVE CHART NAMES
+            # ------------------------------------------
+
             "severity_data":
                 severity_data,
 
@@ -819,9 +936,243 @@ async def dashboard(
                 daily_alerts,
 
             "risk_distribution":
-                risk_distribution
+                risk_distribution,
+
+
+            # ------------------------------------------
+            # SPRINT 2 - THREAT MAP
+            # ------------------------------------------
+
+            "threat_map_data":
+                threat_map_data,
+
+            "threat_map_summary":
+                threat_map_summary
         }
     )
+
+
+# ==========================================================
+# SPRINT 2 - FEATURE 1
+# THREAT MAP API
+# ==========================================================
+
+@app.get(
+    "/api/threat-map"
+)
+async def threat_map_api(
+    request: Request
+):
+
+    redirect = require_login(
+        request
+    )
+
+    if redirect:
+        return redirect
+
+
+    try:
+
+        threats = get_threat_map_data(
+            limit=500
+        )
+
+        return {
+
+            "status":
+                "success",
+
+            "count":
+                len(threats),
+
+            "threats":
+                threats
+        }
+
+    except Exception as error:
+
+        print(
+            f"Threat map API error: "
+            f"{error}"
+        )
+
+        raise HTTPException(
+
+            status_code=500,
+
+            detail=
+                "Unable to load threat map data"
+        )
+
+
+# ==========================================================
+# SPRINT 2 - FEATURE 1
+# THREAT MAP SUMMARY API
+# ==========================================================
+
+@app.get(
+    "/api/threat-map/summary"
+)
+async def threat_map_summary_api(
+    request: Request
+):
+
+    redirect = require_login(
+        request
+    )
+
+    if redirect:
+        return redirect
+
+
+    try:
+
+        summary = (
+            get_threat_map_summary()
+        )
+
+        return {
+
+            "status":
+                "success",
+
+            **summary
+        }
+
+    except Exception as error:
+
+        print(
+            f"Threat map summary error: "
+            f"{error}"
+        )
+
+        raise HTTPException(
+
+            status_code=500,
+
+            detail=
+                "Unable to load threat map summary"
+        )
+
+
+# ==========================================================
+# SPRINT 2 - FEATURE 2
+# ADVANCED ALERT SEARCH PAGE
+# ==========================================================
+
+@app.get(
+    "/alerts",
+    response_class=HTMLResponse
+)
+async def alerts_page(
+    request: Request
+):
+
+    redirect = require_login(
+        request
+    )
+
+    if redirect:
+        return redirect
+
+    try:
+
+        result = search_alerts(
+            limit=50,
+            offset=0
+        )
+
+        alerts = result.get(
+            "alerts",
+            []
+        )
+
+        total = result.get(
+            "total",
+            0
+        )
+
+    except Exception as error:
+
+        print(
+            f"Alert page search error: {error}"
+        )
+
+        alerts = []
+        total = 0
+
+    return templates.TemplateResponse(
+        request=request,
+        name="alerts.html",
+        context={
+            "alerts": alerts,
+            "total": total
+        }
+    )
+
+
+# ==========================================================
+# SPRINT 2 - FEATURE 2
+# ADVANCED ALERT SEARCH API
+# ==========================================================
+
+@app.get(
+    "/api/alerts/search"
+)
+async def alert_search_api(
+    request: Request,
+    search: Optional[str] = None,
+    severity: Optional[str] = None,
+    risk_level: Optional[str] = None,
+    status: Optional[str] = None,
+    alert_type: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0
+):
+
+    redirect = require_login(
+        request
+    )
+
+    if redirect:
+        return redirect
+
+    try:
+
+        result = search_alerts(
+            search=search,
+            severity=severity,
+            risk_level=risk_level,
+            status=status,
+            alert_type=alert_type,
+            date_from=date_from,
+            date_to=date_to,
+            limit=limit,
+            offset=offset
+        )
+
+        return {
+            "status": "success",
+            "count": len(result["alerts"]),
+            "total": result["total"],
+            "limit": result["limit"],
+            "offset": result["offset"],
+            "alerts": result["alerts"]
+        }
+
+    except Exception as error:
+
+        print(
+            f"Alert search API error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to search alerts"
+        )
 
 
 # ==========================================================
@@ -832,13 +1183,14 @@ async def dashboard(
     "/",
     response_class=HTMLResponse
 )
-
 async def execute_dashboard(
 
     request: Request,
 
     alert_id: str = Form(...),
+
     alert_type: str = Form(...),
+
     severity: str = Form(...),
 
     source_ip: str = Form(...),
@@ -887,11 +1239,10 @@ async def execute_dashboard(
         )
 
 
-    # Redirect instead of rendering the
-    # dashboard with potentially stale data
-
     return RedirectResponse(
+
         url="/",
+
         status_code=303
     )
 
@@ -903,7 +1254,6 @@ async def execute_dashboard(
 @app.post(
     "/alerts"
 )
-
 async def receive_alert(
     alert: AlertRequest
 ):
@@ -920,7 +1270,9 @@ async def receive_alert(
     except ValueError as error:
 
         raise HTTPException(
+
             status_code=400,
+
             detail=str(error)
         )
 
@@ -933,79 +1285,142 @@ async def receive_alert(
         )
 
         raise HTTPException(
+
             status_code=500,
-            detail="SOAR alert processing failed"
+
+            detail=
+                "SOAR alert processing failed"
         )
 
 
 # ==========================================================
-# END OF PART 1
-# PART 2 CONTINUES DIRECTLY BELOW
-# ==========================================================
-# ==========================================================
 # WAZUH WEBHOOK
 # ==========================================================
 
-@app.post("/wazuh/webhook")
-async def wazuh_webhook(alert: WazuhAlertRequest):
+@app.post(
+    "/wazuh/webhook"
+)
+async def wazuh_webhook(
+    alert: WazuhAlertRequest
+):
 
     wazuh_data = alert.model_dump()
 
-    rule = wazuh_data.get("rule", {})
-    agent = wazuh_data.get("agent", {})
-    data = wazuh_data.get("data", {})
+    rule = wazuh_data.get(
+        "rule",
+        {}
+    )
 
-    rule_level = rule.get("level", 0)
+    agent = wazuh_data.get(
+        "agent",
+        {}
+    )
+
+    data = wazuh_data.get(
+        "data",
+        {}
+    )
+
+
+    rule_level = rule.get(
+        "level",
+        0
+    )
+
 
     # ------------------------------------------------------
     # MAP WAZUH LEVEL TO SOAR SEVERITY
     # ------------------------------------------------------
 
     try:
-        rule_level = int(rule_level)
-    except (ValueError, TypeError):
+
+        rule_level = int(
+            rule_level
+        )
+
+    except (
+        ValueError,
+        TypeError
+    ):
+
         rule_level = 0
 
+
     if rule_level >= 12:
+
         severity = "CRITICAL"
+
     elif rule_level >= 8:
+
         severity = "HIGH"
+
     elif rule_level >= 5:
+
         severity = "MEDIUM"
+
     else:
+
         severity = "LOW"
+
 
     # ------------------------------------------------------
     # CREATE SOAR ALERT
     # ------------------------------------------------------
 
-    timestamp = wazuh_data.get("timestamp")
+    timestamp = wazuh_data.get(
+        "timestamp"
+    )
 
     if not timestamp:
+
         timestamp = datetime.now().isoformat()
 
+
     alert_id = (
+
         f"WAZUH-"
+
         f"{rule.get('id', 'UNKNOWN')}-"
+
         f"{int(time.time() * 1000)}"
     )
 
+
     soar_alert = {
-        "alert_id": alert_id,
-        "alert_type": rule.get(
-            "description",
-            "Wazuh Security Alert"
-        ),
-        "severity": severity,
-        "source_ip": agent.get("ip"),
+
+        "alert_id":
+            alert_id,
+
+        "alert_type":
+            rule.get(
+                "description",
+                "Wazuh Security Alert"
+            ),
+
+        "severity":
+            severity,
+
+        "source_ip":
+            agent.get("ip"),
+
         "attacker_ip": (
+
             data.get("srcip")
+
             or data.get("src_ip")
+
             or data.get("source_ip")
         ),
-        "description": wazuh_data.get("full_log"),
-        "timestamp": timestamp
+
+        "description":
+            wazuh_data.get(
+                "full_log"
+            ),
+
+        "timestamp":
+            timestamp
     }
+
 
     try:
 
@@ -1014,20 +1429,31 @@ async def wazuh_webhook(alert: WazuhAlertRequest):
         )
 
         return {
-            "message": "Wazuh alert received and processed",
-            "wazuh_alert": wazuh_data,
-            "soar_result": result
+
+            "message":
+                "Wazuh alert received and processed",
+
+            "wazuh_alert":
+                wazuh_data,
+
+            "soar_result":
+                result
         }
+
 
     except Exception as error:
 
         print(
-            f"Wazuh processing error: {error}"
+            f"Wazuh processing error: "
+            f"{error}"
         )
 
         raise HTTPException(
+
             status_code=500,
-            detail="Failed to process Wazuh alert"
+
+            detail=
+                "Failed to process Wazuh alert"
         )
 
 
@@ -1039,20 +1465,31 @@ async def wazuh_webhook(alert: WazuhAlertRequest):
     "/incidents",
     response_class=HTMLResponse
 )
-async def incidents_page(request: Request):
+async def incidents_page(
+    request: Request
+):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
 
+
     incidents = get_all_incidents()
 
+
     return templates.TemplateResponse(
+
         request=request,
+
         name="incidents.html",
+
         context={
-            "incidents": incidents
+
+            "incidents":
+                incidents
         }
     )
 
@@ -1061,29 +1498,43 @@ async def incidents_page(request: Request):
 # INCIDENT API DETAILS
 # ==========================================================
 
-@app.get("/incidents/{incident_id}")
+@app.get(
+    "/incidents/{incident_id}"
+)
 async def incident_details(
+
     incident_id: str,
+
     request: Request
 ):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
+
 
     incident = get_incident_by_id(
         incident_id
     )
 
+
     if not incident:
 
         raise HTTPException(
+
             status_code=404,
-            detail="Incident not found"
+
+            detail=
+                "Incident not found"
         )
 
-    return dict(incident)
+
+    return dict(
+        incident
+    )
 
 
 # ==========================================================
@@ -1095,36 +1546,54 @@ async def incident_details(
     response_class=HTMLResponse
 )
 async def incident_dashboard(
+
     incident_id: str,
+
     request: Request
 ):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
+
 
     incident = get_incident_by_id(
         incident_id
     )
 
+
     if not incident:
 
         raise HTTPException(
+
             status_code=404,
-            detail="Incident not found"
+
+            detail=
+                "Incident not found"
         )
+
 
     activity = get_incident_activity(
         incident_id
     )
 
+
     return templates.TemplateResponse(
+
         request=request,
+
         name="incident_dashboard.html",
+
         context={
-            "incident": incident,
-            "activity": activity
+
+            "incident":
+                incident,
+
+            "activity":
+                activity
         }
     )
 
@@ -1141,18 +1610,27 @@ async def incidents_dashboard(
     request: Request
 ):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
 
+
     incidents = get_all_incidents()
 
+
     return templates.TemplateResponse(
+
         request=request,
+
         name="incidents.html",
+
         context={
-            "incidents": incidents
+
+            "incidents":
+                incidents
         }
     )
 
@@ -1167,32 +1645,48 @@ async def incidents_dashboard(
 async def dashboard_update_status(
 
     incident_id: str,
+
     request: Request,
+
     status: str = Form(...)
 ):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
 
+
     update_incident_status(
+
         incident_id,
+
         status
     )
 
+
     log_incident_activity(
+
         incident_id,
+
         "STATUS_UPDATED",
+
         f"Incident status changed to {status}",
+
         request.session.get(
             "username",
             "Analyst"
         )
     )
 
+
     return RedirectResponse(
-        url=f"/incidents/dashboard/{incident_id}",
+
+        url=
+            f"/incidents/dashboard/{incident_id}",
+
         status_code=303
     )
 
@@ -1203,34 +1697,53 @@ async def dashboard_update_status(
 async def api_update_status(
 
     incident_id: str,
+
     data: IncidentStatusRequest,
+
     request: Request
 ):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
 
+
     update_incident_status(
+
         incident_id,
+
         data.status
     )
 
+
     log_incident_activity(
+
         incident_id,
+
         "STATUS_UPDATED",
+
         f"Incident status changed to {data.status}",
+
         request.session.get(
             "username",
             "Analyst"
         )
     )
 
+
     return {
-        "message": "Incident status updated",
-        "incident_id": incident_id,
-        "status": data.status
+
+        "message":
+            "Incident status updated",
+
+        "incident_id":
+            incident_id,
+
+        "status":
+            data.status
     }
 
 
@@ -1244,32 +1757,48 @@ async def api_update_status(
 async def dashboard_assign_analyst(
 
     incident_id: str,
+
     request: Request,
+
     assigned_to: str = Form(...)
 ):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
 
+
     assign_analyst(
+
         incident_id,
+
         assigned_to
     )
 
+
     log_incident_activity(
+
         incident_id,
+
         "ANALYST_ASSIGNED",
+
         f"Incident assigned to {assigned_to}",
+
         request.session.get(
             "username",
             "System"
         )
     )
 
+
     return RedirectResponse(
-        url=f"/incidents/dashboard/{incident_id}",
+
+        url=
+            f"/incidents/dashboard/{incident_id}",
+
         status_code=303
     )
 
@@ -1280,34 +1809,53 @@ async def dashboard_assign_analyst(
 async def api_assign_analyst(
 
     incident_id: str,
+
     data: AssignRequest,
+
     request: Request
 ):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
 
+
     assign_analyst(
+
         incident_id,
+
         data.assigned_to
     )
 
+
     log_incident_activity(
+
         incident_id,
+
         "ANALYST_ASSIGNED",
+
         f"Incident assigned to {data.assigned_to}",
+
         request.session.get(
             "username",
             "System"
         )
     )
 
+
     return {
-        "message": "Analyst assigned",
-        "incident_id": incident_id,
-        "assigned_to": data.assigned_to
+
+        "message":
+            "Analyst assigned",
+
+        "incident_id":
+            incident_id,
+
+        "assigned_to":
+            data.assigned_to
     }
 
 
@@ -1321,32 +1869,48 @@ async def api_assign_analyst(
 async def dashboard_add_notes(
 
     incident_id: str,
+
     request: Request,
+
     notes: str = Form(...)
 ):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
 
+
     add_analyst_note(
+
         incident_id,
+
         notes
     )
 
+
     log_incident_activity(
+
         incident_id,
+
         "NOTE_ADDED",
+
         "Analyst added an investigation note",
+
         request.session.get(
             "username",
             "Analyst"
         )
     )
 
+
     return RedirectResponse(
-        url=f"/incidents/dashboard/{incident_id}",
+
+        url=
+            f"/incidents/dashboard/{incident_id}",
+
         status_code=303
     )
 
@@ -1357,33 +1921,50 @@ async def dashboard_add_notes(
 async def api_add_notes(
 
     incident_id: str,
+
     data: NotesRequest,
+
     request: Request
 ):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
 
+
     add_analyst_note(
+
         incident_id,
+
         data.notes
     )
 
+
     log_incident_activity(
+
         incident_id,
+
         "NOTE_ADDED",
+
         "Analyst added an investigation note",
+
         request.session.get(
             "username",
             "Analyst"
         )
     )
 
+
     return {
-        "message": "Analyst note added",
-        "incident_id": incident_id
+
+        "message":
+            "Analyst note added",
+
+        "incident_id":
+            incident_id
     }
 
 
@@ -1391,25 +1972,36 @@ async def api_add_notes(
 # DELETE INCIDENT
 # ==========================================================
 
-@app.delete("/incidents/{incident_id}")
+@app.delete(
+    "/incidents/{incident_id}"
+)
 async def remove_incident(
 
     incident_id: str,
+
     request: Request
 ):
 
-    admin_check = require_admin(request)
+    admin_check = require_admin(
+        request
+    )
 
     if admin_check:
         return admin_check
+
 
     delete_incident(
         incident_id
     )
 
+
     return {
-        "message": "Incident deleted",
-        "incident_id": incident_id
+
+        "message":
+            "Incident deleted",
+
+        "incident_id":
+            incident_id
     }
 
 
@@ -1417,52 +2009,103 @@ async def remove_incident(
 # CSV EXPORT
 # ==========================================================
 
-@app.get("/incidents/export/csv")
-async def export_csv(request: Request):
+@app.get(
+    "/incidents/export/csv"
+)
+async def export_csv(
+    request: Request
+):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
+
 
     incidents = export_incidents()
 
     output = io.StringIO()
 
-    writer = csv.writer(output)
+    writer = csv.writer(
+        output
+    )
+
 
     writer.writerow([
+
         "Incident ID",
+
         "Alert ID",
+
         "Title",
+
         "Priority",
+
         "Status",
+
         "Assigned To",
+
         "Created At"
     ])
 
+
     for incident in incidents:
 
-        row = dict(incident)
+        row = dict(
+            incident
+        )
 
         writer.writerow([
-            row.get("incident_id"),
-            row.get("alert_id"),
-            row.get("title"),
-            row.get("priority"),
-            row.get("incident_status"),
-            row.get("assigned_to"),
-            row.get("created_at")
+
+            row.get(
+                "incident_id"
+            ),
+
+            row.get(
+                "alert_id"
+            ),
+
+            row.get(
+                "title"
+            ),
+
+            row.get(
+                "priority"
+            ),
+
+            row.get(
+                "incident_status"
+            ),
+
+            row.get(
+                "assigned_to"
+            ),
+
+            row.get(
+                "created_at"
+            )
         ])
+
 
     output.seek(0)
 
+
     return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
+
+        iter([
+            output.getvalue()
+        ]),
+
+        media_type=
+            "text/csv",
+
         headers={
+
             "Content-Disposition":
-                "attachment; filename=soar_incidents.csv"
+                "attachment; "
+                "filename=soar_incidents.csv"
         }
     )
 
@@ -1471,82 +2114,160 @@ async def export_csv(request: Request):
 # PDF EXPORT
 # ==========================================================
 
-@app.get("/incidents/export/pdf")
-async def export_pdf(request: Request):
+@app.get(
+    "/incidents/export/pdf"
+)
+async def export_pdf(
+    request: Request
+):
 
-    redirect = require_login(request)
+    redirect = require_login(
+        request
+    )
 
     if redirect:
         return redirect
+
 
     incidents = export_incidents()
 
     buffer = io.BytesIO()
 
+
     document = SimpleDocTemplate(
         buffer
     )
 
+
     styles = getSampleStyleSheet()
 
+
     title = Paragraph(
+
         "SOAR Incident Report",
+
         styles["Title"]
     )
 
+
     data = [[
+
         "Incident ID",
+
         "Alert ID",
+
         "Priority",
+
         "Status",
+
         "Assigned To"
     ]]
 
+
     for incident in incidents:
 
-        row = dict(incident)
+        row = dict(
+            incident
+        )
 
         data.append([
-            str(row.get("incident_id", "")),
-            str(row.get("alert_id", "")),
-            str(row.get("priority", "")),
-            str(row.get("incident_status", "")),
-            str(row.get("assigned_to", ""))
+
+            str(
+                row.get(
+                    "incident_id",
+                    ""
+                )
+            ),
+
+            str(
+                row.get(
+                    "alert_id",
+                    ""
+                )
+            ),
+
+            str(
+                row.get(
+                    "priority",
+                    ""
+                )
+            ),
+
+            str(
+                row.get(
+                    "incident_status",
+                    ""
+                )
+            ),
+
+            str(
+                row.get(
+                    "assigned_to",
+                    ""
+                )
+            )
         ])
 
-    table = Table(data)
+
+    table = Table(
+        data
+    )
+
 
     table.setStyle(
+
         TableStyle([
+
             (
+
                 "GRID",
+
                 (0, 0),
+
                 (-1, -1),
+
                 1,
+
                 colors.black
             ),
+
             (
+
                 "BACKGROUND",
+
                 (0, 0),
+
                 (-1, 0),
+
                 colors.lightgrey
             )
         ])
     )
 
+
     document.build([
+
         title,
+
         table
     ])
 
+
     buffer.seek(0)
 
+
     return StreamingResponse(
+
         buffer,
-        media_type="application/pdf",
+
+        media_type=
+            "application/pdf",
+
         headers={
+
             "Content-Disposition":
-                "attachment; filename=soar_incidents.pdf"
+                "attachment; "
+                "filename=soar_incidents.pdf"
         }
     )
 
@@ -1570,13 +2291,20 @@ async def admin_users(
     if admin_check:
         return admin_check
 
+
     users = get_all_users()
 
+
     return templates.TemplateResponse(
+
         request=request,
+
         name="users.html",
+
         context={
-            "users": users
+
+            "users":
+                users
         }
     )
 
@@ -1594,8 +2322,11 @@ async def login_page(
 ):
 
     return templates.TemplateResponse(
+
         request=request,
+
         name="login.html",
+
         context={}
     )
 
@@ -1604,48 +2335,77 @@ async def login_page(
 # LOGIN ACTION
 # ==========================================================
 
-@app.post("/login")
+@app.post(
+    "/login"
+)
 async def login(
 
     request: Request,
 
     username: str = Form(...),
+
     password: str = Form(...)
 ):
 
     user = authenticate_user(
+
         username,
+
         password
     )
+
 
     if not user:
 
         return templates.TemplateResponse(
+
             request=request,
+
             name="login.html",
+
             context={
+
                 "error":
                     "Invalid username or password"
             },
+
             status_code=401
         )
 
-    user_data = dict(user)
+
+    user_data = dict(
+        user
+    )
+
 
     request.session["username"] = (
-        user_data.get("username")
+
+        user_data.get(
+            "username"
+        )
     )
+
 
     request.session["role"] = (
-        user_data.get("role")
+
+        user_data.get(
+            "role"
+        )
     )
+
 
     request.session["full_name"] = (
-        user_data.get("full_name")
+
+        user_data.get(
+            "full_name"
+        )
     )
 
+
     return RedirectResponse(
+
         url="/",
+
         status_code=303
     )
 
@@ -1654,15 +2414,20 @@ async def login(
 # LOGOUT
 # ==========================================================
 
-@app.get("/logout")
+@app.get(
+    "/logout"
+)
 async def logout(
     request: Request
 ):
 
     request.session.clear()
 
+
     return RedirectResponse(
+
         url="/login",
+
         status_code=303
     )
 
@@ -1671,13 +2436,19 @@ async def logout(
 # HEALTH CHECK
 # ==========================================================
 
-@app.get("/health")
+@app.get(
+    "/health"
+)
 async def health_check():
 
     return {
-        "status": "healthy",
+
+        "status":
+            "healthy",
+
         "service":
             "SOAR Incident Containment Engine",
+
         "timestamp":
             datetime.now().isoformat()
     }

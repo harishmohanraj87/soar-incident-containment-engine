@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}SOAR Dashboard{% endblock %}
+{% block title %}SOAR Command Center{% endblock %}
 
 {% block page_title %}
 SOC Command Center
@@ -8,137 +8,1506 @@ SOC Command Center
 
 {% block content %}
 
-<!-- ================================================= -->
-<!-- KPI CARDS -->
-<!-- ================================================= -->
+<style>
 
-<div class="row">
+/* ==========================================================
+   SOAR COMMAND CENTER
+   SPRINT 2 - FEATURE 1
+   FUTURISTIC SOC DASHBOARD
+   ========================================================== */
 
-    <div class="col-lg-2 col-md-4 col-sm-6">
+:root {
+    --soc-bg: #080b14;
+    --soc-panel: rgba(14, 19, 32, 0.88);
+    --soc-panel-2: rgba(18, 25, 42, 0.92);
+    --soc-border: rgba(125, 145, 190, 0.16);
+    --soc-text: #eef3ff;
+    --soc-muted: #7f8ba6;
+    --soc-blue: #5d7cff;
+    --soc-cyan: #25d9ff;
+    --soc-purple: #9b6cff;
+    --soc-red: #ff4d67;
+    --soc-orange: #ff9f43;
+    --soc-yellow: #f6c945;
+    --soc-green: #2bd576;
+    --soc-shadow: 0 18px 50px rgba(0,0,0,.28);
+}
 
-        <div class="small-box bg-info">
+.soc-dashboard {
+    color: var(--soc-text);
+}
 
-            <div class="inner">
+/* ==========================================================
+   HERO
+   ========================================================== */
 
-                <h3>{{ total_alerts|default(0) }}</h3>
+.soc-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 210px;
+    padding: 36px 40px;
+    margin-bottom: 28px;
+    border: 1px solid var(--soc-border);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(93,124,255,.16), transparent 32%),
+        radial-gradient(circle at 80% 70%, rgba(37,217,255,.09), transparent 30%),
+        linear-gradient(135deg, #0b1020, #101729);
+    box-shadow: var(--soc-shadow);
+}
 
-                <p>Total Alerts</p>
+.soc-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+    background-size: 34px 34px;
+    pointer-events: none;
+}
 
-            </div>
+.soc-hero-content,
+.system-status {
+    position: relative;
+    z-index: 1;
+}
 
-            <div class="icon">
+.soc-eyebrow,
+.section-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    font-weight: 700;
+    color: #8390ae;
+}
 
+.soc-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+}
+
+.soc-hero h1 {
+    margin: 0;
+    font-size: clamp(34px, 4vw, 58px);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -2px;
+}
+
+.soc-hero h1 span {
+    background: linear-gradient(90deg, #6e84ff, #2edcff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.soc-hero p {
+    max-width: 650px;
+    margin: 16px 0 0;
+    color: #8e9ab5;
+    font-size: 14px;
+}
+
+.live-dot,
+.pulse-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--soc-green);
+    box-shadow: 0 0 0 5px rgba(43,213,118,.08),
+                0 0 16px rgba(43,213,118,.8);
+}
+
+.pulse-dot {
+    animation: socPulse 1.7s infinite;
+}
+
+@keyframes socPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.55);
+        opacity: .55;
+    }
+}
+
+.system-status {
+    min-width: 285px;
+    padding: 20px;
+    border: 1px solid rgba(43,213,118,.18);
+    border-radius: 16px;
+    background: rgba(5,10,18,.45);
+    backdrop-filter: blur(12px);
+}
+
+.system-status-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #b7ffd2;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+}
+
+.system-status-details {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 15px;
+    color: #7f8ba5;
+    font-size: 12px;
+}
+
+.system-status-details i {
+    width: 18px;
+    color: #6d83ff;
+}
+
+/* ==========================================================
+   SECTION HEADERS
+   ========================================================== */
+
+.dashboard-section {
+    margin-bottom: 28px;
+}
+
+.section-heading,
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.section-heading {
+    margin-bottom: 15px;
+}
+
+.section-heading h2,
+.panel-header h3 {
+    margin: 4px 0 0;
+    color: var(--soc-text);
+    font-weight: 750;
+}
+
+.section-heading h2 {
+    font-size: 22px;
+}
+
+.panel-header h3 {
+    font-size: 16px;
+}
+
+.section-live,
+.panel-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #7f8ba5;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* ==========================================================
+   METRIC CARDS
+   ========================================================== */
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+}
+
+.metric-card {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 112px;
+    padding: 17px;
+    border: 1px solid var(--soc-border);
+    border-radius: 17px;
+    background: linear-gradient(
+        145deg,
+        rgba(18,25,42,.94),
+        rgba(10,15,27,.94)
+    );
+    box-shadow: 0 12px 35px rgba(0,0,0,.18);
+    transition: transform .25s ease,
+                border-color .25s ease,
+                box-shadow .25s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(111,136,255,.3);
+    box-shadow: 0 18px 45px rgba(0,0,0,.3);
+}
+
+.metric-card::after {
+    content: "";
+    position: absolute;
+    right: -30px;
+    bottom: -40px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(93,124,255,.05);
+}
+
+.metric-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 43px;
+    width: 43px;
+    height: 43px;
+    border-radius: 12px;
+    font-size: 17px;
+}
+
+.metric-blue {
+    color: #79a0ff;
+    background: rgba(93,124,255,.13);
+}
+
+.metric-red {
+    color: #ff657c;
+    background: rgba(255,77,103,.13);
+}
+
+.metric-orange {
+    color: #ffae58;
+    background: rgba(255,159,67,.13);
+}
+
+.metric-green {
+    color: #42e68a;
+    background: rgba(43,213,118,.13);
+}
+
+.metric-purple {
+    color: #b58aff;
+    background: rgba(155,108,255,.13);
+}
+
+.metric-cyan {
+    color: #4de2ff;
+    background: rgba(37,217,255,.13);
+}
+
+.metric-content {
+    min-width: 0;
+}
+
+.metric-content span {
+    display: block;
+    color: #78859f;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+}
+
+.metric-content h3 {
+    margin: 4px 0 1px;
+    color: #f4f7ff;
+    font-size: 25px;
+    font-weight: 800;
+}
+
+.metric-content small {
+    color: #5e6a83;
+    font-size: 9px;
+}
+
+/* ==========================================================
+   COMMAND PANELS
+   ========================================================== */
+
+.command-panel {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+    padding: 22px;
+    border: 1px solid var(--soc-border);
+    border-radius: 18px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(17,24,40,.94),
+            rgba(9,14,25,.95)
+        );
+    box-shadow: 0 15px 45px rgba(0,0,0,.2);
+}
+
+.command-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(105,133,255,.5),
+        transparent
+    );
+}
+
+.chart-container {
+    position: relative;
+    height: 260px;
+    margin-top: 15px;
+}
+
+.chart-large {
+    height: 310px;
+}
+
+.automation-badge,
+.success-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border-radius: 20px;
+    color: #75ffa9;
+    background: rgba(43,213,118,.08);
+    border: 1px solid rgba(43,213,118,.14);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+/* ==========================================================
+   ATTACK MAP
+   ========================================================== */
+
+.attack-map-panel {
+    padding: 0;
+}
+
+.attack-map-header {
+    padding: 22px 22px 16px;
+}
+
+.map-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.map-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    color: #4de2ff;
+    background: rgba(37,217,255,.08);
+    border: 1px solid rgba(37,217,255,.14);
+    font-size: 17px;
+}
+
+.map-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.map-refresh {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border: 1px solid rgba(93,124,255,.2);
+    border-radius: 8px;
+    color: #9cadce;
+    background: rgba(93,124,255,.06);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 700;
+    transition: .2s ease;
+}
+
+.map-refresh:hover {
+    color: #fff;
+    border-color: rgba(93,124,255,.45);
+    background: rgba(93,124,255,.12);
+}
+
+.map-refresh.loading i {
+    animation: rotateMap .8s linear infinite;
+}
+
+@keyframes rotateMap {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.map-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 0 22px 18px;
+}
+
+.map-stat {
+    padding: 12px 14px;
+    border: 1px solid rgba(125,145,190,.1);
+    border-radius: 11px;
+    background: rgba(5,9,17,.48);
+}
+
+.map-stat-label {
+    display: block;
+    color: #66728b;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.map-stat-value {
+    display: block;
+    margin-top: 3px;
+    color: #edf3ff;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.map-stat.critical .map-stat-value {
+    color: #ff5c73;
+}
+
+.map-stat.high .map-stat-value {
+    color: #ffad55;
+}
+
+.map-wrapper {
+    position: relative;
+    overflow: hidden;
+    height: 470px;
+    border-top: 1px solid rgba(125,145,190,.12);
+    background: #060b14;
+}
+
+#threatMap {
+    width: 100%;
+    height: 100%;
+    background: #07101c;
+}
+
+.leaflet-container {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: #07101c;
+}
+
+.leaflet-control-zoom {
+    border: 1px solid rgba(125,145,190,.2) !important;
+}
+
+.leaflet-control-zoom a {
+    color: #b9c6df !important;
+    background: rgba(9,15,27,.9) !important;
+    border-color: rgba(125,145,190,.15) !important;
+}
+
+.map-overlay {
+    position: absolute;
+    z-index: 500;
+    pointer-events: none;
+}
+
+.map-live {
+    top: 15px;
+    left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border: 1px solid rgba(43,213,118,.2);
+    border-radius: 7px;
+    color: #9fffc0;
+    background: rgba(5,12,18,.82);
+    backdrop-filter: blur(8px);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.map-legend {
+    right: 15px;
+    bottom: 15px;
+    padding: 12px 13px;
+    border: 1px solid rgba(125,145,190,.15);
+    border-radius: 10px;
+    background: rgba(5,10,18,.87);
+    backdrop-filter: blur(10px);
+}
+
+.legend-title {
+    margin-bottom: 8px;
+    color: #7e8ba6;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 5px;
+    color: #aeb9ce;
+    font-size: 9px;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legend-critical {
+    background: #ff3d5b;
+    box-shadow: 0 0 10px rgba(255,61,91,.7);
+}
+
+.legend-high {
+    background: #ff9d3d;
+    box-shadow: 0 0 10px rgba(255,157,61,.7);
+}
+
+.legend-medium {
+    background: #f1c84b;
+}
+
+.legend-low {
+    background: #32d583;
+}
+
+.map-empty {
+    position: absolute;
+    z-index: 600;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.map-empty-card {
+    max-width: 380px;
+    padding: 28px;
+    border: 1px solid rgba(125,145,190,.15);
+    border-radius: 15px;
+    text-align: center;
+    background: rgba(7,12,22,.9);
+    backdrop-filter: blur(12px);
+}
+
+.map-empty-card i {
+    margin-bottom: 12px;
+    color: #52627e;
+    font-size: 30px;
+}
+
+.map-empty-card h4 {
+    margin: 0 0 7px;
+    color: #cbd5e9;
+    font-size: 14px;
+}
+
+.map-empty-card p {
+    margin: 0;
+    color: #66738d;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.map-marker {
+    position: relative;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.9);
+}
+
+.map-marker::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: .4;
+    animation: markerPulse 1.8s infinite;
+}
+
+.map-marker.critical {
+    color: #ff3d5b;
+    background: #ff3d5b;
+    box-shadow: 0 0 17px rgba(255,61,91,.9);
+}
+
+.map-marker.high {
+    color: #ff9d3d;
+    background: #ff9d3d;
+    box-shadow: 0 0 15px rgba(255,157,61,.85);
+}
+
+.map-marker.medium {
+    color: #f1c84b;
+    background: #f1c84b;
+    box-shadow: 0 0 13px rgba(241,200,75,.75);
+}
+
+.map-marker.low {
+    color: #32d583;
+    background: #32d583;
+    box-shadow: 0 0 12px rgba(50,213,131,.65);
+}
+
+@keyframes markerPulse {
+    0% {
+        transform: scale(.75);
+        opacity: .7;
+    }
+    70% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+}
+
+.threat-popup {
+    min-width: 235px;
+}
+
+.threat-popup-title {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #263149;
+    color: #edf3ff;
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.threat-popup-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 4px 0;
+    color: #7e8ba6;
+    font-size: 10px;
+}
+
+.threat-popup-row strong {
+    color: #cbd5e8;
+    text-align: right;
+}
+
+.threat-popup-risk {
+    color: #ff637a !important;
+}
+
+/* ==========================================================
+   THREAT POSTURE
+   ========================================================== */
+
+.threat-score-container {
+    display: flex;
+    justify-content: center;
+    padding: 27px 0;
+}
+
+.threat-score-ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 175px;
+    height: 175px;
+    border-radius: 50%;
+    background:
+        radial-gradient(
+            circle,
+            #10182a 57%,
+            transparent 58%
+        ),
+        conic-gradient(
+            #ff4d67 0deg,
+            #ff9f43 110deg,
+            #596fff 190deg,
+            #1d273d 190deg
+        );
+    box-shadow: 0 0 45px rgba(93,124,255,.12);
+}
+
+.threat-score-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.threat-score-value {
+    color: #f5f7ff;
+    font-size: 34px;
+    font-weight: 850;
+}
+
+.threat-score-label {
+    margin-top: -2px;
+    color: #78849e;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.threat-posture-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    border-top: 1px solid rgba(125,145,190,.1);
+}
+
+.threat-posture-footer span {
+    display: block;
+    color: #69758e;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.threat-posture-footer strong {
+    display: block;
+    margin-top: 4px;
+    color: #65e9a0;
+    font-size: 11px;
+}
+
+.threat-posture-footer i {
+    color: #657bff;
+    font-size: 22px;
+}
+
+/* ==========================================================
+   AUTOMATION PIPELINE
+   ========================================================== */
+
+.pipeline-container {
+    margin-top: 18px;
+}
+
+.pipeline-step {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 10px;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    transition: .2s ease;
+}
+
+.pipeline-step:hover {
+    background: rgba(93,124,255,.04);
+    border-color: rgba(93,124,255,.08);
+}
+
+.pipeline-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 35px;
+    width: 35px;
+    height: 35px;
+    border-radius: 9px;
+    color: #7f91ff;
+    background: rgba(93,124,255,.09);
+}
+
+.pipeline-info {
+    flex: 1;
+}
+
+.pipeline-info span {
+    display: block;
+    color: #536078;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.pipeline-info strong {
+    display: block;
+    margin-top: 1px;
+    color: #d7deed;
+    font-size: 11px;
+}
+
+.pipeline-info small {
+    display: block;
+    margin-top: 2px;
+    color: #626e87;
+    font-size: 9px;
+}
+
+.pipeline-status {
+    color: #44e78b;
+    font-size: 11px;
+}
+
+.pipeline-line {
+    width: 1px;
+    height: 9px;
+    margin-left: 27px;
+    background: linear-gradient(
+        to bottom,
+        rgba(93,124,255,.4),
+        rgba(93,124,255,.05)
+    );
+}
+
+/* ==========================================================
+   THREAT INTELLIGENCE
+   ========================================================== */
+
+.intel-globe {
+    color: #43dcff;
+    font-size: 21px;
+}
+
+.intel-target {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid rgba(37,217,255,.1);
+    border-radius: 11px;
+    background: rgba(37,217,255,.035);
+}
+
+.intel-target span {
+    display: block;
+    color: #60708a;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.intel-target strong {
+    display: block;
+    margin-top: 5px;
+    color: #dce9ff;
+    font-family: monospace;
+    font-size: 17px;
+}
+
+.intel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.intel-stat {
+    padding: 13px;
+    border: 1px solid rgba(125,145,190,.1);
+    border-radius: 10px;
+    background: rgba(6,11,20,.42);
+}
+
+.intel-stat span {
+    display: block;
+    color: #64718a;
+    font-size: 9px;
+}
+
+.intel-stat strong {
+    display: block;
+    margin-top: 4px;
+    color: #cdd8ec;
+    font-size: 14px;
+}
+
+.intel-full {
+    grid-column: 1 / -1;
+}
+
+/* ==========================================================
+   RESULT
+   ========================================================== */
+
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.result-item {
+    padding: 13px;
+    border-radius: 10px;
+    border: 1px solid rgba(125,145,190,.1);
+    background: rgba(6,11,20,.4);
+}
+
+.result-item span {
+    display: block;
+    color: #66738b;
+    font-size: 9px;
+}
+
+.result-item strong {
+    display: block;
+    margin-top: 5px;
+    color: #d8e0ef;
+    font-size: 11px;
+    word-break: break-word;
+}
+
+/* ==========================================================
+   EVENTS TABLE
+   ========================================================== */
+
+.panel-link {
+    color: #7f91ff;
+    font-size: 10px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.panel-link:hover {
+    color: #b1bcff;
+}
+
+.soc-table {
+    width: 100%;
+    margin-top: 16px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.soc-table th {
+    padding: 10px 12px;
+    color: #5d6a83;
+    border-bottom: 1px solid rgba(125,145,190,.1);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-align: left;
+}
+
+.soc-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(125,145,190,.06);
+    color: #aeb9ce;
+    font-size: 10px;
+}
+
+.soc-table tbody tr {
+    transition: background .2s ease;
+}
+
+.soc-table tbody tr:hover {
+    background: rgba(93,124,255,.035);
+}
+
+.event-time {
+    color: #65718a !important;
+    white-space: nowrap;
+}
+
+.alert-id {
+    color: #91a4ff;
+    font-family: monospace;
+}
+
+.ip-address {
+    color: #b9c6df;
+    font-family: monospace;
+}
+
+.severity-badge {
+    display: inline-flex;
+    padding: 4px 7px;
+    border-radius: 5px;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.severity-critical {
+    color: #ff667c;
+    background: rgba(255,77,103,.1);
+}
+
+.severity-high {
+    color: #ffae59;
+    background: rgba(255,159,67,.1);
+}
+
+.severity-medium {
+    color: #f5ce56;
+    background: rgba(246,201,69,.1);
+}
+
+.severity-low {
+    color: #4de394;
+    background: rgba(43,213,118,.1);
+}
+
+.risk-score {
+    color: #d9e1f1;
+    font-weight: 800;
+}
+
+.event-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #77839b;
+}
+
+.status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #42dd8b;
+}
+
+.empty-events {
+    padding: 45px 20px;
+    text-align: center;
+}
+
+.empty-events i {
+    color: #4f5d76;
+    font-size: 25px;
+}
+
+.empty-events h4 {
+    margin: 10px 0 4px;
+    color: #aab5c9;
+    font-size: 13px;
+}
+
+.empty-events p {
+    margin: 0;
+    color: #59657d;
+    font-size: 10px;
+}
+
+/* ==========================================================
+   ALERT FORM
+   ========================================================== */
+
+.panel-description {
+    margin: 7px 0 0;
+    color: #64718a;
+    font-size: 10px;
+}
+
+.ingestion-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    color: #7f91ff;
+    background: rgba(93,124,255,.09);
+}
+
+.soc-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.soc-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.soc-form-group label {
+    color: #7d8aa4;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+}
+
+.soc-form-group input,
+.soc-form-group select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid rgba(125,145,190,.13);
+    border-radius: 8px;
+    outline: none;
+    color: #cbd5e7;
+    background: rgba(5,10,19,.6);
+    font-size: 11px;
+    transition: .2s ease;
+}
+
+.soc-form-group input:focus,
+.soc-form-group select:focus {
+    border-color: rgba(93,124,255,.5);
+    box-shadow: 0 0 0 3px rgba(93,124,255,.07);
+}
+
+.soc-form-action {
+    display: flex;
+    align-items: end;
+}
+
+.process-alert-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid rgba(93,124,255,.35);
+    border-radius: 8px;
+    color: #fff;
+    background: linear-gradient(
+        100deg,
+        #5269e8,
+        #596cff
+    );
+    box-shadow: 0 8px 22px rgba(82,105,232,.18);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 800;
+    transition: .2s ease;
+}
+
+.process-alert-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(82,105,232,.3);
+}
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+
+@media (max-width: 1300px) {
+
+    .metric-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+}
+
+@media (max-width: 992px) {
+
+    .soc-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 25px;
+    }
+
+    .system-status {
+        width: 100%;
+    }
+
+    .map-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .soc-form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .result-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .metric-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .map-wrapper {
+        height: 390px;
+    }
+
+    .soc-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .result-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+@media (max-width: 500px) {
+
+    .metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .map-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .soc-hero {
+        padding: 25px;
+    }
+
+    .command-panel {
+        padding: 16px;
+    }
+
+}
+
+</style>
+
+
+<div class="soc-dashboard">
+
+<!-- ==========================================================
+     COMMAND CENTER HERO
+     ========================================================== -->
+
+<section class="soc-hero">
+
+    <div class="soc-hero-content">
+
+        <div class="soc-eyebrow">
+            <span class="live-dot"></span>
+            SECURITY OPERATIONS PLATFORM
+        </div>
+
+        <h1>
+            SOAR Command
+            <span>Center</span>
+        </h1>
+
+        <p>
+            Real-time threat detection, automated analysis,
+            intelligence enrichment and incident containment.
+        </p>
+
+    </div>
+
+    <div class="system-status">
+
+        <div class="system-status-top">
+
+            <span class="status-indicator"></span>
+
+            <span>ALL SYSTEMS OPERATIONAL</span>
+
+        </div>
+
+        <div class="system-status-details">
+
+            <span>
+                <i class="fas fa-shield-alt"></i>
+                SOAR Engine Online
+            </span>
+
+            <span>
+                <i class="fas fa-bolt"></i>
+                Automation Ready
+            </span>
+
+            <span>
+                <i class="fas fa-globe"></i>
+                Geographic Intelligence Active
+            </span>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ==========================================================
+     SECURITY PULSE
+     ========================================================== -->
+
+<section class="dashboard-section">
+
+    <div class="section-heading">
+
+        <div>
+
+            <span class="section-label">
+                SYSTEM OVERVIEW
+            </span>
+
+            <h2>Security Pulse</h2>
+
+        </div>
+
+        <div class="section-live">
+
+            <span class="live-dot"></span>
+            LIVE DATA
+
+        </div>
+
+    </div>
+
+
+    <div class="metric-grid">
+
+        <div class="metric-card">
+
+            <div class="metric-icon metric-blue">
                 <i class="fas fa-bell"></i>
+            </div>
+
+            <div class="metric-content">
+
+                <span>Total Alerts</span>
+
+                <h3>
+                    {{ total_alerts|default(0) }}
+                </h3>
+
+                <small>
+                    Processed by engine
+                </small>
 
             </div>
 
         </div>
 
-    </div>
 
-    <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="metric-card">
 
-        <div class="small-box bg-danger">
-
-            <div class="inner">
-
-                <h3>{{ critical_alerts|default(0) }}</h3>
-
-                <p>Critical Alerts</p>
-
-            </div>
-
-            <div class="icon">
-
+            <div class="metric-icon metric-red">
                 <i class="fas fa-radiation"></i>
+            </div>
+
+            <div class="metric-content">
+
+                <span>Critical Threats</span>
+
+                <h3>
+                    {{ critical_alerts|default(0) }}
+                </h3>
+
+                <small>
+                    Immediate attention
+                </small>
 
             </div>
 
         </div>
 
-    </div>
 
-    <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="metric-card">
 
-        <div class="small-box bg-warning">
-
-            <div class="inner">
-
-                <h3>{{ incidents|default(0) }}</h3>
-
-                <p>Open Incidents</p>
-
-            </div>
-
-            <div class="icon">
-
+            <div class="metric-icon metric-orange">
                 <i class="fas fa-exclamation-triangle"></i>
+            </div>
+
+            <div class="metric-content">
+
+                <span>Open Incidents</span>
+
+                <h3>
+                    {{ incidents|default(0) }}
+                </h3>
+
+                <small>
+                    Active investigations
+                </small>
 
             </div>
 
         </div>
 
-    </div>
 
-    <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="metric-card">
 
-        <div class="small-box bg-success">
-
-            <div class="inner">
-
-                <h3>{{ blocked_ips|default(0) }}</h3>
-
-                <p>Blocked IPs</p>
-
-            </div>
-
-            <div class="icon">
-
+            <div class="metric-icon metric-green">
                 <i class="fas fa-ban"></i>
+            </div>
+
+            <div class="metric-content">
+
+                <span>Blocked IPs</span>
+
+                <h3>
+                    {{ blocked_ips|default(0) }}
+                </h3>
+
+                <small>
+                    Containment actions
+                </small>
 
             </div>
 
         </div>
 
-    </div>
 
-    <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="metric-card">
 
-        <div class="small-box bg-primary">
-
-            <div class="inner">
-
-                <h3>{{ playbooks|default(0) }}</h3>
-
-                <p>Playbooks</p>
-
-            </div>
-
-            <div class="icon">
-
+            <div class="metric-icon metric-purple">
                 <i class="fas fa-robot"></i>
+            </div>
+
+            <div class="metric-content">
+
+                <span>Playbook Runs</span>
+
+                <h3>
+                    {{ playbooks|default(0) }}
+                </h3>
+
+                <small>
+                    Automated responses
+                </small>
 
             </div>
 
         </div>
 
-    </div>
 
-    <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="metric-card">
 
-        <div class="small-box bg-secondary">
-
-            <div class="inner">
-
-                <h3>{{ mttr|default("2.4m") }}</h3>
-
-                <p>Average MTTR</p>
-
-            </div>
-
-            <div class="icon">
-
+            <div class="metric-icon metric-cyan">
                 <i class="fas fa-stopwatch"></i>
+            </div>
+
+            <div class="metric-content">
+
+                <span>Average MTTR</span>
+
+                <h3>
+                    {{ mttr|default("2.4m") }}
+                </h3>
+
+                <small>
+                    Mean response time
+                </small>
 
             </div>
 
@@ -146,478 +1515,869 @@ SOC Command Center
 
     </div>
 
-</div>
+</section>
 
-<!-- ================================================= -->
-<!-- ALERT SUBMISSION -->
-<!-- ================================================= -->
 
-<div class="card card-primary">
+<!-- ==========================================================
+     GLOBAL THREAT MAP
+     ========================================================== -->
 
-    <div class="card-header">
+<section class="command-panel attack-map-panel">
 
-        <h3 class="card-title">
+    <div class="attack-map-header">
 
-            <i class="fas fa-paper-plane mr-2"></i>
+        <div class="panel-header">
 
-            Submit Security Alert
+            <div class="map-title-row">
 
-        </h3>
+                <div class="map-icon">
+                    <i class="fas fa-globe-americas"></i>
+                </div>
+
+                <div>
+
+                    <span class="section-label">
+                        GEOGRAPHIC THREAT INTELLIGENCE
+                    </span>
+
+                    <h3>
+                        Global Attack Surface
+                    </h3>
+
+                </div>
+
+            </div>
+
+
+            <div class="map-actions">
+
+                <div class="panel-status">
+
+                    <span class="pulse-dot"></span>
+
+                    LIVE MAP
+
+                </div>
+
+                <button
+                    type="button"
+                    id="refreshThreatMap"
+                    class="map-refresh">
+
+                    <i class="fas fa-sync-alt"></i>
+
+                    Refresh
+
+                </button>
+
+            </div>
+
+        </div>
 
     </div>
 
-    <form method="POST" action="/">
 
-        <div class="card-body">
+    <!-- MAP SUMMARY -->
 
-            <div class="row">
+    <div class="map-summary">
 
-                <div class="col-md-6">
+        <div class="map-stat">
 
-                    <div class="form-group">
+            <span class="map-stat-label">
+                Mapped Threats
+            </span>
 
-                        <label>Alert ID</label>
+            <span
+                class="map-stat-value"
+                id="mappedThreats">
 
-                        <input
-                            type="text"
-                            name="alert_id"
-                            class="form-control"
-                            placeholder="ALT-3001"
-                            required>
+                {{ threat_map_summary.total_mapped_threats|default(0) }}
 
-                    </div>
+            </span>
 
-                </div>
+        </div>
 
-                <div class="col-md-6">
 
-                    <div class="form-group">
+        <div class="map-stat">
 
-                        <label>Alert Type</label>
+            <span class="map-stat-label">
+                Countries
+            </span>
 
-                        <select
-                            name="alert_type"
-                            class="form-control">
+            <span
+                class="map-stat-value"
+                id="mappedCountries">
 
-                            <option>Brute Force</option>
+                {{ threat_map_summary.unique_countries|default(0) }}
 
-                            <option>Malware</option>
+            </span>
 
-                            <option>Phishing</option>
+        </div>
 
-                            <option>SQL Injection</option>
 
-                            <option>Port Scan</option>
+        <div class="map-stat critical">
 
-                            <option>DDoS</option>
+            <span class="map-stat-label">
+                Critical
+            </span>
 
-                        </select>
+            <span
+                class="map-stat-value"
+                id="mappedCritical">
 
-                    </div>
+                {{ threat_map_summary.critical_threats|default(0) }}
 
-                </div>
+            </span>
 
+        </div>
+
+
+        <div class="map-stat high">
+
+            <span class="map-stat-label">
+                High Risk
+            </span>
+
+            <span
+                class="map-stat-value"
+                id="mappedHigh">
+
+                {{ threat_map_summary.high_risk_threats|default(0) }}
+
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- MAP -->
+
+    <div class="map-wrapper">
+
+        <div id="threatMap"></div>
+
+
+        <div class="map-overlay map-live">
+
+            <span class="live-dot"></span>
+
+            THREAT TELEMETRY ACTIVE
+
+        </div>
+
+
+        <div
+            class="map-overlay map-legend">
+
+            <div class="legend-title">
+                THREAT SEVERITY
             </div>
 
-            <div class="row">
+            <div class="legend-item">
+                <span class="legend-dot legend-critical"></span>
+                Critical
+            </div>
 
-                <div class="col-md-4">
+            <div class="legend-item">
+                <span class="legend-dot legend-high"></span>
+                High
+            </div>
 
-                    <div class="form-group">
+            <div class="legend-item">
+                <span class="legend-dot legend-medium"></span>
+                Medium
+            </div>
 
-                        <label>Severity</label>
+            <div class="legend-item">
+                <span class="legend-dot legend-low"></span>
+                Low
+            </div>
 
-                        <select
-                            name="severity"
-                            class="form-control">
+        </div>
 
-                            <option>LOW</option>
 
-                            <option>MEDIUM</option>
+        <div
+            id="mapEmptyState"
+            class="map-empty">
 
-                            <option>HIGH</option>
+            <div class="map-empty-card">
 
-                            <option selected>CRITICAL</option>
+                <i class="fas fa-satellite-dish"></i>
 
-                        </select>
+                <h4>
+                    Awaiting Geographic Telemetry
+                </h4>
 
-                    </div>
-
-                </div>
-
-                <div class="col-md-4">
-
-                    <div class="form-group">
-
-                        <label>Source IP</label>
-
-                        <input
-                            type="text"
-                            name="source_ip"
-                            class="form-control"
-                            placeholder="192.168.1.10"
-                            required>
-
-                    </div>
-
-                </div>
-
-                <div class="col-md-4">
-
-                    <div class="form-group">
-
-                        <label>Attacker IP</label>
-
-                        <input
-                            type="text"
-                            name="attacker_ip"
-                            class="form-control"
-                            placeholder="8.8.8.8"
-                            required>
-
-                    </div>
-
-                </div>
+                <p>
+                    No threat events with valid geographic
+                    coordinates are currently available.
+                    Enriched attacker IPs will appear here
+                    automatically.
+                </p>
 
             </div>
 
         </div>
 
-        <div class="card-footer">
+    </div>
 
-            <button
-                type="submit"
-                class="btn btn-primary">
+</section>
 
-                <i class="fas fa-play mr-2"></i>
 
-                Process Alert
-
-            </button>
-
-        </div>
-
-    </form>
-
-</div>
-<!-- ================================================= -->
-<!-- DASHBOARD ANALYTICS -->
-<!-- ================================================= -->
+<!-- ==========================================================
+     LIVE THREAT ACTIVITY + THREAT POSTURE
+     ========================================================== -->
 
 <div class="row">
-
-    <!-- Alert Trend -->
 
     <div class="col-lg-8">
 
-        <div class="card">
+        <section class="command-panel">
 
-            <div class="card-header">
+            <div class="panel-header">
 
-                <h3 class="card-title">
+                <div>
 
-                    <i class="fas fa-chart-line mr-2"></i>
+                    <span class="section-label">
+                        REAL-TIME MONITORING
+                    </span>
 
-                    Alert Trend
+                    <h3>
+                        Live Threat Activity
+                    </h3>
 
-                </h3>
+                </div>
+
+                <div class="panel-status">
+
+                    <span class="pulse-dot"></span>
+
+                    Monitoring
+
+                </div>
 
             </div>
 
-            <div class="card-body">
 
-                <canvas id="alertChart" height="120"></canvas>
+            <div class="chart-container chart-large">
+
+                <canvas id="alertChart"></canvas>
 
             </div>
 
-        </div>
+        </section>
 
     </div>
 
-    <!-- Severity Distribution -->
 
     <div class="col-lg-4">
 
-        <div class="card">
+        <section class="command-panel">
 
-            <div class="card-header">
+            <div class="panel-header">
 
-                <h3 class="card-title">
+                <div>
 
-                    Severity Distribution
+                    <span class="section-label">
+                        RISK ANALYSIS
+                    </span>
 
-                </h3>
+                    <h3>
+                        Threat Posture
+                    </h3>
+
+                </div>
 
             </div>
 
-            <div class="card-body">
+
+            <div class="threat-score-container">
+
+                <div class="threat-score-ring">
+
+                    <div class="threat-score-inner">
+
+                        <span class="threat-score-value">
+
+                            {{ high_risk|default(0) }}
+
+                        </span>
+
+                        <span class="threat-score-label">
+                            HIGH RISK
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="threat-posture-footer">
+
+                <div>
+
+                    <span>Current Posture</span>
+
+                    <strong>MONITORED</strong>
+
+                </div>
+
+                <i class="fas fa-shield-alt"></i>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>
+
+
+<!-- ==========================================================
+     ANALYTICS
+     ========================================================== -->
+
+<div class="row">
+
+    <div class="col-lg-4">
+
+        <section class="command-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <span class="section-label">
+                        ALERT ANALYSIS
+                    </span>
+
+                    <h3>
+                        Severity Distribution
+                    </h3>
+
+                </div>
+
+            </div>
+
+            <div class="chart-container">
 
                 <canvas id="severityChart"></canvas>
 
             </div>
 
-        </div>
+        </section>
+
+    </div>
+
+
+    <div class="col-lg-4">
+
+        <section class="command-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <span class="section-label">
+                        INCIDENT MANAGEMENT
+                    </span>
+
+                    <h3>
+                        Incident Status
+                    </h3>
+
+                </div>
+
+            </div>
+
+            <div class="chart-container">
+
+                <canvas id="statusChart"></canvas>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <div class="col-lg-4">
+
+        <section class="command-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <span class="section-label">
+                        ENGINE ANALYSIS
+                    </span>
+
+                    <h3>
+                        Risk Distribution
+                    </h3>
+
+                </div>
+
+            </div>
+
+            <div class="chart-container">
+
+                <canvas id="riskChart"></canvas>
+
+            </div>
+
+        </section>
 
     </div>
 
 </div>
 
+
+<!-- ==========================================================
+     AUTOMATION + INTELLIGENCE
+     ========================================================== -->
 
 <div class="row">
 
-    <!-- Incident Status -->
+    <div class="col-lg-7">
 
-    <div class="col-lg-6">
+        <section class="command-panel">
 
-        <div class="card">
+            <div class="panel-header">
 
-            <div class="card-header">
+                <div>
 
-                <h3 class="card-title">
+                    <span class="section-label">
+                        AUTOMATED RESPONSE
+                    </span>
 
-                    Incident Status
+                    <h3>
+                        SOAR Automation Pipeline
+                    </h3>
 
-                </h3>
+                </div>
+
+                <div class="automation-badge">
+
+                    <i class="fas fa-bolt"></i>
+
+                    ACTIVE
+
+                </div>
 
             </div>
 
-            <div class="card-body">
 
-                <canvas id="statusChart" height="180"></canvas>
+            <div class="pipeline-container">
+
+                <div class="pipeline-step completed">
+
+                    <div class="pipeline-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+
+                    <div class="pipeline-info">
+
+                        <span>01</span>
+
+                        <strong>Alert Received</strong>
+
+                        <small>
+                            Security event ingested
+                        </small>
+
+                    </div>
+
+                    <div class="pipeline-status">
+                        <i class="fas fa-check"></i>
+                    </div>
+
+                </div>
+
+
+                <div class="pipeline-line"></div>
+
+
+                <div class="pipeline-step completed">
+
+                    <div class="pipeline-icon">
+                        <i class="fas fa-filter"></i>
+                    </div>
+
+                    <div class="pipeline-info">
+
+                        <span>02</span>
+
+                        <strong>Normalized</strong>
+
+                        <small>
+                            Alert structure validated
+                        </small>
+
+                    </div>
+
+                    <div class="pipeline-status">
+                        <i class="fas fa-check"></i>
+                    </div>
+
+                </div>
+
+
+                <div class="pipeline-line"></div>
+
+
+                <div class="pipeline-step completed">
+
+                    <div class="pipeline-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+
+                    <div class="pipeline-info">
+
+                        <span>03</span>
+
+                        <strong>Threat Intelligence</strong>
+
+                        <small>
+                            IOC enrichment completed
+                        </small>
+
+                    </div>
+
+                    <div class="pipeline-status">
+                        <i class="fas fa-check"></i>
+                    </div>
+
+                </div>
+
+
+                <div class="pipeline-line"></div>
+
+
+                <div class="pipeline-step completed">
+
+                    <div class="pipeline-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+
+                    <div class="pipeline-info">
+
+                        <span>04</span>
+
+                        <strong>Geographic Enrichment</strong>
+
+                        <small>
+                            Attacker location resolved
+                        </small>
+
+                    </div>
+
+                    <div class="pipeline-status">
+                        <i class="fas fa-check"></i>
+                    </div>
+
+                </div>
+
+
+                <div class="pipeline-line"></div>
+
+
+                <div class="pipeline-step completed">
+
+                    <div class="pipeline-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+
+                    <div class="pipeline-info">
+
+                        <span>05</span>
+
+                        <strong>Risk Analysis</strong>
+
+                        <small>
+                            Threat score calculated
+                        </small>
+
+                    </div>
+
+                    <div class="pipeline-status">
+                        <i class="fas fa-check"></i>
+                    </div>
+
+                </div>
+
+
+                <div class="pipeline-line"></div>
+
+
+                <div class="pipeline-step active">
+
+                    <div class="pipeline-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+
+                    <div class="pipeline-info">
+
+                        <span>06</span>
+
+                        <strong>Playbook Execution</strong>
+
+                        <small>
+                            Automated response engine
+                        </small>
+
+                    </div>
+
+                    <div class="pipeline-status">
+                        <span class="pulse-dot"></span>
+                    </div>
+
+                </div>
+
+
+                <div class="pipeline-line"></div>
+
+
+                <div class="pipeline-step">
+
+                    <div class="pipeline-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+
+                    <div class="pipeline-info">
+
+                        <span>07</span>
+
+                        <strong>Containment</strong>
+
+                        <small>
+                            Incident response action
+                        </small>
+
+                    </div>
+
+                </div>
 
             </div>
 
-        </div>
+        </section>
 
     </div>
 
-    <!-- Risk Distribution -->
 
-    <div class="col-lg-6">
+    <div class="col-lg-5">
 
-        <div class="card">
+        <section class="command-panel">
 
-            <div class="card-header">
+            <div class="panel-header">
 
-                <h3 class="card-title">
+                <div>
 
-                    Risk Distribution
+                    <span class="section-label">
+                        INTELLIGENCE
+                    </span>
 
-                </h3>
+                    <h3>
+                        Threat Intelligence
+                    </h3>
+
+                </div>
+
+                <i class="fas fa-globe intel-globe"></i>
 
             </div>
 
-            <div class="card-body">
 
-                <canvas id="riskChart" height="180"></canvas>
+            <div class="intel-target">
+
+                <span>PRIMARY IOC</span>
+
+                <strong>
+                    {{ top_ip|default("No IOC Available") }}
+                </strong>
 
             </div>
 
-        </div>
+
+            <div class="intel-grid">
+
+                <div class="intel-stat">
+
+                    <span>Abuse Score</span>
+
+                    <strong>
+                        {{ abuse_score|default("--") }}
+                    </strong>
+
+                </div>
+
+
+                <div class="intel-stat">
+
+                    <span>VirusTotal</span>
+
+                    <strong>
+                        {{ vt_score|default("--") }}
+                    </strong>
+
+                </div>
+
+
+                <div class="intel-stat intel-full">
+
+                    <span>Origin</span>
+
+                    <strong>
+                        {{ country|default("Unknown") }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
 
     </div>
 
 </div>
 
-<!-- ================================================= -->
-<!-- PLAYBOOK RESULT -->
-<!-- ================================================= -->
+
+<!-- ==========================================================
+     LATEST PLAYBOOK RESULT
+     ========================================================== -->
 
 {% if result %}
 
-<div class="card card-success">
+<section class="command-panel">
 
-    <div class="card-header">
+    <div class="panel-header">
 
-        <h3 class="card-title">
+        <div>
 
-            Latest Playbook Result
+            <span class="section-label">
+                AUTOMATION RESULT
+            </span>
 
-        </h3>
+            <h3>
+                Latest Playbook Execution
+            </h3>
 
-    </div>
+        </div>
 
-    <div class="card-body">
+        <div class="success-status">
 
-        <table class="table table-bordered">
+            <span class="live-dot"></span>
 
-            <tr>
-
-                <th>Status</th>
-
-                <td>{{ result.get("status","-") }}</td>
-
-            </tr>
-
-            <tr>
-
-                <th>Action</th>
-
-                <td>{{ result.get("action","-") }}}</td>
-
-            </tr>
-
-            <tr>
-
-                <th>Target</th>
-
-                <td>{{ result.get("target","-") }}</td>
-
-            </tr>
-
-            <tr>
-
-                <th>Timestamp</th>
-
-                <td>{{ result.get("timestamp","-") }}</td>
-
-            </tr>
-
-        </table>
-
-    </div>
-
-</div>
-
-{% endif %}<!-- ================================================= -->
-<!-- THREAT INTELLIGENCE + PLAYBOOK -->
-<!-- ================================================= -->
-
-<div class="row">
-
-    <div class="col-lg-6">
-
-        <div class="card card-danger">
-
-            <div class="card-header">
-
-                <h3 class="card-title">
-
-                    Threat Intelligence
-
-                </h3>
-
-            </div>
-
-            <div class="card-body">
-
-                <table class="table table-bordered">
-
-                    <tr>
-
-                        <th>Attacker IP</th>
-
-                        <td>{{ top_ip|default("N/A") }}</td>
-
-                    </tr>
-
-                    <tr>
-
-                        <th>Abuse Score</th>
-
-                        <td>{{ abuse_score|default("--") }}</td>
-
-                    </tr>
-
-                    <tr>
-
-                        <th>VirusTotal</th>
-
-                        <td>{{ vt_score|default("--") }}</td>
-
-                    </tr>
-
-                    <tr>
-
-                        <th>Country</th>
-
-                        <td>{{ country|default("--") }}</td>
-
-                    </tr>
-
-                </table>
-
-            </div>
+            COMPLETED
 
         </div>
 
     </div>
 
-    <div class="col-lg-6">
 
-        <div class="card card-success">
+    <div class="result-grid">
 
-            <div class="card-header">
+        <div class="result-item">
 
-                <h3 class="card-title">
+            <span>Status</span>
 
-                    SOAR Automation
+            <strong>
+                {{ result.get("status", "-") }}
+            </strong>
 
-                </h3>
+        </div>
 
-            </div>
 
-            <div class="card-body">
+        <div class="result-item">
 
-                <ul class="timeline">
+            <span>Action</span>
 
-                    <li>✔ Alert Parsed</li>
+            <strong>
+                {{ result.get("action", "-") }}
+            </strong>
 
-                    <li>✔ Alert Normalized</li>
+        </div>
 
-                    <li>✔ Threat Intelligence Enrichment</li>
 
-                    <li>✔ Risk Score Calculated</li>
+        <div class="result-item">
 
-                    <li>✔ Playbook Executed</li>
+            <span>Target</span>
 
-                    <li>✔ Incident Created</li>
+            <strong>
+                {{ result.get("target", "-") }}
+            </strong>
 
-                </ul>
+        </div>
 
-            </div>
+
+        <div class="result-item">
+
+            <span>Timestamp</span>
+
+            <strong>
+                {{ result.get("timestamp", "-") }}
+            </strong>
 
         </div>
 
     </div>
 
-</div>
+</section>
 
-<!-- ================================================= -->
-<!-- RECENT ALERTS -->
-<!-- ================================================= -->
+{% endif %}
 
-<div class="card">
 
-    <div class="card-header">
+<!-- ==========================================================
+     LIVE SECURITY EVENTS
+     ========================================================== -->
 
-        <h3 class="card-title">
+<section class="command-panel">
 
-            Recent Alerts
+    <div class="panel-header">
 
-        </h3>
+        <div>
+
+            <span class="section-label">
+                EVENT STREAM
+            </span>
+
+            <h3>
+                Live Security Events
+            </h3>
+
+        </div>
+
+        <a
+            href="/incidents/dashboard"
+            class="panel-link">
+
+            View Incidents
+
+            <i class="fas fa-arrow-right"></i>
+
+        </a>
 
     </div>
 
-    <div class="card-body table-responsive">
 
-        <table class="table table-hover">
+    <div class="table-responsive">
+
+        <table class="soc-table">
 
             <thead>
 
                 <tr>
 
-                    <th>Time</th>
-
-                    <th>Alert ID</th>
-
-                    <th>Source IP</th>
-
-                    <th>Severity</th>
-
-                    <th>Risk</th>
-
-                    <th>Status</th>
+                    <th>TIME</th>
+                    <th>ALERT ID</th>
+                    <th>ATTACKER</th>
+                    <th>SEVERITY</th>
+                    <th>RISK</th>
+                    <th>STATUS</th>
 
                 </tr>
 
@@ -626,20 +2386,106 @@ SOC Command Center
             <tbody>
 
                 {% for alert in recent_alerts %}
+
                 <tr>
-                    <td>{{ alert[5] }}</td>
 
-                        <td>{{ alert[0] }}</td>
+                    <td class="event-time">
 
-                        <td>{{ alert[1] }}</td>
+                        {{ alert.get("created_at", "-") }}
 
-                        <td>{{ alert[2] }}</td>
+                    </td>
 
-                        <td>{{ alert[3] }}</td>
 
-                        <td>{{ alert[4] }}</td>
-                     </tr>
-                    {% endfor %}
+                    <td>
+
+                        <span class="alert-id">
+
+                            {{ alert.get("alert_id", "-") }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="ip-address">
+
+                            {{ alert.get("attacker_ip")
+                               or alert.get("source_ip")
+                               or "-" }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        {% set severity =
+                            alert.get("severity", "LOW")|upper %}
+
+                        <span
+                            class="severity-badge severity-{{ severity|lower }}">
+
+                            {{ severity }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="risk-score">
+
+                            {{ alert.get("risk_score", 0) }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="event-status">
+
+                            <span class="status-dot"></span>
+
+                            {{ alert.get("status", "NEW") }}
+
+                        </span>
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="6">
+
+                        <div class="empty-events">
+
+                            <i class="fas fa-satellite-dish"></i>
+
+                            <h4>
+                                No Security Events Yet
+                            </h4>
+
+                            <p>
+                                The SOAR engine is waiting
+                                for incoming alerts.
+                            </p>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
 
             </tbody>
 
@@ -647,118 +2493,1286 @@ SOC Command Center
 
     </div>
 
+</section>
+
+
+<!-- ==========================================================
+     ALERT SUBMISSION
+     ========================================================== -->
+
+<section class="command-panel">
+
+    <div class="panel-header">
+
+        <div>
+
+            <span class="section-label">
+                ALERT INGESTION
+            </span>
+
+            <h3>
+                Submit Security Event
+            </h3>
+
+            <p class="panel-description">
+
+                Send a security alert through the complete
+                SOAR detection and containment pipeline.
+
+            </p>
+
+        </div>
+
+        <div class="ingestion-icon">
+
+            <i class="fas fa-paper-plane"></i>
+
+        </div>
+
+    </div>
+
+
+    <form method="POST" action="/">
+
+        <div class="soc-form-grid">
+
+            <div class="soc-form-group">
+
+                <label>Alert ID</label>
+
+                <input
+                    type="text"
+                    name="alert_id"
+                    placeholder="ALT-3001"
+                    required>
+
+            </div>
+
+
+            <div class="soc-form-group">
+
+                <label>Alert Type</label>
+
+                <select name="alert_type">
+
+                    <option>Brute Force</option>
+                    <option>Malware</option>
+                    <option>Phishing</option>
+                    <option>SQL Injection</option>
+                    <option>Port Scan</option>
+                    <option>DDoS</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="soc-form-group">
+
+                <label>Severity</label>
+
+                <select name="severity">
+
+                    <option>LOW</option>
+                    <option>MEDIUM</option>
+                    <option>HIGH</option>
+                    <option selected>CRITICAL</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="soc-form-group">
+
+                <label>Source IP</label>
+
+                <input
+                    type="text"
+                    name="source_ip"
+                    placeholder="192.168.1.10"
+                    required>
+
+            </div>
+
+
+            <div class="soc-form-group">
+
+                <label>Attacker IP</label>
+
+                <input
+                    type="text"
+                    name="attacker_ip"
+                    placeholder="8.8.8.8"
+                    required>
+
+            </div>
+
+
+            <div class="soc-form-action">
+
+                <button
+                    type="submit"
+                    class="process-alert-btn">
+
+                    <span>
+                        Process Alert
+                    </span>
+
+                    <i class="fas fa-arrow-right"></i>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</section>
+
 </div>
 
+
 {% endblock %}
+
 
 {% block scripts %}
 
 <script>
 
-// ================================
-// Prepare Dashboard Data
-// ================================
+/* ==========================================================
+   SERVER DATA
+   ========================================================== */
 
 const severityData = {{ severity_chart | tojson }};
 const statusData = {{ status_chart | tojson }};
 const dailyData = {{ daily_chart | tojson }};
 const riskData = {{ risk_chart | tojson }};
 
-// ================================
-// Alert Trend
-// ================================
+const initialThreatMapData =
+    {{ threat_map_data | tojson }};
 
-new Chart(document.getElementById("alertChart"), {
 
-    type: "line",
+/* ==========================================================
+   CHART HELPERS
+   ========================================================== */
 
-    data: {
+function chartPair(item) {
 
-        labels: dailyData.map(x => x[0]),
+    if (Array.isArray(item)) {
 
-        datasets: [{
-
-            label: "Alerts",
-
-            data: dailyData.map(x => x[1]),
-
-            borderWidth: 2,
-
-            fill: false
-
-        }]
+        return {
+            label: item[0],
+            value: item[1]
+        };
 
     }
 
-});
+    if (item && typeof item === "object") {
 
-// ================================
-// Severity Distribution
-// ================================
+        return {
+            label:
+                item.label ??
+                item.name ??
+                item.severity ??
+                item.status ??
+                item.risk_level ??
+                item.date ??
+                item[0] ??
+                "-",
 
-new Chart(document.getElementById("severityChart"), {
-
-    type: "pie",
-
-    data: {
-
-        labels: severityData.map(x => x[0]),
-
-        datasets: [{
-
-            data: severityData.map(x => x[1])
-
-        }]
-
-    }
-
-});
-
-// ================================
-// Incident Status
-// ================================
-
-new Chart(document.getElementById("statusChart"), {
-
-    type: "bar",
-
-    data: {
-
-        labels: statusData.map(x => x[0]),
-
-        datasets: [{
-
-            label: "Incidents",
-
-            data: statusData.map(x => x[1])
-
-        }]
+            value:
+                item.value ??
+                item.count ??
+                item.total ??
+                item[1] ??
+                0
+        };
 
     }
 
-});
+    return {
+        label: "-",
+        value: 0
+    };
+}
 
-// ================================
-// Risk Distribution
-// ================================
 
-new Chart(document.getElementById("riskChart"), {
+function normalizeChartData(data) {
 
-    type: "doughnut",
+    if (!Array.isArray(data)) {
+        return [];
+    }
 
-    data: {
+    return data.map(chartPair);
 
-        labels: riskData.map(x => x[0]),
+}
 
-        datasets: [{
 
-            data: riskData.map(x => x[1])
+/* ==========================================================
+   CHART DEFAULTS
+   ========================================================== */
 
-        }]
+Chart.defaults.color = "#8f9bb3";
+
+Chart.defaults.font.family =
+    "'Inter', 'Segoe UI', sans-serif";
+
+
+/* ==========================================================
+   LIVE THREAT ACTIVITY
+   ========================================================== */
+
+const normalizedDaily =
+    normalizeChartData(dailyData);
+
+
+new Chart(
+    document.getElementById("alertChart"),
+    {
+
+        type: "line",
+
+        data: {
+
+            labels:
+                normalizedDaily.map(
+                    item => item.label
+                ),
+
+            datasets: [
+
+                {
+
+                    label: "Security Alerts",
+
+                    data:
+                        normalizedDaily.map(
+                            item => item.value
+                        ),
+
+                    borderColor: "#6c7cff",
+
+                    backgroundColor:
+                        "rgba(108,124,255,0.10)",
+
+                    borderWidth: 3,
+
+                    fill: true,
+
+                    tension: 0.42,
+
+                    pointRadius: 3,
+
+                    pointHoverRadius: 6,
+
+                    pointBackgroundColor:
+                        "#8f9bff"
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            interaction: {
+                intersect: false,
+                mode: "index"
+            },
+
+            plugins: {
+
+                legend: {
+                    display: false
+                }
+
+            },
+
+            scales: {
+
+                x: {
+
+                    grid: {
+                        display: false
+                    },
+
+                    ticks: {
+                        color: "#77819b"
+                    }
+
+                },
+
+                y: {
+
+                    beginAtZero: true,
+
+                    grid: {
+                        color:
+                            "rgba(255,255,255,0.05)"
+                    },
+
+                    ticks: {
+                        color: "#77819b"
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+);
+
+
+/* ==========================================================
+   SEVERITY DISTRIBUTION
+   ========================================================== */
+
+const normalizedSeverity =
+    normalizeChartData(severityData);
+
+
+new Chart(
+    document.getElementById("severityChart"),
+    {
+
+        type: "doughnut",
+
+        data: {
+
+            labels:
+                normalizedSeverity.map(
+                    item => item.label
+                ),
+
+            datasets: [
+
+                {
+
+                    data:
+                        normalizedSeverity.map(
+                            item => item.value
+                        ),
+
+                    backgroundColor: [
+
+                        "#ef4444",
+                        "#f97316",
+                        "#eab308",
+                        "#38bdf8"
+
+                    ],
+
+                    borderWidth: 0,
+
+                    hoverOffset: 8
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            cutout: "70%",
+
+            plugins: {
+
+                legend: {
+
+                    position: "bottom",
+
+                    labels: {
+
+                        padding: 20,
+
+                        usePointStyle: true
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+);
+
+
+/* ==========================================================
+   INCIDENT STATUS
+   ========================================================== */
+
+const normalizedStatus =
+    normalizeChartData(statusData);
+
+
+new Chart(
+    document.getElementById("statusChart"),
+    {
+
+        type: "bar",
+
+        data: {
+
+            labels:
+                normalizedStatus.map(
+                    item => item.label
+                ),
+
+            datasets: [
+
+                {
+
+                    label: "Incidents",
+
+                    data:
+                        normalizedStatus.map(
+                            item => item.value
+                        ),
+
+                    backgroundColor:
+                        "#6c7cff",
+
+                    borderRadius: 8,
+
+                    borderSkipped: false
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    display: false
+                }
+
+            },
+
+            scales: {
+
+                x: {
+
+                    grid: {
+                        display: false
+                    }
+
+                },
+
+                y: {
+
+                    beginAtZero: true,
+
+                    grid: {
+
+                        color:
+                            "rgba(255,255,255,0.05)"
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+);
+
+
+/* ==========================================================
+   RISK DISTRIBUTION
+   ========================================================== */
+
+const normalizedRisk =
+    normalizeChartData(riskData);
+
+
+new Chart(
+    document.getElementById("riskChart"),
+    {
+
+        type: "doughnut",
+
+        data: {
+
+            labels:
+                normalizedRisk.map(
+                    item => item.label
+                ),
+
+            datasets: [
+
+                {
+
+                    data:
+                        normalizedRisk.map(
+                            item => item.value
+                        ),
+
+                    backgroundColor: [
+
+                        "#ef4444",
+                        "#f97316",
+                        "#eab308",
+                        "#22c55e"
+
+                    ],
+
+                    borderWidth: 0,
+
+                    hoverOffset: 8
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            cutout: "72%",
+
+            plugins: {
+
+                legend: {
+
+                    position: "bottom",
+
+                    labels: {
+
+                        padding: 18,
+
+                        usePointStyle: true
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+);
+
+
+/* ==========================================================
+   GLOBAL ATTACK MAP
+   ========================================================== */
+
+let threatMap = null;
+
+let threatMarkers = [];
+
+
+/* ----------------------------------------------------------
+   CREATE MAP
+   ---------------------------------------------------------- */
+
+function initializeThreatMap() {
+
+    if (typeof L === "undefined") {
+
+        console.error(
+            "Leaflet is not available."
+        );
+
+        return;
 
     }
 
-});
+
+    threatMap = L.map(
+        "threatMap",
+        {
+            zoomControl: true,
+            worldCopyJump: true,
+            minZoom: 2,
+            maxZoom: 12
+        }
+    ).setView(
+        [25, 10],
+        2
+    );
+
+
+    L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+            maxZoom: 19,
+            attribution:
+                '&copy; OpenStreetMap contributors'
+        }
+    ).addTo(
+        threatMap
+    );
+
+
+    renderThreatMarkers(
+        initialThreatMapData || []
+    );
+
+}
+
+
+/* ----------------------------------------------------------
+   RISK CLASS
+   ---------------------------------------------------------- */
+
+function getRiskClass(threat) {
+
+    const riskLevel =
+        String(
+            threat.risk_level ||
+            threat.severity ||
+            "LOW"
+        ).toUpperCase();
+
+
+    if (
+        riskLevel === "CRITICAL"
+    ) {
+
+        return "critical";
+
+    }
+
+
+    if (
+        riskLevel === "HIGH"
+    ) {
+
+        return "high";
+
+    }
+
+
+    if (
+        riskLevel === "MEDIUM"
+    ) {
+
+        return "medium";
+
+    }
+
+
+    return "low";
+
+}
+
+
+/* ----------------------------------------------------------
+   MARKER ICON
+   ---------------------------------------------------------- */
+
+function createThreatIcon(
+    threat
+) {
+
+    const riskClass =
+        getRiskClass(threat);
+
+
+    return L.divIcon({
+
+        className:
+            "threat-marker-wrapper",
+
+        html:
+            `<div class="map-marker ${riskClass}"></div>`,
+
+        iconSize: [17, 17],
+
+        iconAnchor: [8, 8],
+
+        popupAnchor: [0, -9]
+
+    });
+
+}
+
+
+/* ----------------------------------------------------------
+   POPUP
+   ---------------------------------------------------------- */
+
+function createThreatPopup(
+    threat
+) {
+
+    const ip =
+        threat.attacker_ip ||
+        "-";
+
+    const city =
+        threat.city ||
+        "Unknown";
+
+    const region =
+        threat.region ||
+        "Unknown";
+
+    const country =
+        threat.country ||
+        "Unknown";
+
+    const org =
+        threat.org ||
+        "Unknown";
+
+    const severity =
+        threat.severity ||
+        threat.risk_level ||
+        "LOW";
+
+    const riskScore =
+        threat.risk_score ??
+        0;
+
+    const alertId =
+        threat.alert_id ||
+        "-";
+
+    const alertType =
+        threat.alert_type ||
+        "Unknown";
+
+    const status =
+        threat.status ||
+        "NEW";
+
+    const action =
+        threat.action_taken ||
+        "Pending";
+
+    const createdAt =
+        threat.created_at ||
+        "-";
+
+
+    return `
+
+        <div class="threat-popup">
+
+            <div class="threat-popup-title">
+
+                <i class="fas fa-crosshairs"></i>
+
+                Threat Origin
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Attacker IP</span>
+
+                <strong>
+                    ${escapeHtml(ip)}
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Location</span>
+
+                <strong>
+                    ${escapeHtml(city)},
+                    ${escapeHtml(country)}
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Region</span>
+
+                <strong>
+                    ${escapeHtml(region)}
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Organization</span>
+
+                <strong>
+                    ${escapeHtml(org)}
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Alert</span>
+
+                <strong>
+                    ${escapeHtml(alertType)}
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Severity</span>
+
+                <strong class="threat-popup-risk">
+                    ${escapeHtml(severity)}
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Risk Score</span>
+
+                <strong class="threat-popup-risk">
+                    ${escapeHtml(String(riskScore))}/100
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Status</span>
+
+                <strong>
+                    ${escapeHtml(status)}
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Action</span>
+
+                <strong>
+                    ${escapeHtml(action)}
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Alert ID</span>
+
+                <strong>
+                    ${escapeHtml(alertId)}
+                </strong>
+
+            </div>
+
+
+            <div class="threat-popup-row">
+
+                <span>Detected</span>
+
+                <strong>
+                    ${escapeHtml(createdAt)}
+                </strong>
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+/* ----------------------------------------------------------
+   HTML ESCAPE
+   ---------------------------------------------------------- */
+
+function escapeHtml(
+    value
+) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.textContent =
+        value == null
+            ? ""
+            : String(value);
+
+    return div.innerHTML;
+
+}
+
+
+/* ----------------------------------------------------------
+   RENDER MARKERS
+   ---------------------------------------------------------- */
+
+function renderThreatMarkers(
+    threats
+) {
+
+    if (!threatMap) {
+        return;
+    }
+
+
+    threatMarkers.forEach(
+        marker => {
+
+            threatMap.removeLayer(
+                marker
+            );
+
+        }
+    );
+
+
+    threatMarkers = [];
+
+
+    let validThreatCount = 0;
+
+
+    if (!Array.isArray(threats)) {
+
+        threats = [];
+
+    }
+
+
+    threats.forEach(
+        threat => {
+
+            const latitude =
+                Number(
+                    threat.latitude
+                );
+
+            const longitude =
+                Number(
+                    threat.longitude
+                );
+
+
+            if (
+                !Number.isFinite(latitude) ||
+                !Number.isFinite(longitude)
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                latitude < -90 ||
+                latitude > 90 ||
+                longitude < -180 ||
+                longitude > 180
+            ) {
+
+                return;
+
+            }
+
+
+            const marker =
+                L.marker(
+                    [latitude, longitude],
+                    {
+                        icon:
+                            createThreatIcon(
+                                threat
+                            )
+                    }
+                );
+
+
+            marker.bindPopup(
+                createThreatPopup(
+                    threat
+                )
+            );
+
+
+            marker.addTo(
+                threatMap
+            );
+
+
+            threatMarkers.push(
+                marker
+            );
+
+
+            validThreatCount++;
+
+        }
+    );
+
+
+    const emptyState =
+        document.getElementById(
+            "mapEmptyState"
+        );
+
+
+    if (emptyState) {
+
+        emptyState.style.display =
+            validThreatCount === 0
+                ? "flex"
+                : "none";
+
+    }
+
+
+    if (
+        validThreatCount > 0
+    ) {
+
+        const bounds =
+            L.latLngBounds(
+                threatMarkers.map(
+                    marker =>
+                        marker.getLatLng()
+                )
+            );
+
+
+        if (
+            bounds.isValid()
+        ) {
+
+            threatMap.fitBounds(
+                bounds.pad(.25),
+                {
+                    maxZoom: 5,
+                    animate: true
+                }
+            );
+
+        }
+
+    }
+
+}
+
+
+/* ----------------------------------------------------------
+   LOAD MAP DATA
+   ---------------------------------------------------------- */
+
+async function loadThreatMap() {
+
+    const button =
+        document.getElementById(
+            "refreshThreatMap"
+        );
+
+
+    if (button) {
+
+        button.classList.add(
+            "loading"
+        );
+
+    }
+
+
+    try {
+
+        const [
+            threatsResponse,
+            summaryResponse
+        ] = await Promise.all([
+
+            fetch(
+                "/api/threat-map",
+                {
+                    credentials: "same-origin"
+                }
+            ),
+
+            fetch(
+                "/api/threat-map/summary",
+                {
+                    credentials: "same-origin"
+                }
+            )
+
+        ]);
+
+
+        if (
+            !threatsResponse.ok ||
+            !summaryResponse.ok
+        ) {
+
+            throw new Error(
+                "Threat map request failed"
+            );
+
+        }
+
+
+        const threatPayload =
+            await threatsResponse.json();
+
+
+        const summaryPayload =
+            await summaryResponse.json();
+
+
+        renderThreatMarkers(
+            threatPayload.threats || []
+        );
+
+
+        updateMapSummary(
+            summaryPayload
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Unable to refresh threat map:",
+            error
+        );
+
+    } finally {
+
+        if (button) {
+
+            button.classList.remove(
+                "loading"
+            );
+
+        }
+
+    }
+
+}
+
+
+/* ----------------------------------------------------------
+   UPDATE MAP SUMMARY
+   ---------------------------------------------------------- */
+
+function updateMapSummary(
+    summary
+) {
+
+    document.getElementById(
+        "mappedThreats"
+    ).textContent =
+        summary.total_mapped_threats ??
+        0;
+
+
+    document.getElementById(
+        "mappedCountries"
+    ).textContent =
+        summary.unique_countries ??
+        0;
+
+
+    document.getElementById(
+        "mappedCritical"
+    ).textContent =
+        summary.critical_threats ??
+        0;
+
+
+    document.getElementById(
+        "mappedHigh"
+    ).textContent =
+        summary.high_risk_threats ??
+        0;
+
+}
+
+
+/* ----------------------------------------------------------
+   REFRESH BUTTON
+   ---------------------------------------------------------- */
+
+document
+    .getElementById(
+        "refreshThreatMap"
+    )
+    .addEventListener(
+        "click",
+        loadThreatMap
+    );
+
+
+/* ----------------------------------------------------------
+   INITIALIZE
+   ---------------------------------------------------------- */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        initializeThreatMap();
+
+    }
+);
+
+
+/* ----------------------------------------------------------
+   AUTO REFRESH
+   ----------------------------------------------------------
+
+   Refresh geographic telemetry every 30 seconds.
+   This does not reload the entire dashboard.
+   ---------------------------------------------------------- */
+
+setInterval(
+    loadThreatMap,
+    30000
+);
 
 </script>
 

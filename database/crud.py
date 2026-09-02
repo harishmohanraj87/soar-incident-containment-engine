@@ -27,6 +27,9 @@ def save_alert(alert: dict):
     """
     Save a normalized alert.
 
+    Geographic threat intelligence is also persisted when
+    available so the Attack Map can use the data later.
+
     Returns:
         {
             "alert_id": "...",
@@ -57,7 +60,6 @@ def save_alert(alert: dict):
         )
 
         if cursor.fetchone():
-
             print(
                 f"Alert {alert_id} already exists."
             )
@@ -79,9 +81,19 @@ def save_alert(alert: dict):
                 risk_score,
                 risk_level,
                 action_taken,
-                status
+                status,
+                country,
+                city,
+                region,
+                latitude,
+                longitude,
+                org
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?
+            )
             """,
             (
                 alert_id,
@@ -91,19 +103,21 @@ def save_alert(alert: dict):
                 alert.get("attacker_ip"),
                 alert.get("risk_score", 0),
                 alert.get("risk_level", "LOW"),
-                alert.get(
-                    "action_taken",
-                    "Pending"
-                ),
-                alert.get("status", "NEW")
+                alert.get("action_taken", "Pending"),
+                alert.get("status", "NEW"),
+                alert.get("country"),
+                alert.get("city"),
+                alert.get("region"),
+                alert.get("latitude"),
+                alert.get("longitude"),
+                alert.get("org")
             )
         )
 
         conn.commit()
 
         print(
-            f"Alert {alert_id} "
-            "saved successfully."
+            f"Alert {alert_id} saved successfully."
         )
 
         return {
@@ -113,12 +127,10 @@ def save_alert(alert: dict):
         }
 
     except Exception:
-
         conn.rollback()
         raise
 
     finally:
-
         conn.close()
 
 
@@ -127,7 +139,6 @@ def delete_alert(alert_id: str):
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -143,12 +154,307 @@ def delete_alert(alert_id: str):
         return cursor.rowcount > 0
 
     except Exception:
-
         conn.rollback()
         raise
 
     finally:
+        conn.close()
 
+
+# ==========================================================
+# ADVANCED ALERT SEARCH & FILTERING
+# ==========================================================
+
+def search_alerts(
+    search=None,
+    severity=None,
+    risk_level=None,
+    status=None,
+    alert_type=None,
+    date_from=None,
+    date_to=None,
+    limit=50,
+    offset=0
+):
+    """
+    Advanced alert search and filtering.
+
+    Supported filters:
+
+    search:
+        Searches across:
+        - alert ID
+        - alert type
+        - source IP
+        - attacker IP
+        - country
+        - city
+        - region
+        - organization
+
+    severity:
+        CRITICAL / HIGH / MEDIUM / LOW
+
+    risk_level:
+        CRITICAL / HIGH / MEDIUM / LOW
+
+    status:
+        NEW / INVESTIGATING / CONTAINED /
+        RESOLVED / CLOSED
+
+    alert_type:
+        Exact alert type match.
+
+    date_from:
+        Inclusive start date in YYYY-MM-DD format.
+
+    date_to:
+        Inclusive end date in YYYY-MM-DD format.
+
+    limit:
+        Maximum number of returned alerts.
+
+    offset:
+        Pagination offset.
+
+    Returns:
+        {
+            "alerts": [...],
+            "total": 0,
+            "limit": 50,
+            "offset": 0
+        }
+    """
+
+    # ------------------------------------------------------
+    # Protect the database from unreasonable pagination.
+    # ------------------------------------------------------
+
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 50
+
+    try:
+        offset = int(offset)
+    except (TypeError, ValueError):
+        offset = 0
+
+    limit = max(1, min(limit, 500))
+    offset = max(0, offset)
+
+    # ------------------------------------------------------
+    # Build WHERE conditions dynamically.
+    # Values are always parameterized.
+    # ------------------------------------------------------
+
+    conditions = []
+    parameters = []
+
+    # ------------------------------------------------------
+    # General search
+    # ------------------------------------------------------
+
+    if search and search.strip():
+
+        search_value = f"%{search.strip()}%"
+
+        conditions.append(
+            """
+            (
+                alert_id LIKE ?
+                OR alert_type LIKE ?
+                OR source_ip LIKE ?
+                OR attacker_ip LIKE ?
+                OR country LIKE ?
+                OR city LIKE ?
+                OR region LIKE ?
+                OR org LIKE ?
+            )
+            """
+        )
+
+        parameters.extend(
+            [
+                search_value,
+                search_value,
+                search_value,
+                search_value,
+                search_value,
+                search_value,
+                search_value,
+                search_value
+            ]
+        )
+
+    # ------------------------------------------------------
+    # Severity
+    # ------------------------------------------------------
+
+    if severity and severity.strip():
+
+        conditions.append(
+            "UPPER(severity) = UPPER(?)"
+        )
+
+        parameters.append(
+            severity.strip()
+        )
+
+    # ------------------------------------------------------
+    # Risk level
+    # ------------------------------------------------------
+
+    if risk_level and risk_level.strip():
+
+        conditions.append(
+            "UPPER(risk_level) = UPPER(?)"
+        )
+
+        parameters.append(
+            risk_level.strip()
+        )
+
+    # ------------------------------------------------------
+    # Alert status
+    # ------------------------------------------------------
+
+    if status and status.strip():
+
+        conditions.append(
+            "UPPER(status) = UPPER(?)"
+        )
+
+        parameters.append(
+            status.strip()
+        )
+
+    # ------------------------------------------------------
+    # Alert type
+    # ------------------------------------------------------
+
+    if alert_type and alert_type.strip():
+
+        conditions.append(
+            "UPPER(alert_type) = UPPER(?)"
+        )
+
+        parameters.append(
+            alert_type.strip()
+        )
+
+    # ------------------------------------------------------
+    # Date range
+    # ------------------------------------------------------
+
+    if date_from and date_from.strip():
+
+        conditions.append(
+            "DATE(created_at) >= DATE(?)"
+        )
+
+        parameters.append(
+            date_from.strip()
+        )
+
+    if date_to and date_to.strip():
+
+        conditions.append(
+            "DATE(created_at) <= DATE(?)"
+        )
+
+        parameters.append(
+            date_to.strip()
+        )
+
+    # ------------------------------------------------------
+    # Build WHERE clause.
+    # ------------------------------------------------------
+
+    where_clause = ""
+
+    if conditions:
+        where_clause = (
+            "WHERE "
+            + " AND ".join(conditions)
+        )
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        # --------------------------------------------------
+        # Total matching records
+        # --------------------------------------------------
+
+        count_query = f"""
+            SELECT COUNT(*)
+            FROM alerts
+            {where_clause}
+        """
+
+        cursor.execute(
+            count_query,
+            parameters
+        )
+
+        total = cursor.fetchone()[0]
+
+        # --------------------------------------------------
+        # Matching alert records
+        # --------------------------------------------------
+
+        alert_query = f"""
+            SELECT
+                alert_id,
+                alert_type,
+                severity,
+                source_ip,
+                attacker_ip,
+                risk_score,
+                risk_level,
+                action_taken,
+                status,
+                country,
+                city,
+                region,
+                latitude,
+                longitude,
+                org,
+                created_at
+            FROM alerts
+            {where_clause}
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        """
+
+        alert_parameters = list(parameters)
+
+        alert_parameters.extend(
+            [
+                limit,
+                offset
+            ]
+        )
+
+        cursor.execute(
+            alert_query,
+            alert_parameters
+        )
+
+        alerts = rows_to_dicts(
+            cursor.fetchall()
+        )
+
+        return {
+            "alerts": alerts,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+
+    finally:
         conn.close()
 
 
@@ -161,7 +467,6 @@ def get_total_alerts():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -174,7 +479,6 @@ def get_total_alerts():
         return cursor.fetchone()[0]
 
     finally:
-
         conn.close()
 
 
@@ -183,7 +487,6 @@ def get_high_risk_alerts():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -198,7 +501,6 @@ def get_high_risk_alerts():
         return cursor.fetchone()[0]
 
     finally:
-
         conn.close()
 
 
@@ -207,7 +509,6 @@ def get_critical_alerts():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -221,7 +522,6 @@ def get_critical_alerts():
         return cursor.fetchone()[0]
 
     finally:
-
         conn.close()
 
 
@@ -230,7 +530,6 @@ def get_playbook_executions():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -245,7 +544,6 @@ def get_playbook_executions():
         return cursor.fetchone()[0]
 
     finally:
-
         conn.close()
 
 
@@ -254,7 +552,6 @@ def get_blocked_ips():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -268,7 +565,6 @@ def get_blocked_ips():
         return cursor.fetchone()[0]
 
     finally:
-
         conn.close()
 
 
@@ -284,12 +580,15 @@ def get_mttr():
     return "2.4 min"
 
 
+# ==========================================================
+# RECENT ALERTS
+# ==========================================================
+
 def get_recent_alerts(limit=10):
 
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -317,7 +616,130 @@ def get_recent_alerts(limit=10):
         )
 
     finally:
+        conn.close()
 
+
+# ==========================================================
+# ATTACK MAP / GEOGRAPHIC THREAT INTELLIGENCE
+# ==========================================================
+
+def get_threat_map_data(limit=500):
+    """
+    Return geographically enriched attacker alerts
+    for the SOC Attack Map.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                alert_id,
+                alert_type,
+                severity,
+                attacker_ip,
+                source_ip,
+                risk_score,
+                risk_level,
+                status,
+                action_taken,
+                country,
+                city,
+                region,
+                latitude,
+                longitude,
+                org,
+                created_at
+            FROM alerts
+            WHERE attacker_ip IS NOT NULL
+              AND attacker_ip != ''
+              AND latitude IS NOT NULL
+              AND longitude IS NOT NULL
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (limit,)
+        )
+
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+        conn.close()
+
+
+# ==========================================================
+# GEOGRAPHIC THREAT SUMMARY
+# ==========================================================
+
+def get_threat_map_summary():
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM alerts
+            WHERE latitude IS NOT NULL
+              AND longitude IS NOT NULL
+            """
+        )
+
+        total_mapped = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            SELECT COUNT(DISTINCT country)
+            FROM alerts
+            WHERE latitude IS NOT NULL
+              AND longitude IS NOT NULL
+              AND country IS NOT NULL
+              AND country != ''
+              AND country != 'Unknown'
+            """
+        )
+
+        unique_countries = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM alerts
+            WHERE latitude IS NOT NULL
+              AND longitude IS NOT NULL
+              AND risk_level = 'CRITICAL'
+            """
+        )
+
+        critical_mapped = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM alerts
+            WHERE latitude IS NOT NULL
+              AND longitude IS NOT NULL
+              AND risk_level = 'HIGH'
+            """
+        )
+
+        high_mapped = cursor.fetchone()[0]
+
+        return {
+            "total_mapped_threats": total_mapped,
+            "unique_countries": unique_countries,
+            "critical_threats": critical_mapped,
+            "high_risk_threats": high_mapped
+        }
+
+    finally:
         conn.close()
 
 
@@ -327,32 +749,22 @@ def get_recent_alerts(limit=10):
 
 def create_incident(incident: dict):
 
-    incident_id = incident.get(
-        "incident_id"
-    )
-
-    alert_id = incident.get(
-        "alert_id"
-    )
+    incident_id = incident.get("incident_id")
+    alert_id = incident.get("alert_id")
 
     if not incident_id:
-
         raise ValueError(
-            "Cannot create incident: "
-            "missing incident ID"
+            "Cannot create incident: missing incident ID"
         )
 
     if not alert_id:
-
         raise ValueError(
-            "Cannot create incident: "
-            "missing alert ID"
+            "Cannot create incident: missing alert ID"
         )
 
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -367,8 +779,7 @@ def create_incident(incident: dict):
         if cursor.fetchone():
 
             print(
-                f"Incident {incident_id} "
-                "already exists."
+                f"Incident {incident_id} already exists."
             )
 
             return {
@@ -419,8 +830,7 @@ def create_incident(incident: dict):
         conn.commit()
 
         print(
-            f"Incident {incident_id} "
-            "created successfully."
+            f"Incident {incident_id} created successfully."
         )
 
         return {
@@ -435,7 +845,6 @@ def create_incident(incident: dict):
         raise
 
     finally:
-
         conn.close()
 
 
@@ -444,7 +853,6 @@ def get_all_incidents():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -460,16 +868,16 @@ def get_all_incidents():
         )
 
     finally:
-
         conn.close()
 
 
-def get_incident_by_id(incident_id: str):
+def get_incident_by_id(
+    incident_id: str
+):
 
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -489,7 +897,6 @@ def get_incident_by_id(incident_id: str):
         return dict(row)
 
     finally:
-
         conn.close()
 
 
@@ -501,7 +908,6 @@ def update_incident_status(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -527,7 +933,6 @@ def update_incident_status(
         raise
 
     finally:
-
         conn.close()
 
 
@@ -539,7 +944,6 @@ def assign_analyst(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -565,7 +969,6 @@ def assign_analyst(
         raise
 
     finally:
-
         conn.close()
 
 
@@ -583,7 +986,6 @@ def add_analyst_note(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -618,7 +1020,6 @@ def add_analyst_note(
         raise
 
     finally:
-
         conn.close()
 
 
@@ -629,10 +1030,7 @@ def delete_incident(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
-
-        # Delete related activity first
 
         cursor.execute(
             """
@@ -642,8 +1040,6 @@ def delete_incident(
             (incident_id,)
         )
 
-        # Delete incident
-
         cursor.execute(
             """
             DELETE FROM incidents
@@ -652,9 +1048,7 @@ def delete_incident(
             (incident_id,)
         )
 
-        deleted = (
-            cursor.rowcount > 0
-        )
+        deleted = cursor.rowcount > 0
 
         conn.commit()
 
@@ -666,7 +1060,6 @@ def delete_incident(
         raise
 
     finally:
-
         conn.close()
 
 
@@ -675,7 +1068,6 @@ def get_open_incidents():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -693,7 +1085,6 @@ def get_open_incidents():
         return cursor.fetchone()[0]
 
     finally:
-
         conn.close()
 
 
@@ -708,7 +1099,6 @@ def incident_exists(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -726,7 +1116,6 @@ def incident_exists(
         )
 
     finally:
-
         conn.close()
 
 
@@ -735,7 +1124,6 @@ def get_incident_summary():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -759,7 +1147,6 @@ def get_incident_summary():
         )
 
     finally:
-
         conn.close()
 
 
@@ -770,7 +1157,6 @@ def get_incidents_by_status(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -788,7 +1174,6 @@ def get_incidents_by_status(
         )
 
     finally:
-
         conn.close()
 
 
@@ -799,7 +1184,6 @@ def get_incidents_by_analyst(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -817,7 +1201,6 @@ def get_incidents_by_analyst(
         )
 
     finally:
-
         conn.close()
 
 
@@ -826,7 +1209,6 @@ def get_incident_counts():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -848,7 +1230,6 @@ def get_incident_counts():
         }
 
     finally:
-
         conn.close()
 
 
@@ -859,7 +1240,6 @@ def resolve_incident(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -883,7 +1263,6 @@ def resolve_incident(
         raise
 
     finally:
-
         conn.close()
 
 
@@ -901,14 +1280,12 @@ def log_incident_activity(
     if not incident_id:
 
         raise ValueError(
-            "Cannot log activity: "
-            "missing incident ID"
+            "Cannot log activity: missing incident ID"
         )
 
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -939,7 +1316,6 @@ def log_incident_activity(
         raise
 
     finally:
-
         conn.close()
 
 
@@ -950,7 +1326,6 @@ def get_incident_activity(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -972,7 +1347,6 @@ def get_incident_activity(
         )
 
     finally:
-
         conn.close()
 
 
@@ -985,7 +1359,6 @@ def get_alerts_by_severity():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1003,7 +1376,6 @@ def get_alerts_by_severity():
         )
 
     finally:
-
         conn.close()
 
 
@@ -1012,7 +1384,6 @@ def get_incidents_by_status_chart():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1030,7 +1401,6 @@ def get_incidents_by_status_chart():
         )
 
     finally:
-
         conn.close()
 
 
@@ -1039,7 +1409,6 @@ def get_daily_alerts():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1058,7 +1427,6 @@ def get_daily_alerts():
         )
 
     finally:
-
         conn.close()
 
 
@@ -1067,7 +1435,6 @@ def get_risk_distribution():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1085,7 +1452,6 @@ def get_risk_distribution():
         )
 
     finally:
-
         conn.close()
 
 
@@ -1098,7 +1464,6 @@ def export_incidents():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1123,7 +1488,6 @@ def export_incidents():
         )
 
     finally:
-
         conn.close()
 
 
@@ -1138,8 +1502,7 @@ def create_user(user: dict):
     if not username:
 
         raise ValueError(
-            "Cannot create user: "
-            "missing username"
+            "Cannot create user: missing username"
         )
 
     if user_exists(username):
@@ -1149,7 +1512,6 @@ def create_user(user: dict):
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1164,17 +1526,9 @@ def create_user(user: dict):
             """,
             (
                 username,
-                user.get(
-                    "password_hash"
-                ),
-                user.get(
-                    "full_name",
-                    username
-                ),
-                user.get(
-                    "role",
-                    "ANALYST"
-                )
+                user.get("password_hash"),
+                user.get("full_name", username),
+                user.get("role", "ANALYST")
             )
         )
 
@@ -1194,7 +1548,6 @@ def create_user(user: dict):
         raise
 
     finally:
-
         conn.close()
 
 
@@ -1205,7 +1558,6 @@ def get_user(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1220,13 +1572,11 @@ def get_user(
         row = cursor.fetchone()
 
         if row is None:
-
             return None
 
         return dict(row)
 
     finally:
-
         conn.close()
 
 
@@ -1235,7 +1585,6 @@ def get_all_users():
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1255,7 +1604,6 @@ def get_all_users():
         )
 
     finally:
-
         conn.close()
 
 
@@ -1266,7 +1614,6 @@ def user_exists(
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1284,7 +1631,6 @@ def user_exists(
         )
 
     finally:
-
         conn.close()
 
 
@@ -1300,14 +1646,12 @@ def authenticate_user(
     user = get_user(username)
 
     if not user:
-
         return None
 
     if not verify_password(
         password,
         user["password_hash"]
     ):
-
         return None
 
     return user
