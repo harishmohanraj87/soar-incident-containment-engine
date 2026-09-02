@@ -2,12 +2,39 @@ from database.database import create_connection
 
 
 # ==========================================================
+# HELPER — ADD COLUMN SAFELY
+# ==========================================================
+
+def add_column_if_not_exists(cursor, table_name, column_name, column_definition):
+    """
+    Add a column to an existing SQLite table if it does not exist.
+    This allows safe database upgrades without deleting existing data.
+    """
+
+    cursor.execute(f"PRAGMA table_info({table_name})")
+
+    existing_columns = {
+        row[1]
+        for row in cursor.fetchall()
+    }
+
+    if column_name not in existing_columns:
+        cursor.execute(
+            f"""
+            ALTER TABLE {table_name}
+            ADD COLUMN {column_name} {column_definition}
+            """
+        )
+
+
+# ==========================================================
 # ALERTS TABLE
 # ==========================================================
 
 def create_alerts_table():
     """
-    Create the alerts table.
+    Create the alerts table and safely upgrade existing databases
+    with geographic threat intelligence fields.
     """
 
     conn = create_connection()
@@ -38,9 +65,67 @@ def create_alerts_table():
 
             status TEXT DEFAULT 'NEW',
 
+            country TEXT,
+
+            city TEXT,
+
+            region TEXT,
+
+            latitude REAL,
+
+            longitude REAL,
+
+            org TEXT,
+
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
+
+        # --------------------------------------------------
+        # SAFE MIGRATION FOR EXISTING DATABASES
+        # --------------------------------------------------
+
+        add_column_if_not_exists(
+            cursor,
+            "alerts",
+            "country",
+            "TEXT"
+        )
+
+        add_column_if_not_exists(
+            cursor,
+            "alerts",
+            "city",
+            "TEXT"
+        )
+
+        add_column_if_not_exists(
+            cursor,
+            "alerts",
+            "region",
+            "TEXT"
+        )
+
+        add_column_if_not_exists(
+            cursor,
+            "alerts",
+            "latitude",
+            "REAL"
+        )
+
+        add_column_if_not_exists(
+            cursor,
+            "alerts",
+            "longitude",
+            "REAL"
+        )
+
+        add_column_if_not_exists(
+            cursor,
+            "alerts",
+            "org",
+            "TEXT"
+        )
 
         conn.commit()
 
@@ -60,6 +145,7 @@ def create_incidents_table():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -88,7 +174,9 @@ def create_incidents_table():
             resolved_at TIMESTAMP,
 
             FOREIGN KEY (alert_id)
+
             REFERENCES alerts(alert_id)
+
             ON DELETE CASCADE
         )
         """)
@@ -96,6 +184,7 @@ def create_incidents_table():
         conn.commit()
 
     finally:
+
         conn.close()
 
 
@@ -111,6 +200,7 @@ def create_incident_activity_table():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -129,7 +219,9 @@ def create_incident_activity_table():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
             FOREIGN KEY (incident_id)
+
             REFERENCES incidents(incident_id)
+
             ON DELETE CASCADE
         )
         """)
@@ -137,6 +229,7 @@ def create_incident_activity_table():
         conn.commit()
 
     finally:
+
         conn.close()
 
 
@@ -152,6 +245,7 @@ def create_users_table():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -174,6 +268,7 @@ def create_users_table():
         conn.commit()
 
     finally:
+
         conn.close()
 
 
@@ -183,10 +278,10 @@ def create_users_table():
 
 def initialize_database():
     """
-    Initialize all required SOAR database tables.
+    Initialize and upgrade all required SOAR database tables.
 
-    Order is important because some tables
-    contain foreign key relationships.
+    Order matters because incidents and incident activity
+    depend on the alerts and incidents tables.
     """
 
     create_alerts_table()
@@ -198,5 +293,5 @@ def initialize_database():
     create_users_table()
 
     print(
-        "SOAR database initialized successfully."
+        "SOAR database initialized and upgraded successfully."
     )

@@ -1,41 +1,87 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>{% block title %}SOAR Incident Containment Engine{% endblock %}</title>
+    <title>
+        {% block title %}
+        SOAR Incident Containment Engine
+        {% endblock %}
+    </title>
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="/static/plugins/fontawesome-free/css/all.min.css">
 
-    <!-- AdminLTE -->
-    <link rel="stylesheet" href="/static/dist/css/adminlte.min.css">
+    <!-- ================================================= -->
+    <!-- FONT AWESOME -->
+    <!-- ================================================= -->
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link
+        rel="stylesheet"
+        href="/static/plugins/fontawesome-free/css/all.min.css"
+    >
+
+
+    <!-- ================================================= -->
+    <!-- ADMINLTE -->
+    <!-- ================================================= -->
+
+    <link
+        rel="stylesheet"
+        href="/static/dist/css/adminlte.min.css"
+    >
+
+
+    <!-- ================================================= -->
+    <!-- CUSTOM CSS -->
+    <!-- ================================================= -->
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+
+    <!-- ================================================= -->
+    <!-- LEAFLET MAP -->
+    <!-- ================================================= -->
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
 
 </head>
 
+
 <body class="hold-transition sidebar-mini layout-fixed">
+
 
 <div class="wrapper">
 
-    <!-- ===========================
-            Navbar
-    ============================ -->
+
+    <!-- ================================================= -->
+    <!-- NAVBAR -->
+    <!-- ================================================= -->
 
     <nav class="main-header navbar navbar-expand navbar-dark navbar-primary">
 
-        <!-- Left -->
+
+        <!-- LEFT -->
 
         <ul class="navbar-nav">
 
             <li class="nav-item">
 
-                <a class="nav-link" data-widget="pushmenu" href="#">
+                <a
+                    class="nav-link"
+                    data-widget="pushmenu"
+                    href="#"
+                >
 
                     <i class="fas fa-bars"></i>
 
@@ -45,9 +91,13 @@
 
         </ul>
 
-        <!-- Right -->
+
+        <!-- RIGHT -->
 
         <ul class="navbar-nav ml-auto">
+
+
+            <!-- SYSTEM STATUS -->
 
             <li class="nav-item mr-3">
 
@@ -58,6 +108,9 @@
                 </span>
 
             </li>
+
+
+            <!-- CURRENT USER -->
 
             <li class="nav-item mr-3">
 
@@ -71,9 +124,15 @@
 
             </li>
 
+
+            <!-- LOGOUT -->
+
             <li class="nav-item">
 
-                <a href="/logout" class="btn btn-danger btn-sm">
+                <a
+                    href="/logout"
+                    class="btn btn-danger btn-sm"
+                >
 
                     <i class="fas fa-sign-out-alt"></i>
 
@@ -83,19 +142,33 @@
 
             </li>
 
+
         </ul>
+
 
     </nav>
 
-    <!-- ===========================
-            Sidebar
-    ============================ -->
 
-    <aside class="main-sidebar sidebar-dark-primary elevation-4">
 
-        <a href="/" class="brand-link">
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
 
-            <i class="fas fa-shield-alt ml-3 mr-2"></i>
+    <aside
+        class="main-sidebar sidebar-dark-primary elevation-4"
+    >
+
+
+        <!-- BRAND -->
+
+        <a
+            href="/"
+            class="brand-link"
+        >
+
+            <i
+                class="fas fa-shield-alt ml-3 mr-2"
+            ></i>
 
             <span class="brand-text font-weight-light">
 
@@ -105,15 +178,25 @@
 
         </a>
 
+
+
         <div class="sidebar">
 
-            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+
+            <!-- USER PANEL -->
+
+            <div
+                class="user-panel mt-3 pb-3 mb-3 d-flex"
+            >
 
                 <div class="image">
 
-                    <i class="fas fa-user-circle fa-2x text-white"></i>
+                    <i
+                        class="fas fa-user-circle fa-2x text-white"
+                    ></i>
 
                 </div>
+
 
                 <div class="info">
 
@@ -127,156 +210,277 @@
 
             </div>
 
+
+
+            <!-- ================================================= -->
+            <!-- SIDEBAR NAVIGATION -->
+            <!-- ================================================= -->
+
             <nav class="mt-2">
 
-                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview">
+
+                <ul
+                    class="nav nav-pills nav-sidebar flex-column"
+                    data-widget="treeview"
+                >
+
+
+                    <!-- DASHBOARD -->
 
                     <li class="nav-item">
 
-                        <a href="/" class="nav-link">
+                        <a
+                            href="/"
+                            class="nav-link"
+                        >
 
                             <i class="nav-icon fas fa-home"></i>
 
-                            <p>Dashboard</p>
+                            <p>
+                                Dashboard
+                            </p>
 
                         </a>
 
                     </li>
 
+
+
+                    <!-- ALERTS -->
+
                     <li class="nav-item">
 
-                        <a href="/alerts" class="nav-link">
+                        <a
+                            href="/alerts"
+                            class="nav-link"
+                        >
 
                             <i class="nav-icon fas fa-bell"></i>
 
-                            <p>Alerts</p>
+                            <p>
+                                Alerts
+                            </p>
 
                         </a>
 
                     </li>
 
+
+
+                    <!-- THREAT INTELLIGENCE -->
+
                     <li class="nav-item">
 
-                        <a href="#" class="nav-link">
+                        <a
+                            href="#"
+                            class="nav-link"
+                        >
 
                             <i class="nav-icon fas fa-search"></i>
 
-                            <p>Threat Intelligence</p>
+                            <p>
+                                Threat Intelligence
+                            </p>
 
                         </a>
 
                     </li>
 
+
+
+                    <!-- PLAYBOOKS -->
+
                     <li class="nav-item">
 
-                        <a href="#" class="nav-link">
+                        <a
+                            href="#"
+                            class="nav-link"
+                        >
 
                             <i class="nav-icon fas fa-play-circle"></i>
 
-                            <p>Playbooks</p>
+                            <p>
+                                Playbooks
+                            </p>
 
                         </a>
 
                     </li>
 
+
+
+                    <!-- INCIDENTS -->
+
                     <li class="nav-item">
 
-                        <a href="/incidents/dashboard" class="nav-link">
+                        <a
+                            href="/incidents/dashboard"
+                            class="nav-link"
+                        >
 
-                            <i class="nav-icon fas fa-exclamation-triangle"></i>
+                            <i
+                                class="nav-icon fas fa-exclamation-triangle"
+                            ></i>
 
-                            <p>Incidents</p>
+                            <p>
+                                Incidents
+                            </p>
 
                         </a>
 
                     </li>
 
+
+
+                    <!-- USER MANAGEMENT -->
+
                     <li class="nav-item">
 
-                        <a href="/admin/users" class="nav-link">
+                        <a
+                            href="/admin/users"
+                            class="nav-link"
+                        >
 
                             <i class="nav-icon fas fa-users"></i>
 
-                            <p>User Management</p>
+                            <p>
+                                User Management
+                            </p>
 
                         </a>
 
                     </li>
 
+
+
+                    <!-- AUDIT LOGS -->
+
                     <li class="nav-item">
 
-                        <a href="#" class="nav-link">
+                        <a
+                            href="#"
+                            class="nav-link"
+                        >
 
                             <i class="nav-icon fas fa-history"></i>
 
-                            <p>Audit Logs</p>
+                            <p>
+                                Audit Logs
+                            </p>
 
                         </a>
 
                     </li>
+
+
+
+                    <!-- SETTINGS -->
 
                     <li class="nav-item">
 
-                        <a href="#" class="nav-link">
+                        <a
+                            href="#"
+                            class="nav-link"
+                        >
 
                             <i class="nav-icon fas fa-cog"></i>
 
-                            <p>Settings</p>
+                            <p>
+                                Settings
+                            </p>
 
                         </a>
 
                     </li>
 
+
                 </ul>
+
 
             </nav>
 
+
         </div>
+
 
     </aside>
 
-    <!-- ===========================
-            Page Content
-    ============================ -->
+
+
+    <!-- ================================================= -->
+    <!-- PAGE CONTENT -->
+    <!-- ================================================= -->
 
     <div class="content-wrapper">
 
+
+        <!-- PAGE HEADER -->
+
         <section class="content-header">
 
+
             <div class="container-fluid">
+
 
                 <div class="row mb-2">
 
+
                     <div class="col-sm-6">
 
-                        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+
+                        <h1>
+
+                            {% block page_title %}
+                            Dashboard
+                            {% endblock %}
+
+                        </h1>
+
 
                     </div>
 
+
                 </div>
+
 
             </div>
 
+
         </section>
+
+
+
+        <!-- ================================================= -->
+        <!-- MAIN CONTENT -->
+        <!-- ================================================= -->
 
         <section class="content">
 
+
             <div class="container-fluid">
 
+
                 {% block content %}
+
                 {% endblock %}
+
 
             </div>
 
+
         </section>
+
 
     </div>
 
-    <!-- ===========================
-            Footer
-    ============================ -->
+
+
+    <!-- ================================================= -->
+    <!-- FOOTER -->
+    <!-- ================================================= -->
 
     <footer class="main-footer">
+
 
         <strong>
 
@@ -284,34 +488,79 @@
 
         </strong>
 
+
         <div class="float-right d-none d-sm-inline">
 
             FastAPI | SQLite | AdminLTE | Threat Intelligence
 
         </div>
 
+
     </footer>
+
 
 </div>
 
-<!-- jQuery -->
 
-<script src="/static/plugins/jquery/jquery.min.js"></script>
 
-<!-- Bootstrap -->
+<!-- ================================================= -->
+<!-- JQUERY -->
+<!-- ================================================= -->
 
-<script src="/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script
+    src="/static/plugins/jquery/jquery.min.js"
+></script>
 
-<!-- AdminLTE -->
 
-<script src="/static/dist/js/adminlte.min.js"></script>
 
-<!-- Chart.js -->
+<!-- ================================================= -->
+<!-- BOOTSTRAP -->
+<!-- ================================================= -->
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script
+    src="/static/plugins/bootstrap/js/bootstrap.bundle.min.js"
+></script>
+
+
+
+<!-- ================================================= -->
+<!-- ADMINLTE -->
+<!-- ================================================= -->
+
+<script
+    src="/static/dist/js/adminlte.min.js"
+></script>
+
+
+
+<!-- ================================================= -->
+<!-- CHART.JS -->
+<!-- ================================================= -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/chart.js"
+></script>
+
+
+
+<!-- ================================================= -->
+<!-- LEAFLET -->
+<!-- ================================================= -->
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
+
+
+<!-- ================================================= -->
+<!-- PAGE-SPECIFIC SCRIPTS -->
+<!-- ================================================= -->
 
 {% block scripts %}
+
 {% endblock %}
+
 
 </body>
 

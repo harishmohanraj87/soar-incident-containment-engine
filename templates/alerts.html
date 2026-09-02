@@ -1,0 +1,594 @@
+{% extends "base.html" %}
+
+{% block title %}Alert Operations{% endblock %}
+
+{% block content %}
+
+<style>
+    .alerts-shell {
+        padding: 18px 0 40px;
+    }
+
+    .alerts-hero {
+        border: 1px solid rgba(92, 126, 185, .28);
+        background:
+            radial-gradient(circle at 90% 10%, rgba(0, 214, 255, .10), transparent 28%),
+            linear-gradient(135deg, rgba(17, 27, 47, .98), rgba(8, 13, 27, .98));
+        border-radius: 18px;
+        padding: 24px;
+        margin-bottom: 18px;
+        box-shadow: 0 16px 45px rgba(0,0,0,.22);
+    }
+
+    .eyebrow {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: #6f9bd4;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .hero-title {
+        margin: 6px 0 4px;
+        font-size: 27px;
+        font-weight: 800;
+        color: #f5f8ff;
+    }
+
+    .hero-subtitle {
+        color: #8291aa;
+        font-size: 13px;
+    }
+
+    .search-panel {
+        background: #0d1526;
+        border: 1px solid #202e47;
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 18px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: 2fr repeat(4, 1fr);
+        gap: 10px;
+    }
+
+    .filter-grid.second {
+        grid-template-columns: 1fr 1fr 1fr 1fr auto;
+        margin-top: 10px;
+    }
+
+    .filter-control {
+        width: 100%;
+        min-height: 42px;
+        border-radius: 9px;
+        border: 1px solid #273650;
+        background: #080f1d;
+        color: #dbe7fa;
+        padding: 0 12px;
+        outline: none;
+    }
+
+    .filter-control:focus {
+        border-color: #42bdf5;
+        box-shadow: 0 0 0 3px rgba(66,189,245,.08);
+    }
+
+    .btn-search {
+        min-height: 42px;
+        border: 0;
+        border-radius: 9px;
+        padding: 0 20px;
+        background: linear-gradient(135deg, #1677b9, #16a8c8);
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-clear {
+        min-height: 42px;
+        border: 1px solid #30415f;
+        border-radius: 9px;
+        padding: 0 18px;
+        background: transparent;
+        color: #aab8cd;
+        cursor: pointer;
+    }
+
+    .results-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 16px 2px 10px;
+    }
+
+    .result-count {
+        color: #7f91ad;
+        font-size: 12px;
+    }
+
+    .result-count strong {
+        color: #f0f5ff;
+        font-size: 15px;
+    }
+
+    .live-badge {
+        color: #59e6a8;
+        font-size: 10px;
+        letter-spacing: 1.4px;
+        font-weight: 800;
+    }
+
+    .table-card {
+        background: #0b1322;
+        border: 1px solid #202e47;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .alerts-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1050px;
+    }
+
+    .alerts-table th {
+        text-align: left;
+        padding: 14px 15px;
+        color: #657b9d;
+        font-size: 10px;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        background: #0a111e;
+        border-bottom: 1px solid #202e47;
+        white-space: nowrap;
+    }
+
+    .alerts-table td {
+        padding: 14px 15px;
+        border-bottom: 1px solid rgba(37,52,76,.65);
+        color: #cbd7e8;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .alerts-table tr:hover td {
+        background: rgba(42, 77, 116, .13);
+    }
+
+    .alert-id {
+        color: #72cfff;
+        font-weight: 700;
+    }
+
+    .ip {
+        font-family: Consolas, monospace;
+        color: #c9d7ec;
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 9px;
+        border-radius: 999px;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: .7px;
+    }
+
+    .critical { background: rgba(255, 67, 101, .13); color: #ff617d; }
+    .high { background: rgba(255, 153, 51, .13); color: #ffad5a; }
+    .medium { background: rgba(255, 204, 77, .13); color: #ffd35c; }
+    .low, .safe { background: rgba(65, 221, 151, .11); color: #5de5a8; }
+    .new { background: rgba(82, 157, 255, .12); color: #78b5ff; }
+
+    .empty-state {
+        text-align: center;
+        padding: 65px 20px;
+        color: #687991;
+    }
+
+    .empty-state .icon {
+        font-size: 34px;
+        margin-bottom: 10px;
+    }
+
+    @media (max-width: 1000px) {
+        .filter-grid,
+        .filter-grid.second {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .btn-search,
+        .btn-clear {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="alerts-shell">
+
+    <div class="alerts-hero">
+        <div class="eyebrow">SOC OPERATIONS / ALERT INTELLIGENCE</div>
+        <div class="hero-title">Advanced Alert Search</div>
+        <div class="hero-subtitle">
+            Investigate, correlate and isolate security alerts using analyst-grade filters.
+        </div>
+    </div>
+
+    <div class="search-panel">
+
+        <form id="alertSearchForm">
+
+            <div class="filter-grid">
+
+                <input
+                    id="search"
+                    class="filter-control"
+                    type="text"
+                    placeholder="Search alert ID, IP, type, country, city, organization..."
+                >
+
+                <select id="severity" class="filter-control">
+                    <option value="">All Severity</option>
+                    <option value="CRITICAL">Critical</option>
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                </select>
+
+                <select id="risk_level" class="filter-control">
+                    <option value="">All Risk Levels</option>
+                    <option value="CRITICAL">Critical</option>
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                    <option value="SAFE">Safe</option>
+                </select>
+
+                <select id="status" class="filter-control">
+                    <option value="">All Status</option>
+                    <option value="NEW">New</option>
+                    <option value="INVESTIGATING">Investigating</option>
+                    <option value="CONTAINED">Contained</option>
+                    <option value="RESOLVED">Resolved</option>
+                    <option value="CLOSED">Closed</option>
+                </select>
+
+                <input
+                    id="alert_type"
+                    class="filter-control"
+                    type="text"
+                    placeholder="Alert type"
+                >
+
+            </div>
+
+            <div class="filter-grid second">
+
+                <input
+                    id="date_from"
+                    class="filter-control"
+                    type="date"
+                    title="From date"
+                >
+
+                <input
+                    id="date_to"
+                    class="filter-control"
+                    type="date"
+                    title="To date"
+                >
+
+                <select id="limit" class="filter-control">
+                    <option value="25">25 results</option>
+                    <option value="50" selected>50 results</option>
+                    <option value="100">100 results</option>
+                    <option value="250">250 results</option>
+                    <option value="500">500 results</option>
+                </select>
+
+                <div></div>
+
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-search" type="submit">SEARCH</button>
+                    <button class="btn-clear" type="button" id="clearBtn">CLEAR</button>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <div class="results-bar">
+        <div class="result-count">
+            <strong id="resultTotal">{{ total }}</strong> matching alerts
+        </div>
+
+        <div class="live-badge">● SEARCH ENGINE ONLINE</div>
+    </div>
+
+    <div class="table-card">
+
+        <div class="table-wrap">
+
+            <table class="alerts-table">
+
+                <thead>
+                    <tr>
+                        <th>Alert ID</th>
+                        <th>Type</th>
+                        <th>Severity</th>
+                        <th>Risk</th>
+                        <th>Source IP</th>
+                        <th>Attacker IP</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                        <th>Location</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+
+                <tbody id="alertsBody">
+
+                {% for alert in alerts %}
+
+                    <tr>
+                        <td class="alert-id">
+                            {{ alert.get("alert_id", "—") }}
+                        </td>
+
+                        <td>
+                            {{ alert.get("alert_type", "Unknown") }}
+                        </td>
+
+                        <td>
+                            {% set sev = (alert.get("severity") or "LOW")|lower %}
+                            <span class="pill {{ sev }}">
+                                {{ alert.get("severity", "LOW") }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% set risk = (alert.get("risk_level") or "LOW")|lower %}
+                            <span class="pill {{ risk }}">
+                                {{ alert.get("risk_level", "LOW") }}
+                                · {{ alert.get("risk_score", 0) }}
+                            </span>
+                        </td>
+
+                        <td class="ip">
+                            {{ alert.get("source_ip") or "—" }}
+                        </td>
+
+                        <td class="ip">
+                            {{ alert.get("attacker_ip") or "—" }}
+                        </td>
+
+                        <td>
+                            <span class="pill new">
+                                {{ alert.get("status") or "NEW" }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {{ alert.get("action_taken") or "Pending" }}
+                        </td>
+
+                        <td>
+                            {% if alert.get("city") or alert.get("country") %}
+                                {{ alert.get("city") or "Unknown" }},
+                                {{ alert.get("country") or "Unknown" }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ alert.get("created_at") or "—" }}
+                        </td>
+                    </tr>
+
+                {% else %}
+
+                    <tr>
+                        <td colspan="10">
+                            <div class="empty-state">
+                                <div class="icon">◈</div>
+                                <div>No alerts match the current search.</div>
+                            </div>
+                        </td>
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+(function () {
+
+    const form = document.getElementById("alertSearchForm");
+    const body = document.getElementById("alertsBody");
+    const total = document.getElementById("resultTotal");
+
+    function value(id) {
+        return document.getElementById(id).value.trim();
+    }
+
+    function esc(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function pillClass(value) {
+        return String(value || "LOW").toLowerCase().replaceAll(" ", "-");
+    }
+
+    function renderRows(alerts) {
+
+        if (!alerts.length) {
+            body.innerHTML = `
+                <tr>
+                    <td colspan="10">
+                        <div class="empty-state">
+                            <div class="icon">◈</div>
+                            <div>No alerts match the current search.</div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        body.innerHTML = alerts.map(alert => {
+
+            const location =
+                alert.city || alert.country
+                    ? `${esc(alert.city || "Unknown")}, ${esc(alert.country || "Unknown")}`
+                    : "—";
+
+            const severity = alert.severity || "LOW";
+            const risk = alert.risk_level || "LOW";
+
+            return `
+                <tr>
+                    <td class="alert-id">${esc(alert.alert_id || "—")}</td>
+                    <td>${esc(alert.alert_type || "Unknown")}</td>
+                    <td>
+                        <span class="pill ${pillClass(severity)}">
+                            ${esc(severity)}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="pill ${pillClass(risk)}">
+                            ${esc(risk)} · ${esc(alert.risk_score ?? 0)}
+                        </span>
+                    </td>
+                    <td class="ip">${esc(alert.source_ip || "—")}</td>
+                    <td class="ip">${esc(alert.attacker_ip || "—")}</td>
+                    <td>
+                        <span class="pill new">
+                            ${esc(alert.status || "NEW")}
+                        </span>
+                    </td>
+                    <td>${esc(alert.action_taken || "Pending")}</td>
+                    <td>${location}</td>
+                    <td>${esc(alert.created_at || "—")}</td>
+                </tr>
+            `;
+        }).join("");
+    }
+
+    async function performSearch() {
+
+        const params = new URLSearchParams();
+
+        const fields = [
+            "search",
+            "severity",
+            "risk_level",
+            "status",
+            "alert_type",
+            "date_from",
+            "date_to",
+            "limit"
+        ];
+
+        fields.forEach(field => {
+            const current = value(field);
+
+            if (current) {
+                params.set(field, current);
+            }
+        });
+
+        params.set("offset", "0");
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="10">
+                    <div class="empty-state">
+                        <div class="icon">◌</div>
+                        <div>Querying alert telemetry...</div>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        try {
+
+            const response = await fetch(
+                `/api/alerts/search?${params.toString()}`,
+                {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Search request failed");
+            }
+
+            const data = await response.json();
+
+            total.textContent = data.total ?? 0;
+
+            renderRows(data.alerts || []);
+
+        } catch (error) {
+
+            console.error(error);
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="10">
+                        <div class="empty-state">
+                            <div class="icon">!</div>
+                            <div>Unable to query alert telemetry.</div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        performSearch();
+    });
+
+    document.getElementById("clearBtn")
+        .addEventListener("click", function () {
+
+            form.reset();
+            performSearch();
+
+        });
+
+})();
+</script>
+
+{% endblock %}
