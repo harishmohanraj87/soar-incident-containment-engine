@@ -1454,6 +1454,325 @@ def get_risk_distribution():
     finally:
         conn.close()
 
+# ==========================================================
+# ADVANCED SOC DASHBOARD ANALYTICS
+# ==========================================================
+
+def get_top_attacker_ips(limit=10):
+    """
+    Return the most frequent attacker IP addresses.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                attacker_ip,
+                COUNT(*) AS alert_count,
+                MAX(risk_score) AS max_risk_score
+            FROM alerts
+            WHERE attacker_ip IS NOT NULL
+              AND attacker_ip != ''
+            GROUP BY attacker_ip
+            ORDER BY alert_count DESC, max_risk_score DESC
+            LIMIT ?
+            """,
+            (limit,)
+        )
+
+        return rows_to_dicts(cursor.fetchall())
+
+    finally:
+        conn.close()
+
+
+def get_top_threat_countries(limit=10):
+    """
+    Return countries generating the most alerts.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                country,
+                COUNT(*) AS alert_count,
+                COUNT(DISTINCT attacker_ip) AS unique_attackers
+            FROM alerts
+            WHERE country IS NOT NULL
+              AND country != ''
+              AND country != 'Unknown'
+            GROUP BY country
+            ORDER BY alert_count DESC
+            LIMIT ?
+            """,
+            (limit,)
+        )
+
+        return rows_to_dicts(cursor.fetchall())
+
+    finally:
+        conn.close()
+
+
+def get_alert_type_distribution():
+    """
+    Return distribution of security alert types.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                alert_type,
+                COUNT(*) AS count
+            FROM alerts
+            WHERE alert_type IS NOT NULL
+              AND alert_type != ''
+            GROUP BY alert_type
+            ORDER BY count DESC
+            """
+        )
+
+        return rows_to_dicts(cursor.fetchall())
+
+    finally:
+        conn.close()
+
+
+def get_recent_critical_alerts(limit=8):
+    """
+    Return the most recent HIGH and CRITICAL alerts.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                alert_id,
+                alert_type,
+                severity,
+                attacker_ip,
+                source_ip,
+                risk_score,
+                risk_level,
+                status,
+                action_taken,
+                country,
+                city,
+                org,
+                created_at
+            FROM alerts
+            WHERE severity IN ('HIGH', 'CRITICAL')
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (limit,)
+        )
+
+        return rows_to_dicts(cursor.fetchall())
+
+    finally:
+        conn.close()
+
+
+def get_dashboard_metrics():
+    """
+    Return the main SOC Command Center metrics
+    in a single database call.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*) AS total_alerts,
+
+                SUM(
+                    CASE
+                        WHEN severity = 'CRITICAL'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS critical_alerts,
+
+                SUM(
+                    CASE
+                        WHEN severity = 'HIGH'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS high_alerts,
+
+                SUM(
+                    CASE
+                        WHEN risk_level IN ('HIGH', 'CRITICAL')
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS high_risk_alerts,
+
+                SUM(
+                    CASE
+                        WHEN action_taken = 'Block IP'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS blocked_ips,
+
+                SUM(
+                    CASE
+                        WHEN action_taken IS NOT NULL
+                         AND action_taken != 'Pending'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS playbook_runs
+
+            FROM alerts
+            """
+        )
+
+        row = cursor.fetchone()
+
+        metrics = dict(row)
+
+        for key, value in metrics.items():
+
+            if value is None:
+                metrics[key] = 0
+
+        return metrics
+
+    finally:
+        conn.close()
+
+
+def get_incident_dashboard_metrics():
+    """
+    Return incident posture metrics for the SOC dashboard.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*) AS total_incidents,
+
+                SUM(
+                    CASE
+                        WHEN incident_status = 'NEW'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS new_incidents,
+
+                SUM(
+                    CASE
+                        WHEN incident_status = 'INVESTIGATING'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS investigating_incidents,
+
+                SUM(
+                    CASE
+                        WHEN incident_status = 'CONTAINED'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS contained_incidents,
+
+                SUM(
+                    CASE
+                        WHEN incident_status = 'RESOLVED'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS resolved_incidents,
+
+                SUM(
+                    CASE
+                        WHEN incident_status = 'CLOSED'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS closed_incidents
+
+            FROM incidents
+            """
+        )
+
+        row = cursor.fetchone()
+
+        metrics = dict(row)
+
+        for key, value in metrics.items():
+
+            if value is None:
+                metrics[key] = 0
+
+        return metrics
+
+    finally:
+        conn.close()
+
+
+def get_dashboard_overview():
+    """
+    Build the complete SOC Command Center dataset.
+
+    This is the primary backend data source for
+    the advanced dashboard.
+    """
+
+    return {
+        "metrics": get_dashboard_metrics(),
+
+        "incidents": get_incident_dashboard_metrics(),
+
+        "severity": get_alerts_by_severity(),
+
+        "risk": get_risk_distribution(),
+
+        "alert_types": get_alert_type_distribution(),
+
+        "daily_alerts": get_daily_alerts(),
+
+        "top_attackers": get_top_attacker_ips(),
+
+        "top_countries": get_top_threat_countries(),
+
+        "recent_critical": get_recent_critical_alerts(),
+
+        "threat_map": get_threat_map_data(),
+
+        "threat_map_summary": get_threat_map_summary()
+    }
 
 # ==========================================================
 # REPORTING

@@ -12,8 +12,8 @@ SOC Command Center
 
 /* ==========================================================
    SOAR COMMAND CENTER
-   SPRINT 2 - FEATURE 1
-   FUTURISTIC SOC DASHBOARD
+   SPRINT 2 - FEATURE 3
+   ADVANCED SOC DASHBOARD
    ========================================================== */
 
 :root {
@@ -35,6 +35,10 @@ SOC Command Center
 
 .soc-dashboard {
     color: var(--soc-text);
+}
+
+.soc-dashboard * {
+    box-sizing: border-box;
 }
 
 /* ==========================================================
@@ -120,8 +124,9 @@ SOC Command Center
     height: 8px;
     border-radius: 50%;
     background: var(--soc-green);
-    box-shadow: 0 0 0 5px rgba(43,213,118,.08),
-                0 0 16px rgba(43,213,118,.8);
+    box-shadow:
+        0 0 0 5px rgba(43,213,118,.08),
+        0 0 16px rgba(43,213,118,.8);
 }
 
 .pulse-dot {
@@ -133,6 +138,7 @@ SOC Command Center
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.55);
         opacity: .55;
@@ -156,6 +162,14 @@ SOC Command Center
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 1.2px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--soc-green);
+    box-shadow: 0 0 14px rgba(43,213,118,.9);
 }
 
 .system-status-details {
@@ -238,15 +252,17 @@ SOC Command Center
     padding: 17px;
     border: 1px solid var(--soc-border);
     border-radius: 17px;
-    background: linear-gradient(
-        145deg,
-        rgba(18,25,42,.94),
-        rgba(10,15,27,.94)
-    );
+    background:
+        linear-gradient(
+            145deg,
+            rgba(18,25,42,.94),
+            rgba(10,15,27,.94)
+        );
     box-shadow: 0 12px 35px rgba(0,0,0,.18);
-    transition: transform .25s ease,
-                border-color .25s ease,
-                box-shadow .25s ease;
+    transition:
+        transform .25s ease,
+        border-color .25s ease,
+        box-shadow .25s ease;
 }
 
 .metric-card:hover {
@@ -359,12 +375,13 @@ SOC Command Center
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(105,133,255,.5),
-        transparent
-    );
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(105,133,255,.5),
+            transparent
+        );
 }
 
 .chart-container {
@@ -688,10 +705,12 @@ SOC Command Center
         transform: scale(.75);
         opacity: .7;
     }
+
     70% {
         transform: scale(1.6);
         opacity: 0;
     }
+
     100% {
         transform: scale(1.6);
         opacity: 0;
@@ -810,6 +829,187 @@ SOC Command Center
 }
 
 /* ==========================================================
+   ADVANCED INTELLIGENCE PANELS
+   ========================================================== */
+
+.intelligence-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.intelligence-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 16px;
+}
+
+.intelligence-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 12px;
+    border: 1px solid rgba(125,145,190,.08);
+    border-radius: 10px;
+    background: rgba(5,10,19,.42);
+    transition: .2s ease;
+}
+
+.intelligence-row:hover {
+    border-color: rgba(93,124,255,.18);
+    background: rgba(93,124,255,.04);
+}
+
+.intelligence-rank {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 25px;
+    width: 25px;
+    height: 25px;
+    border-radius: 7px;
+    color: #8291b1;
+    background: rgba(93,124,255,.08);
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.intelligence-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.intelligence-main strong {
+    display: block;
+    overflow: hidden;
+    color: #d9e2f2;
+    font-family: monospace;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.intelligence-main span {
+    display: block;
+    margin-top: 3px;
+    color: #626e87;
+    font-size: 9px;
+}
+
+.intelligence-value {
+    text-align: right;
+}
+
+.intelligence-value strong {
+    display: block;
+    color: #91a4ff;
+    font-size: 12px;
+}
+
+.intelligence-value span {
+    display: block;
+    margin-top: 2px;
+    color: #5e6a82;
+    font-size: 8px;
+}
+
+.country-flag {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    color: #48ddff;
+    background: rgba(37,217,255,.07);
+    font-size: 13px;
+}
+
+.intel-empty {
+    padding: 28px 15px;
+    color: #5e6a82;
+    text-align: center;
+    font-size: 10px;
+}
+
+.intel-empty i {
+    display: block;
+    margin-bottom: 8px;
+    color: #43516b;
+    font-size: 21px;
+}
+
+/* ==========================================================
+   CRITICAL ACTIVITY
+   ========================================================== */
+
+.critical-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 16px;
+}
+
+.critical-event {
+    display: grid;
+    grid-template-columns: 8px 1fr auto;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 12px;
+    border: 1px solid rgba(255,77,103,.08);
+    border-radius: 10px;
+    background: rgba(255,77,103,.025);
+}
+
+.critical-event-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ff526b;
+    box-shadow: 0 0 10px rgba(255,77,103,.65);
+}
+
+.critical-event-main {
+    min-width: 0;
+}
+
+.critical-event-main strong {
+    display: block;
+    color: #dce4f2;
+    font-size: 10px;
+}
+
+.critical-event-main span {
+    display: block;
+    overflow: hidden;
+    margin-top: 3px;
+    color: #68758e;
+    font-family: monospace;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.critical-event-meta {
+    text-align: right;
+}
+
+.critical-event-meta strong {
+    display: block;
+    color: #ff667c;
+    font-size: 9px;
+}
+
+.critical-event-meta span {
+    display: block;
+    margin-top: 3px;
+    color: #59667f;
+    font-size: 8px;
+}
+
+/* ==========================================================
    AUTOMATION PIPELINE
    ========================================================== */
 
@@ -878,11 +1078,12 @@ SOC Command Center
     width: 1px;
     height: 9px;
     margin-left: 27px;
-    background: linear-gradient(
-        to bottom,
-        rgba(93,124,255,.4),
-        rgba(93,124,255,.05)
-    );
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(93,124,255,.4),
+            rgba(93,124,255,.05)
+        );
 }
 
 /* ==========================================================
@@ -1187,11 +1388,7 @@ SOC Command Center
     border: 1px solid rgba(93,124,255,.35);
     border-radius: 8px;
     color: #fff;
-    background: linear-gradient(
-        100deg,
-        #5269e8,
-        #596cff
-    );
+    background: linear-gradient(100deg, #5269e8, #596cff);
     box-shadow: 0 8px 22px rgba(82,105,232,.18);
     cursor: pointer;
     font-size: 10px;
@@ -1205,6 +1402,50 @@ SOC Command Center
 }
 
 /* ==========================================================
+   DASHBOARD LIVE STATUS
+   ========================================================== */
+
+.dashboard-sync {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border: 1px solid rgba(93,124,255,.12);
+    border-radius: 20px;
+    color: #6f7d98;
+    background: rgba(93,124,255,.035);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .8px;
+}
+
+.dashboard-sync.syncing {
+    color: #8da1ff;
+    border-color: rgba(93,124,255,.25);
+}
+
+.dashboard-sync.error {
+    color: #ff7b8c;
+    border-color: rgba(255,77,103,.2);
+}
+
+.sync-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #42dd8b;
+}
+
+.dashboard-sync.syncing .sync-dot {
+    background: #6f82ff;
+    box-shadow: 0 0 10px rgba(111,130,255,.8);
+}
+
+.dashboard-sync.error .sync-dot {
+    background: #ff526b;
+}
+
+/* ==========================================================
    RESPONSIVE
    ========================================================== */
 
@@ -1212,6 +1453,14 @@ SOC Command Center
 
     .metric-grid {
         grid-template-columns: repeat(3, 1fr);
+    }
+
+}
+
+@media (max-width: 1100px) {
+
+    .intelligence-grid {
+        grid-template-columns: 1fr;
     }
 
 }
@@ -1260,6 +1509,10 @@ SOC Command Center
         grid-template-columns: 1fr;
     }
 
+    .soc-hero {
+        padding: 28px;
+    }
+
 }
 
 @media (max-width: 500px) {
@@ -1272,12 +1525,16 @@ SOC Command Center
         grid-template-columns: 1fr 1fr;
     }
 
+    .command-panel {
+        padding: 16px;
+    }
+
     .soc-hero {
         padding: 25px;
     }
 
-    .command-panel {
-        padding: 16px;
+    .panel-header {
+        align-items: flex-start;
     }
 
 }
@@ -1364,9 +1621,10 @@ SOC Command Center
 
         </div>
 
-        <div class="section-live">
+        <div class="dashboard-sync" id="dashboardSyncStatus">
 
-            <span class="live-dot"></span>
+            <span class="sync-dot"></span>
+
             LIVE DATA
 
         </div>
@@ -1386,7 +1644,7 @@ SOC Command Center
 
                 <span>Total Alerts</span>
 
-                <h3>
+                <h3 id="metricTotalAlerts">
                     {{ total_alerts|default(0) }}
                 </h3>
 
@@ -1409,7 +1667,7 @@ SOC Command Center
 
                 <span>Critical Threats</span>
 
-                <h3>
+                <h3 id="metricCriticalAlerts">
                     {{ critical_alerts|default(0) }}
                 </h3>
 
@@ -1432,7 +1690,7 @@ SOC Command Center
 
                 <span>Open Incidents</span>
 
-                <h3>
+                <h3 id="metricOpenIncidents">
                     {{ incidents|default(0) }}
                 </h3>
 
@@ -1455,7 +1713,7 @@ SOC Command Center
 
                 <span>Blocked IPs</span>
 
-                <h3>
+                <h3 id="metricBlockedIps">
                     {{ blocked_ips|default(0) }}
                 </h3>
 
@@ -1478,7 +1736,7 @@ SOC Command Center
 
                 <span>Playbook Runs</span>
 
-                <h3>
+                <h3 id="metricPlaybookRuns">
                     {{ playbooks|default(0) }}
                 </h3>
 
@@ -1501,7 +1759,7 @@ SOC Command Center
 
                 <span>Average MTTR</span>
 
-                <h3>
+                <h3 id="metricMttr">
                     {{ mttr|default("2.4m") }}
                 </h3>
 
@@ -1548,7 +1806,6 @@ SOC Command Center
 
             </div>
 
-
             <div class="map-actions">
 
                 <div class="panel-status">
@@ -1576,8 +1833,6 @@ SOC Command Center
 
     </div>
 
-
-    <!-- MAP SUMMARY -->
 
     <div class="map-summary">
 
@@ -1651,8 +1906,6 @@ SOC Command Center
     </div>
 
 
-    <!-- MAP -->
-
     <div class="map-wrapper">
 
         <div id="threatMap"></div>
@@ -1667,8 +1920,7 @@ SOC Command Center
         </div>
 
 
-        <div
-            class="map-overlay map-legend">
+        <div class="map-overlay map-legend">
 
             <div class="legend-title">
                 THREAT SEVERITY
@@ -1798,7 +2050,9 @@ SOC Command Center
 
                     <div class="threat-score-inner">
 
-                        <span class="threat-score-value">
+                        <span
+                            class="threat-score-value"
+                            id="threatPostureValue">
 
                             {{ high_risk|default(0) }}
 
@@ -1821,7 +2075,9 @@ SOC Command Center
 
                     <span>Current Posture</span>
 
-                    <strong>MONITORED</strong>
+                    <strong id="threatPostureStatus">
+                        MONITORED
+                    </strong>
 
                 </div>
 
@@ -1933,6 +2189,175 @@ SOC Command Center
         </section>
 
     </div>
+
+</div>
+
+
+<!-- ==========================================================
+     ADVANCED SOC INTELLIGENCE
+     ========================================================== -->
+
+<div class="intelligence-grid">
+
+    <!-- TOP ATTACKERS -->
+
+    <section class="command-panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <span class="section-label">
+                    THREAT ACTORS
+                </span>
+
+                <h3>
+                    Top Attacker IPs
+                </h3>
+
+            </div>
+
+            <div class="panel-status">
+                <i class="fas fa-crosshairs"></i>
+                Ranked
+            </div>
+
+        </div>
+
+        <div
+            id="topAttackersList"
+            class="intelligence-list">
+
+            <div class="intel-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                Loading threat actors...
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- TOP COUNTRIES -->
+
+    <section class="command-panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <span class="section-label">
+                    GLOBAL ORIGINS
+                </span>
+
+                <h3>
+                    Top Threat Countries
+                </h3>
+
+            </div>
+
+            <div class="panel-status">
+                <i class="fas fa-globe"></i>
+                Geographic
+            </div>
+
+        </div>
+
+        <div
+            id="topCountriesList"
+            class="intelligence-list">
+
+            <div class="intel-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                Loading geographic intelligence...
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- ==========================================================
+     ALERT TYPES + CRITICAL ACTIVITY
+     ========================================================== -->
+
+<div class="intelligence-grid">
+
+    <section class="command-panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <span class="section-label">
+                    ATTACK CLASSIFICATION
+                </span>
+
+                <h3>
+                    Alert Type Intelligence
+                </h3>
+
+            </div>
+
+            <div class="panel-status">
+                <i class="fas fa-layer-group"></i>
+                Distribution
+            </div>
+
+        </div>
+
+        <div class="chart-container">
+
+            <canvas id="alertTypeChart"></canvas>
+
+        </div>
+
+    </section>
+
+
+    <section class="command-panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <span class="section-label">
+                    PRIORITY ACTIVITY
+                </span>
+
+                <h3>
+                    Recent Critical Events
+                </h3>
+
+            </div>
+
+            <div class="panel-status">
+
+                <span class="pulse-dot"></span>
+
+                Priority Feed
+
+            </div>
+
+        </div>
+
+        <div
+            id="criticalActivityList"
+            class="critical-feed">
+
+            <div class="intel-empty">
+
+                <i class="fas fa-spinner fa-spin"></i>
+
+                Loading critical activity...
+
+            </div>
+
+        </div>
+
+    </section>
 
 </div>
 
@@ -2196,7 +2621,7 @@ SOC Command Center
 
                 <span>PRIMARY IOC</span>
 
-                <strong>
+                <strong id="primaryIoc">
                     {{ top_ip|default("No IOC Available") }}
                 </strong>
 
@@ -2209,7 +2634,7 @@ SOC Command Center
 
                     <span>Abuse Score</span>
 
-                    <strong>
+                    <strong id="abuseScore">
                         {{ abuse_score|default("--") }}
                     </strong>
 
@@ -2220,7 +2645,7 @@ SOC Command Center
 
                     <span>VirusTotal</span>
 
-                    <strong>
+                    <strong id="vtScore">
                         {{ vt_score|default("--") }}
                     </strong>
 
@@ -2231,7 +2656,7 @@ SOC Command Center
 
                     <span>Origin</span>
 
-                    <strong>
+                    <strong id="primaryCountry">
                         {{ country|default("Unknown") }}
                     </strong>
 
@@ -2383,42 +2808,29 @@ SOC Command Center
 
             </thead>
 
-            <tbody>
+            <tbody id="liveEventsBody">
 
                 {% for alert in recent_alerts %}
 
                 <tr>
 
                     <td class="event-time">
-
                         {{ alert.get("created_at", "-") }}
-
                     </td>
 
-
                     <td>
-
                         <span class="alert-id">
-
                             {{ alert.get("alert_id", "-") }}
-
                         </span>
-
                     </td>
 
-
                     <td>
-
                         <span class="ip-address">
-
                             {{ alert.get("attacker_ip")
                                or alert.get("source_ip")
                                or "-" }}
-
                         </span>
-
                     </td>
-
 
                     <td>
 
@@ -2434,17 +2846,11 @@ SOC Command Center
 
                     </td>
 
-
                     <td>
-
                         <span class="risk-score">
-
                             {{ alert.get("risk_score", 0) }}
-
                         </span>
-
                     </td>
-
 
                     <td>
 
@@ -2632,8 +3038,6 @@ SOC Command Center
 </section>
 
 </div>
-
-
 {% endblock %}
 
 
@@ -2642,20 +3046,63 @@ SOC Command Center
 <script>
 
 /* ==========================================================
-   SERVER DATA
+   ADVANCED SOC DASHBOARD
+   SPRINT 2 - FEATURE 3
+   LIVE ANALYTICS ENGINE
    ========================================================== */
-
-const severityData = {{ severity_chart | tojson }};
-const statusData = {{ status_chart | tojson }};
-const dailyData = {{ daily_chart | tojson }};
-const riskData = {{ risk_chart | tojson }};
-
-const initialThreatMapData =
-    {{ threat_map_data | tojson }};
 
 
 /* ==========================================================
-   CHART HELPERS
+   INITIAL SERVER DATA
+   ========================================================== */
+
+const severityData =
+    {{ severity_chart | default([]) | tojson }};
+
+const statusData =
+    {{ status_chart | default([]) | tojson }};
+
+const dailyData =
+    {{ daily_chart | default([]) | tojson }};
+
+const riskData =
+    {{ risk_chart | default([]) | tojson }};
+
+const initialThreatMapData =
+    {{ threat_map_data | default([]) | tojson }};
+
+
+/* ==========================================================
+   DASHBOARD STATE
+   ========================================================== */
+
+let dashboardOverview = null;
+
+let alertChart = null;
+let severityChart = null;
+let statusChart = null;
+let riskChart = null;
+let alertTypeChart = null;
+
+let dashboardRefreshTimer = null;
+
+
+/* ==========================================================
+   CHART DEFAULTS
+   ========================================================== */
+
+if (typeof Chart !== "undefined") {
+
+    Chart.defaults.color = "#8f9bb3";
+
+    Chart.defaults.font.family =
+        "'Inter', 'Segoe UI', sans-serif";
+
+}
+
+
+/* ==========================================================
+   CHART DATA HELPERS
    ========================================================== */
 
 function chartPair(item) {
@@ -2664,38 +3111,47 @@ function chartPair(item) {
 
         return {
             label: item[0],
-            value: item[1]
+            value: Number(item[1]) || 0
         };
 
     }
 
+
     if (item && typeof item === "object") {
 
         return {
+
             label:
                 item.label ??
                 item.name ??
                 item.severity ??
                 item.status ??
                 item.risk_level ??
+                item.alert_type ??
                 item.date ??
-                item[0] ??
+                item.country ??
                 "-",
 
             value:
-                item.value ??
-                item.count ??
-                item.total ??
-                item[1] ??
-                0
+                Number(
+                    item.value ??
+                    item.count ??
+                    item.total ??
+                    item.alert_count ??
+                    item[1] ??
+                    0
+                ) || 0
+
         };
 
     }
+
 
     return {
         label: "-",
         value: 0
     };
+
 }
 
 
@@ -2711,381 +3167,1295 @@ function normalizeChartData(data) {
 
 
 /* ==========================================================
-   CHART DEFAULTS
+   SAFE TEXT
    ========================================================== */
 
-Chart.defaults.color = "#8f9bb3";
+function escapeHtml(value) {
 
-Chart.defaults.font.family =
-    "'Inter', 'Segoe UI', sans-serif";
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        value == null
+            ? ""
+            : String(value);
+
+    return div.innerHTML;
+
+}
 
 
 /* ==========================================================
-   LIVE THREAT ACTIVITY
+   DOM UPDATE HELPER
    ========================================================== */
 
-const normalizedDaily =
-    normalizeChartData(dailyData);
+function setText(id, value) {
+
+    const element =
+        document.getElementById(id);
+
+    if (!element) {
+        return;
+    }
+
+    element.textContent =
+        value == null
+            ? "-"
+            : String(value);
+
+}
 
 
-new Chart(
-    document.getElementById("alertChart"),
-    {
+/* ==========================================================
+   DASHBOARD SYNC STATUS
+   ========================================================== */
 
-        type: "line",
+function setDashboardStatus(
+    state,
+    message
+) {
 
-        data: {
+    const status =
+        document.getElementById(
+            "dashboardSyncStatus"
+        );
 
-            labels:
-                normalizedDaily.map(
-                    item => item.label
-                ),
+    if (!status) {
+        return;
+    }
 
-            datasets: [
 
-                {
+    status.classList.remove(
+        "syncing",
+        "error"
+    );
 
-                    label: "Security Alerts",
 
-                    data:
-                        normalizedDaily.map(
-                            item => item.value
-                        ),
+    if (state === "syncing") {
 
-                    borderColor: "#6c7cff",
+        status.classList.add(
+            "syncing"
+        );
 
-                    backgroundColor:
-                        "rgba(108,124,255,0.10)",
+    }
 
-                    borderWidth: 3,
 
-                    fill: true,
+    if (state === "error") {
 
-                    tension: 0.42,
+        status.classList.add(
+            "error"
+        );
 
-                    pointRadius: 3,
+    }
 
-                    pointHoverRadius: 6,
 
-                    pointBackgroundColor:
-                        "#8f9bff"
+    status.innerHTML = `
 
-                }
+        <span class="sync-dot"></span>
 
-            ]
+        ${escapeHtml(
+            message || "LIVE DATA"
+        )}
 
-        },
+    `;
 
-        options: {
+}
 
-            responsive: true,
 
-            maintainAspectRatio: false,
+/* ==========================================================
+   KPI METRICS
+   ========================================================== */
 
-            interaction: {
-                intersect: false,
-                mode: "index"
-            },
+function updateDashboardMetrics(
+    metrics,
+    incidents
+) {
 
-            plugins: {
+    metrics =
+        metrics || {};
 
-                legend: {
-                    display: false
-                }
+    incidents =
+        incidents || {};
 
-            },
 
-            scales: {
+    setText(
+        "metricTotalAlerts",
+        metrics.total_alerts ?? 0
+    );
 
-                x: {
 
-                    grid: {
-                        display: false
-                    },
+    setText(
+        "metricCriticalAlerts",
+        metrics.critical_alerts ?? 0
+    );
 
-                    ticks: {
-                        color: "#77819b"
-                    }
+
+    setText(
+        "metricOpenIncidents",
+        (
+            Number(incidents.total_incidents || 0) -
+            Number(incidents.resolved_incidents || 0) -
+            Number(incidents.closed_incidents || 0)
+        )
+    );
+
+
+    setText(
+        "metricBlockedIps",
+        metrics.blocked_ips ?? 0
+    );
+
+
+    setText(
+        "metricPlaybookRuns",
+        metrics.playbook_runs ?? 0
+    );
+
+
+    /*
+       MTTR is currently supplied by the existing
+       dashboard backend/template.
+    */
+
+}
+
+
+/* ==========================================================
+   THREAT POSTURE
+   ========================================================== */
+
+function updateThreatPosture(
+    metrics
+) {
+
+    metrics =
+        metrics || {};
+
+
+    const highRisk =
+        Number(
+            metrics.high_risk_alerts || 0
+        );
+
+
+    setText(
+        "threatPostureValue",
+        highRisk
+    );
+
+
+    const posture =
+        document.getElementById(
+            "threatPostureStatus"
+        );
+
+
+    if (!posture) {
+        return;
+    }
+
+
+    const critical =
+        Number(
+            metrics.critical_alerts || 0
+        );
+
+
+    if (critical > 0) {
+
+        posture.textContent =
+            "ELEVATED";
+
+        return;
+
+    }
+
+
+    if (highRisk > 0) {
+
+        posture.textContent =
+            "GUARDED";
+
+        return;
+
+    }
+
+
+    posture.textContent =
+        "MONITORED";
+
+}
+
+
+/* ==========================================================
+   CREATE / UPDATE LINE CHART
+   ========================================================== */
+
+function renderAlertChart(
+    data
+) {
+
+    if (typeof Chart === "undefined") {
+        return;
+    }
+
+
+    const canvas =
+        document.getElementById(
+            "alertChart"
+        );
+
+
+    if (!canvas) {
+        return;
+    }
+
+
+    const normalized =
+        normalizeChartData(data);
+
+
+    const labels =
+        normalized.map(
+            item => item.label
+        );
+
+
+    const values =
+        normalized.map(
+            item => item.value
+        );
+
+
+    if (alertChart) {
+
+        alertChart.data.labels =
+            labels;
+
+        alertChart.data.datasets[0].data =
+            values;
+
+        alertChart.update("none");
+
+        return;
+
+    }
+
+
+    alertChart =
+        new Chart(
+            canvas,
+            {
+
+                type: "line",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Security Alerts",
+
+                            data: values,
+
+                            borderColor:
+                                "#6c7cff",
+
+                            backgroundColor:
+                                "rgba(108,124,255,0.10)",
+
+                            borderWidth: 3,
+
+                            fill: true,
+
+                            tension: 0.42,
+
+                            pointRadius: 3,
+
+                            pointHoverRadius: 6,
+
+                            pointBackgroundColor:
+                                "#8f9bff"
+
+                        }
+
+                    ]
 
                 },
 
-                y: {
+                options: {
 
-                    beginAtZero: true,
+                    responsive: true,
 
-                    grid: {
-                        color:
-                            "rgba(255,255,255,0.05)"
+                    maintainAspectRatio: false,
+
+                    interaction: {
+
+                        intersect: false,
+
+                        mode: "index"
+
                     },
 
-                    ticks: {
-                        color: "#77819b"
-                    }
+                    plugins: {
 
-                }
+                        legend: {
+                            display: false
+                        }
 
-            }
+                    },
 
-        }
+                    scales: {
 
-    }
-);
+                        x: {
 
+                            grid: {
+                                display: false
+                            },
 
-/* ==========================================================
-   SEVERITY DISTRIBUTION
-   ========================================================== */
+                            ticks: {
+                                color: "#77819b"
+                            }
 
-const normalizedSeverity =
-    normalizeChartData(severityData);
+                        },
 
+                        y: {
 
-new Chart(
-    document.getElementById("severityChart"),
-    {
+                            beginAtZero: true,
 
-        type: "doughnut",
+                            grid: {
 
-        data: {
+                                color:
+                                    "rgba(255,255,255,0.05)"
 
-            labels:
-                normalizedSeverity.map(
-                    item => item.label
-                ),
+                            },
 
-            datasets: [
+                            ticks: {
+                                color: "#77819b"
+                            }
 
-                {
-
-                    data:
-                        normalizedSeverity.map(
-                            item => item.value
-                        ),
-
-                    backgroundColor: [
-
-                        "#ef4444",
-                        "#f97316",
-                        "#eab308",
-                        "#38bdf8"
-
-                    ],
-
-                    borderWidth: 0,
-
-                    hoverOffset: 8
-
-                }
-
-            ]
-
-        },
-
-        options: {
-
-            responsive: true,
-
-            maintainAspectRatio: false,
-
-            cutout: "70%",
-
-            plugins: {
-
-                legend: {
-
-                    position: "bottom",
-
-                    labels: {
-
-                        padding: 20,
-
-                        usePointStyle: true
+                        }
 
                     }
 
                 }
 
             }
-
-        }
+        );
 
     }
-);
 
 
 /* ==========================================================
-   INCIDENT STATUS
+   DOUGHNUT CHART FACTORY
    ========================================================== */
 
-const normalizedStatus =
-    normalizeChartData(statusData);
+function createDoughnutChart(
+    canvasId,
+    data,
+    existingChart,
+    colors,
+    cutout
+) {
+
+    if (typeof Chart === "undefined") {
+        return existingChart;
+    }
 
 
-new Chart(
-    document.getElementById("statusChart"),
-    {
+    const canvas =
+        document.getElementById(
+            canvasId
+        );
 
-        type: "bar",
 
-        data: {
+    if (!canvas) {
+        return existingChart;
+    }
 
-            labels:
-                normalizedStatus.map(
-                    item => item.label
-                ),
 
-            datasets: [
+    const normalized =
+        normalizeChartData(data);
 
-                {
 
-                    label: "Incidents",
+    const labels =
+        normalized.map(
+            item => item.label
+        );
 
-                    data:
-                        normalizedStatus.map(
-                            item => item.value
-                        ),
 
-                    backgroundColor:
-                        "#6c7cff",
+    const values =
+        normalized.map(
+            item => item.value
+        );
 
-                    borderRadius: 8,
 
-                    borderSkipped: false
+    if (existingChart) {
 
-                }
+        existingChart.data.labels =
+            labels;
 
-            ]
+        existingChart.data.datasets[0].data =
+            values;
 
-        },
+        existingChart.update("none");
 
-        options: {
+        return existingChart;
 
-            responsive: true,
+    }
 
-            maintainAspectRatio: false,
 
-            plugins: {
+    return new Chart(
+        canvas,
+        {
 
-                legend: {
-                    display: false
-                }
+            type: "doughnut",
+
+            data: {
+
+                labels: labels,
+
+                datasets: [
+
+                    {
+
+                        data: values,
+
+                        backgroundColor:
+                            colors,
+
+                        borderWidth: 0,
+
+                        hoverOffset: 8
+
+                    }
+
+                ]
 
             },
 
-            scales: {
+            options: {
 
-                x: {
+                responsive: true,
 
-                    grid: {
-                        display: false
+                maintainAspectRatio: false,
+
+                cutout:
+                    cutout || "70%",
+
+                plugins: {
+
+                    legend: {
+
+                        position: "bottom",
+
+                        labels: {
+
+                            padding: 18,
+
+                            usePointStyle: true
+
+                        }
+
                     }
+
+                }
+
+            }
+
+        }
+    );
+
+}
+
+
+/* ==========================================================
+   SEVERITY CHART
+   ========================================================== */
+
+function renderSeverityChart(
+    data
+) {
+
+    severityChart =
+        createDoughnutChart(
+
+            "severityChart",
+
+            data,
+
+            severityChart,
+
+            [
+                "#ef4444",
+                "#f97316",
+                "#eab308",
+                "#38bdf8"
+            ],
+
+            "70%"
+
+        );
+
+}
+
+
+/* ==========================================================
+   RISK CHART
+   ========================================================== */
+
+function renderRiskChart(
+    data
+) {
+
+    riskChart =
+        createDoughnutChart(
+
+            "riskChart",
+
+            data,
+
+            riskChart,
+
+            [
+                "#ef4444",
+                "#f97316",
+                "#eab308",
+                "#22c55e"
+            ],
+
+            "72%"
+
+        );
+
+}
+
+
+/* ==========================================================
+   INCIDENT STATUS BAR CHART
+   ========================================================== */
+
+function renderStatusChart(
+    data
+) {
+
+    if (typeof Chart === "undefined") {
+        return;
+    }
+
+
+    const canvas =
+        document.getElementById(
+            "statusChart"
+        );
+
+
+    if (!canvas) {
+        return;
+    }
+
+
+    const normalized =
+        normalizeChartData(data);
+
+
+    const labels =
+        normalized.map(
+            item => item.label
+        );
+
+
+    const values =
+        normalized.map(
+            item => item.value
+        );
+
+
+    if (statusChart) {
+
+        statusChart.data.labels =
+            labels;
+
+        statusChart.data.datasets[0].data =
+            values;
+
+        statusChart.update("none");
+
+        return;
+
+    }
+
+
+    statusChart =
+        new Chart(
+            canvas,
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Incidents",
+
+                            data: values,
+
+                            backgroundColor:
+                                "#6c7cff",
+
+                            borderRadius: 8,
+
+                            borderSkipped: false
+
+                        }
+
+                    ]
 
                 },
 
-                y: {
+                options: {
 
-                    beginAtZero: true,
+                    responsive: true,
 
-                    grid: {
+                    maintainAspectRatio: false,
 
-                        color:
-                            "rgba(255,255,255,0.05)"
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        }
+
+                    },
+
+                    scales: {
+
+                        x: {
+
+                            grid: {
+                                display: false
+                            }
+
+                        },
+
+                        y: {
+
+                            beginAtZero: true,
+
+                            grid: {
+
+                                color:
+                                    "rgba(255,255,255,0.05)"
+
+                            }
+
+                        }
 
                     }
 
                 }
 
             }
+        );
 
-        }
-
-    }
-);
+}
 
 
 /* ==========================================================
-   RISK DISTRIBUTION
+   ALERT TYPE CHART
    ========================================================== */
 
-const normalizedRisk =
-    normalizeChartData(riskData);
+function renderAlertTypeChart(
+    data
+) {
 
+    alertTypeChart =
+        createDoughnutChart(
 
-new Chart(
-    document.getElementById("riskChart"),
-    {
+            "alertTypeChart",
 
-        type: "doughnut",
+            data,
 
-        data: {
+            alertTypeChart,
 
-            labels:
-                normalizedRisk.map(
-                    item => item.label
-                ),
+            [
+                "#6c7cff",
+                "#25d9ff",
+                "#9b6cff",
+                "#ff9f43",
+                "#2bd576",
+                "#ff4d67"
+            ],
 
-            datasets: [
+            "66%"
 
-                {
+        );
 
-                    data:
-                        normalizedRisk.map(
-                            item => item.value
-                        ),
-
-                    backgroundColor: [
-
-                        "#ef4444",
-                        "#f97316",
-                        "#eab308",
-                        "#22c55e"
-
-                    ],
-
-                    borderWidth: 0,
-
-                    hoverOffset: 8
-
-                }
-
-            ]
-
-        },
-
-        options: {
-
-            responsive: true,
-
-            maintainAspectRatio: false,
-
-            cutout: "72%",
-
-            plugins: {
-
-                legend: {
-
-                    position: "bottom",
-
-                    labels: {
-
-                        padding: 18,
-
-                        usePointStyle: true
-
-                    }
-
-                }
-
-            }
-
-        }
-
-    }
-);
+}
 
 
 /* ==========================================================
-   GLOBAL ATTACK MAP
+   ADVANCED ANALYTICS
+   ========================================================== */
+
+function updateCharts(
+    overview
+) {
+
+    if (!overview) {
+        return;
+    }
+
+
+    renderAlertChart(
+        overview.daily_alerts || []
+    );
+
+
+    renderSeverityChart(
+        overview.severity || []
+    );
+
+
+    renderStatusChart(
+        overview.incidents_status ||
+        overview.status ||
+        []
+    );
+
+
+    renderRiskChart(
+        overview.risk || []
+    );
+
+
+    renderAlertTypeChart(
+        overview.alert_types || []
+    );
+
+}
+
+
+/* ==========================================================
+   TOP ATTACKER IPs
+   ========================================================== */
+
+function renderTopAttackers(
+    attackers
+) {
+
+    const container =
+        document.getElementById(
+            "topAttackersList"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    if (
+        !Array.isArray(attackers) ||
+        attackers.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div class="intel-empty">
+
+                <i class="fas fa-crosshairs"></i>
+
+                No attacker intelligence available.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        attackers
+            .slice(0, 10)
+            .map(
+                (attacker, index) => {
+
+                    const ip =
+                        attacker.attacker_ip ||
+                        "Unknown";
+
+                    const count =
+                        Number(
+                            attacker.alert_count || 0
+                        );
+
+                    const maxRisk =
+                        Number(
+                            attacker.max_risk_score || 0
+                        );
+
+
+                    return `
+
+                        <div class="intelligence-row">
+
+                            <div class="intelligence-rank">
+                                ${index + 1}
+                            </div>
+
+                            <div class="intelligence-main">
+
+                                <strong>
+                                    ${escapeHtml(ip)}
+                                </strong>
+
+                                <span>
+                                    ${count}
+                                    alert${count === 1 ? "" : "s"}
+                                </span>
+
+                            </div>
+
+                            <div class="intelligence-value">
+
+                                <strong>
+                                    ${maxRisk}
+                                </strong>
+
+                                <span>
+                                    MAX RISK
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* ==========================================================
+   TOP THREAT COUNTRIES
+   ========================================================== */
+
+function renderTopCountries(
+    countries
+) {
+
+    const container =
+        document.getElementById(
+            "topCountriesList"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    if (
+        !Array.isArray(countries) ||
+        countries.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div class="intel-empty">
+
+                <i class="fas fa-globe"></i>
+
+                No geographic threat data available.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        countries
+            .slice(0, 10)
+            .map(
+                (country, index) => {
+
+                    const name =
+                        country.country ||
+                        "Unknown";
+
+                    const alerts =
+                        Number(
+                            country.alert_count || 0
+                        );
+
+                    const attackers =
+                        Number(
+                            country.unique_attackers || 0
+                        );
+
+
+                    return `
+
+                        <div class="intelligence-row">
+
+                            <div class="country-flag">
+
+                                <i class="fas fa-globe-americas"></i>
+
+                            </div>
+
+                            <div class="intelligence-main">
+
+                                <strong>
+                                    ${escapeHtml(name)}
+                                </strong>
+
+                                <span>
+                                    ${attackers}
+                                    unique attacker${attackers === 1 ? "" : "s"}
+                                </span>
+
+                            </div>
+
+                            <div class="intelligence-value">
+
+                                <strong>
+                                    ${alerts}
+                                </strong>
+
+                                <span>
+                                    ALERTS
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* ==========================================================
+   CRITICAL EVENT FEED
+   ========================================================== */
+
+function renderCriticalActivity(
+    events
+) {
+
+    const container =
+        document.getElementById(
+            "criticalActivityList"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    if (
+        !Array.isArray(events) ||
+        events.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div class="intel-empty">
+
+                <i class="fas fa-shield-alt"></i>
+
+                No critical or high-severity events.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        events
+            .slice(0, 8)
+            .map(
+                event => {
+
+                    const severity =
+                        String(
+                            event.severity ||
+                            "HIGH"
+                        ).toUpperCase();
+
+                    const alertId =
+                        event.alert_id ||
+                        "-";
+
+                    const attacker =
+                        event.attacker_ip ||
+                        event.source_ip ||
+                        "-";
+
+                    const risk =
+                        Number(
+                            event.risk_score || 0
+                        );
+
+                    const status =
+                        event.status ||
+                        "NEW";
+
+                    const created =
+                        event.created_at ||
+                        "-";
+
+
+                    return `
+
+                        <div class="critical-event">
+
+                            <span class="critical-event-dot"></span>
+
+                            <div class="critical-event-main">
+
+                                <strong>
+                                    ${escapeHtml(
+                                        severity
+                                    )}
+                                    ·
+                                    ${escapeHtml(
+                                        alertId
+                                    )}
+                                </strong>
+
+                                <span>
+                                    ${escapeHtml(
+                                        attacker
+                                    )}
+                                </span>
+
+                            </div>
+
+                            <div class="critical-event-meta">
+
+                                <strong>
+                                    RISK ${risk}
+                                </strong>
+
+                                <span>
+                                    ${escapeHtml(
+                                        status
+                                    )}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* ==========================================================
+   LIVE SECURITY EVENTS TABLE
+   ========================================================== */
+
+function renderLiveEvents(
+    events
+) {
+
+    const tbody =
+        document.getElementById(
+            "liveEventsBody"
+        );
+
+
+    if (!tbody) {
+        return;
+    }
+
+
+    if (
+        !Array.isArray(events) ||
+        events.length === 0
+    ) {
+
+        tbody.innerHTML = `
+
+            <tr>
+
+                <td colspan="6">
+
+                    <div class="empty-events">
+
+                        <i class="fas fa-satellite-dish"></i>
+
+                        <h4>
+                            No Security Events Yet
+                        </h4>
+
+                        <p>
+                            The SOAR engine is waiting
+                            for incoming alerts.
+                        </p>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    tbody.innerHTML =
+        events
+            .slice(0, 10)
+            .map(
+                alert => {
+
+                    const severity =
+                        String(
+                            alert.severity ||
+                            "LOW"
+                        ).toUpperCase();
+
+                    const attacker =
+                        alert.attacker_ip ||
+                        alert.source_ip ||
+                        "-";
+
+                    const risk =
+                        alert.risk_score ??
+                        0;
+
+                    const status =
+                        alert.status ||
+                        "NEW";
+
+
+                    return `
+
+                        <tr>
+
+                            <td class="event-time">
+
+                                ${escapeHtml(
+                                    alert.created_at || "-"
+                                )}
+
+                            </td>
+
+                            <td>
+
+                                <span class="alert-id">
+
+                                    ${escapeHtml(
+                                        alert.alert_id || "-"
+                                    )}
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span class="ip-address">
+
+                                    ${escapeHtml(
+                                        attacker
+                                    )}
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span
+                                    class="severity-badge severity-${severity.toLowerCase()}">
+
+                                    ${escapeHtml(
+                                        severity
+                                    )}
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span class="risk-score">
+
+                                    ${escapeHtml(
+                                        String(risk)
+                                    )}
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span class="event-status">
+
+                                    <span class="status-dot"></span>
+
+                                    ${escapeHtml(
+                                        status
+                                    )}
+
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* ==========================================================
+   THREAT MAP
    ========================================================== */
 
 let threatMap = null;
@@ -3094,7 +4464,7 @@ let threatMarkers = [];
 
 
 /* ----------------------------------------------------------
-   CREATE MAP
+   MAP INITIALIZATION
    ---------------------------------------------------------- */
 
 function initializeThreatMap() {
@@ -3110,26 +4480,51 @@ function initializeThreatMap() {
     }
 
 
-    threatMap = L.map(
-        "threatMap",
-        {
-            zoomControl: true,
-            worldCopyJump: true,
-            minZoom: 2,
-            maxZoom: 12
-        }
-    ).setView(
-        [25, 10],
-        2
-    );
+    const mapElement =
+        document.getElementById(
+            "threatMap"
+        );
+
+
+    if (!mapElement) {
+        return;
+    }
+
+
+    if (threatMap) {
+        return;
+    }
+
+
+    threatMap =
+        L.map(
+            "threatMap",
+            {
+
+                zoomControl: true,
+
+                worldCopyJump: true,
+
+                minZoom: 2,
+
+                maxZoom: 12
+
+            }
+        ).setView(
+            [25, 10],
+            2
+        );
 
 
     L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
+
             maxZoom: 19,
+
             attribution:
-                '&copy; OpenStreetMap contributors'
+                "&copy; OpenStreetMap contributors"
+
         }
     ).addTo(
         threatMap
@@ -3147,7 +4542,9 @@ function initializeThreatMap() {
    RISK CLASS
    ---------------------------------------------------------- */
 
-function getRiskClass(threat) {
+function getRiskClass(
+    threat
+) {
 
     const riskLevel =
         String(
@@ -3157,30 +4554,18 @@ function getRiskClass(threat) {
         ).toUpperCase();
 
 
-    if (
-        riskLevel === "CRITICAL"
-    ) {
-
+    if (riskLevel === "CRITICAL") {
         return "critical";
-
     }
 
 
-    if (
-        riskLevel === "HIGH"
-    ) {
-
+    if (riskLevel === "HIGH") {
         return "high";
-
     }
 
 
-    if (
-        riskLevel === "MEDIUM"
-    ) {
-
+    if (riskLevel === "MEDIUM") {
         return "medium";
-
     }
 
 
@@ -3352,7 +4737,11 @@ function createThreatPopup(
                 <span>Severity</span>
 
                 <strong class="threat-popup-risk">
-                    ${escapeHtml(severity)}
+
+                    ${escapeHtml(
+                        severity
+                    )}
+
                 </strong>
 
             </div>
@@ -3363,7 +4752,11 @@ function createThreatPopup(
                 <span>Risk Score</span>
 
                 <strong class="threat-popup-risk">
-                    ${escapeHtml(String(riskScore))}/100
+
+                    ${escapeHtml(
+                        String(riskScore)
+                    )}/100
+
                 </strong>
 
             </div>
@@ -3420,30 +4813,7 @@ function createThreatPopup(
 
 
 /* ----------------------------------------------------------
-   HTML ESCAPE
-   ---------------------------------------------------------- */
-
-function escapeHtml(
-    value
-) {
-
-    const div =
-        document.createElement(
-            "div"
-        );
-
-    div.textContent =
-        value == null
-            ? ""
-            : String(value);
-
-    return div.innerHTML;
-
-}
-
-
-/* ----------------------------------------------------------
-   RENDER MARKERS
+   RENDER MAP MARKERS
    ---------------------------------------------------------- */
 
 function renderThreatMarkers(
@@ -3473,9 +4843,7 @@ function renderThreatMarkers(
 
 
     if (!Array.isArray(threats)) {
-
         threats = [];
-
     }
 
 
@@ -3517,12 +4885,17 @@ function renderThreatMarkers(
 
             const marker =
                 L.marker(
-                    [latitude, longitude],
+                    [
+                        latitude,
+                        longitude
+                    ],
                     {
+
                         icon:
                             createThreatIcon(
                                 threat
                             )
+
                     }
                 );
 
@@ -3566,9 +4939,7 @@ function renderThreatMarkers(
     }
 
 
-    if (
-        validThreatCount > 0
-    ) {
+    if (validThreatCount > 0) {
 
         const bounds =
             L.latLngBounds(
@@ -3579,15 +4950,16 @@ function renderThreatMarkers(
             );
 
 
-        if (
-            bounds.isValid()
-        ) {
+        if (bounds.isValid()) {
 
             threatMap.fitBounds(
                 bounds.pad(.25),
                 {
+
                     maxZoom: 5,
+
                     animate: true
+
                 }
             );
 
@@ -3599,7 +4971,45 @@ function renderThreatMarkers(
 
 
 /* ----------------------------------------------------------
-   LOAD MAP DATA
+   MAP SUMMARY
+   ---------------------------------------------------------- */
+
+function updateMapSummary(
+    summary
+) {
+
+    summary =
+        summary || {};
+
+
+    setText(
+        "mappedThreats",
+        summary.total_mapped_threats ?? 0
+    );
+
+
+    setText(
+        "mappedCountries",
+        summary.unique_countries ?? 0
+    );
+
+
+    setText(
+        "mappedCritical",
+        summary.critical_threats ?? 0
+    );
+
+
+    setText(
+        "mappedHigh",
+        summary.high_risk_threats ?? 0
+    );
+
+}
+
+
+/* ----------------------------------------------------------
+   LOAD MAP
    ---------------------------------------------------------- */
 
 async function loadThreatMap() {
@@ -3629,14 +5039,16 @@ async function loadThreatMap() {
             fetch(
                 "/api/threat-map",
                 {
-                    credentials: "same-origin"
+                    credentials:
+                        "same-origin"
                 }
             ),
 
             fetch(
                 "/api/threat-map/summary",
                 {
-                    credentials: "same-origin"
+                    credentials:
+                        "same-origin"
                 }
             )
 
@@ -3695,83 +5107,347 @@ async function loadThreatMap() {
 }
 
 
-/* ----------------------------------------------------------
-   UPDATE MAP SUMMARY
-   ---------------------------------------------------------- */
+/* ==========================================================
+   MAIN DASHBOARD API
+   ========================================================== */
 
-function updateMapSummary(
-    summary
-) {
+async function loadDashboardOverview() {
 
-    document.getElementById(
-        "mappedThreats"
-    ).textContent =
-        summary.total_mapped_threats ??
-        0;
+    setDashboardStatus(
+        "syncing",
+        "SYNCING"
+    );
 
 
-    document.getElementById(
-        "mappedCountries"
-    ).textContent =
-        summary.unique_countries ??
-        0;
+    try {
+
+        const response =
+            await fetch(
+                "/api/dashboard/overview",
+                {
+
+                    method: "GET",
+
+                    credentials:
+                        "same-origin",
+
+                    headers: {
+
+                        "Accept":
+                            "application/json"
+
+                    },
+
+                    cache: "no-store"
+
+                }
+            );
 
 
-    document.getElementById(
-        "mappedCritical"
-    ).textContent =
-        summary.critical_threats ??
-        0;
+        if (!response.ok) {
+
+            throw new Error(
+                `Dashboard API returned ${response.status}`
+            );
+
+        }
 
 
-    document.getElementById(
-        "mappedHigh"
-    ).textContent =
-        summary.high_risk_threats ??
-        0;
+        const payload =
+            await response.json();
+
+
+        if (
+            !payload ||
+            payload.status !== "success"
+        ) {
+
+            throw new Error(
+                "Invalid dashboard API response"
+            );
+
+        }
+
+
+        const overview =
+            payload.data || {};
+
+
+        dashboardOverview =
+            overview;
+
+
+        /* --------------------------------------------------
+           METRICS
+           -------------------------------------------------- */
+
+        updateDashboardMetrics(
+            overview.metrics,
+            overview.incidents
+        );
+
+
+        /* --------------------------------------------------
+           POSTURE
+           -------------------------------------------------- */
+
+        updateThreatPosture(
+            overview.metrics
+        );
+
+
+        /* --------------------------------------------------
+           CHARTS
+           -------------------------------------------------- */
+
+        updateCharts(
+            overview
+        );
+
+
+        /* --------------------------------------------------
+           INTELLIGENCE
+           -------------------------------------------------- */
+
+        renderTopAttackers(
+            overview.top_attackers || []
+        );
+
+
+        renderTopCountries(
+            overview.top_countries || []
+        );
+
+
+        renderCriticalActivity(
+            overview.recent_critical || []
+        );
+
+
+        /* --------------------------------------------------
+           LIVE EVENT STREAM
+           -------------------------------------------------- */
+
+        renderLiveEvents(
+            overview.recent_critical || []
+        );
+
+
+        /* --------------------------------------------------
+           PRIMARY IOC
+           -------------------------------------------------- */
+
+        const topAttackers =
+            overview.top_attackers || [];
+
+
+        if (topAttackers.length > 0) {
+
+            setText(
+                "primaryIoc",
+                topAttackers[0].attacker_ip ||
+                "No IOC Available"
+            );
+
+        }
+
+
+        /* --------------------------------------------------
+           MAP SUMMARY FROM OVERVIEW
+           -------------------------------------------------- */
+
+        if (
+            overview.threat_map_summary
+        ) {
+
+            updateMapSummary(
+                overview.threat_map_summary
+            );
+
+        }
+
+
+        setDashboardStatus(
+            "online",
+            "LIVE DATA"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Dashboard overview error:",
+            error
+        );
+
+
+        /*
+           Do not destroy the existing dashboard if
+           the API temporarily fails.
+        */
+
+        setDashboardStatus(
+            "error",
+            "SYNC ERROR"
+        );
+
+    }
 
 }
 
 
-/* ----------------------------------------------------------
-   REFRESH BUTTON
-   ---------------------------------------------------------- */
+/* ==========================================================
+   REFRESH ALL SOC DATA
+   ========================================================== */
 
-document
-    .getElementById(
-        "refreshThreatMap"
-    )
-    .addEventListener(
-        "click",
-        loadThreatMap
+async function refreshSocDashboard() {
+
+    await Promise.allSettled([
+
+        loadDashboardOverview(),
+
+        loadThreatMap()
+
+    ]);
+
+}
+
+
+/* ==========================================================
+   INITIALIZE DASHBOARD
+   ========================================================== */
+
+function initializeSocDashboard() {
+
+    /*
+       Create map first.
+    */
+
+    initializeThreatMap();
+
+
+    /*
+       Render initial server-side charts immediately.
+       This prevents a blank dashboard while the API loads.
+    */
+
+    renderAlertChart(
+        dailyData
     );
 
 
-/* ----------------------------------------------------------
-   INITIALIZE
-   ---------------------------------------------------------- */
+    renderSeverityChart(
+        severityData
+    );
+
+
+    renderRiskChart(
+        riskData
+    );
+
+
+    /*
+       The backend's status chart is normally supplied
+       through status_chart. Use it as the initial state.
+    */
+
+    renderStatusChart(
+        statusData
+    );
+
+
+    /*
+       Dashboard API then replaces the initial state
+       with current live data.
+    */
+
+    loadDashboardOverview();
+
+
+    /*
+       Map loads separately so Feature 1 remains functional.
+    */
+
+    loadThreatMap();
+
+
+    /*
+       Refresh analytics every 20 seconds.
+    */
+
+    dashboardRefreshTimer =
+        setInterval(
+            loadDashboardOverview,
+            20000
+        );
+
+
+    /*
+       Geographic telemetry refreshes every 30 seconds.
+    */
+
+    setInterval(
+        loadThreatMap,
+        30000
+    );
+
+}
+
+
+/* ==========================================================
+   MAP REFRESH BUTTON
+   ========================================================== */
 
 document.addEventListener(
     "DOMContentLoaded",
     function() {
 
-        initializeThreatMap();
+        const mapButton =
+            document.getElementById(
+                "refreshThreatMap"
+            );
+
+
+        if (mapButton) {
+
+            mapButton.addEventListener(
+                "click",
+                loadThreatMap
+            );
+
+        }
+
+
+        initializeSocDashboard();
 
     }
 );
 
 
-/* ----------------------------------------------------------
-   AUTO REFRESH
-   ----------------------------------------------------------
+/* ==========================================================
+   PAGE VISIBILITY
+   ========================================================== */
 
-   Refresh geographic telemetry every 30 seconds.
-   This does not reload the entire dashboard.
-   ---------------------------------------------------------- */
+document.addEventListener(
+    "visibilitychange",
+    function() {
 
-setInterval(
-    loadThreatMap,
-    30000
+        /*
+           When the analyst returns to the dashboard,
+           immediately synchronize current SOC state.
+        */
+
+        if (
+            document.visibilityState === "visible"
+        ) {
+
+            loadDashboardOverview();
+
+            loadThreatMap();
+
+        }
+
+    }
 );
 
 </script>
