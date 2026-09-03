@@ -1,7 +1,14 @@
 import sqlite3
+import csv
+import io
 
 from database.database import create_connection
 from backend.auth import verify_password
+
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib.styles import getSampleStyleSheet
 
 
 # ==========================================================
@@ -166,11 +173,16 @@ def delete_alert(alert_id: str):
 # ==========================================================
 
 def search_alerts(
+    query=None,
     search=None,
     severity=None,
     risk_level=None,
     status=None,
     alert_type=None,
+    source_ip=None,
+    attacker_ip=None,
+    alert_id=None,
+    incident_id=None,
     date_from=None,
     date_to=None,
     limit=50,
@@ -179,56 +191,15 @@ def search_alerts(
     """
     Advanced alert search and filtering.
 
-    Supported filters:
+    Supports the parameter names used by backend/main.py while
+    retaining ``search`` as a backwards-compatible alias for ``query``.
 
-    search:
-        Searches across:
-        - alert ID
-        - alert type
-        - source IP
-        - attacker IP
-        - country
-        - city
-        - region
-        - organization
-
-    severity:
-        CRITICAL / HIGH / MEDIUM / LOW
-
-    risk_level:
-        CRITICAL / HIGH / MEDIUM / LOW
-
-    status:
-        NEW / INVESTIGATING / CONTAINED /
-        RESOLVED / CLOSED
-
-    alert_type:
-        Exact alert type match.
-
-    date_from:
-        Inclusive start date in YYYY-MM-DD format.
-
-    date_to:
-        Inclusive end date in YYYY-MM-DD format.
-
-    limit:
-        Maximum number of returned alerts.
-
-    offset:
-        Pagination offset.
-
-    Returns:
-        {
-            "alerts": [...],
-            "total": 0,
-            "limit": 50,
-            "offset": 0
-        }
+    Returns a list of alert dictionaries so the existing API response
+    can safely calculate ``len(results)`` and serialize the results.
     """
 
-    # ------------------------------------------------------
-    # Protect the database from unreasonable pagination.
-    # ------------------------------------------------------
+    if query is None:
+        query = search
 
     try:
         limit = int(limit)
@@ -243,24 +214,12 @@ def search_alerts(
     limit = max(1, min(limit, 500))
     offset = max(0, offset)
 
-    # ------------------------------------------------------
-    # Build WHERE conditions dynamically.
-    # Values are always parameterized.
-    # ------------------------------------------------------
-
     conditions = []
     parameters = []
 
-    # ------------------------------------------------------
-    # General search
-    # ------------------------------------------------------
-
-    if search and search.strip():
-
-        search_value = f"%{search.strip()}%"
-
-        conditions.append(
-            """
+    if query and str(query).strip():
+        value = f"%{str(query).strip()}%"
+        conditions.append("""
             (
                 alert_id LIKE ?
                 OR alert_type LIKE ?
@@ -271,141 +230,67 @@ def search_alerts(
                 OR region LIKE ?
                 OR org LIKE ?
             )
-            """
-        )
+        """)
+        parameters.extend([value] * 8)
 
-        parameters.extend(
-            [
-                search_value,
-                search_value,
-                search_value,
-                search_value,
-                search_value,
-                search_value,
-                search_value,
-                search_value
-            ]
-        )
+    if severity and str(severity).strip():
+        conditions.append("UPPER(severity) = UPPER(?)")
+        parameters.append(str(severity).strip())
 
-    # ------------------------------------------------------
-    # Severity
-    # ------------------------------------------------------
+    if risk_level and str(risk_level).strip():
+        conditions.append("UPPER(risk_level) = UPPER(?)")
+        parameters.append(str(risk_level).strip())
 
-    if severity and severity.strip():
+    if status and str(status).strip():
+        conditions.append("UPPER(status) = UPPER(?)")
+        parameters.append(str(status).strip())
 
-        conditions.append(
-            "UPPER(severity) = UPPER(?)"
-        )
+    if alert_type and str(alert_type).strip():
+        conditions.append("UPPER(alert_type) = UPPER(?)")
+        parameters.append(str(alert_type).strip())
 
-        parameters.append(
-            severity.strip()
-        )
+    if source_ip and str(source_ip).strip():
+        conditions.append("source_ip LIKE ?")
+        parameters.append(f"%{str(source_ip).strip()}%")
 
-    # ------------------------------------------------------
-    # Risk level
-    # ------------------------------------------------------
+    if attacker_ip and str(attacker_ip).strip():
+        conditions.append("attacker_ip LIKE ?")
+        parameters.append(f"%{str(attacker_ip).strip()}%")
 
-    if risk_level and risk_level.strip():
+    if alert_id and str(alert_id).strip():
+        conditions.append("alert_id LIKE ?")
+        parameters.append(f"%{str(alert_id).strip()}%")
 
-        conditions.append(
-            "UPPER(risk_level) = UPPER(?)"
-        )
+    if incident_id and str(incident_id).strip():
+        conditions.append("""
+            EXISTS (
+                SELECT 1
+                FROM incidents i
+                WHERE i.alert_id = alerts.alert_id
+                  AND i.incident_id LIKE ?
+            )
+        """)
+        parameters.append(f"%{str(incident_id).strip()}%")
 
-        parameters.append(
-            risk_level.strip()
-        )
+    if date_from and str(date_from).strip():
+        conditions.append("DATE(created_at) >= DATE(?)")
+        parameters.append(str(date_from).strip())
 
-    # ------------------------------------------------------
-    # Alert status
-    # ------------------------------------------------------
-
-    if status and status.strip():
-
-        conditions.append(
-            "UPPER(status) = UPPER(?)"
-        )
-
-        parameters.append(
-            status.strip()
-        )
-
-    # ------------------------------------------------------
-    # Alert type
-    # ------------------------------------------------------
-
-    if alert_type and alert_type.strip():
-
-        conditions.append(
-            "UPPER(alert_type) = UPPER(?)"
-        )
-
-        parameters.append(
-            alert_type.strip()
-        )
-
-    # ------------------------------------------------------
-    # Date range
-    # ------------------------------------------------------
-
-    if date_from and date_from.strip():
-
-        conditions.append(
-            "DATE(created_at) >= DATE(?)"
-        )
-
-        parameters.append(
-            date_from.strip()
-        )
-
-    if date_to and date_to.strip():
-
-        conditions.append(
-            "DATE(created_at) <= DATE(?)"
-        )
-
-        parameters.append(
-            date_to.strip()
-        )
-
-    # ------------------------------------------------------
-    # Build WHERE clause.
-    # ------------------------------------------------------
+    if date_to and str(date_to).strip():
+        conditions.append("DATE(created_at) <= DATE(?)")
+        parameters.append(str(date_to).strip())
 
     where_clause = ""
-
     if conditions:
-        where_clause = (
-            "WHERE "
-            + " AND ".join(conditions)
-        )
+        where_clause = "WHERE " + " AND ".join(conditions)
 
     conn = create_connection()
 
     try:
         cursor = conn.cursor()
 
-        # --------------------------------------------------
-        # Total matching records
-        # --------------------------------------------------
-
-        count_query = f"""
-            SELECT COUNT(*)
-            FROM alerts
-            {where_clause}
-        """
-
         cursor.execute(
-            count_query,
-            parameters
-        )
-
-        total = cursor.fetchone()[0]
-
-        # --------------------------------------------------
-        # Matching alert records
-        # --------------------------------------------------
-
-        alert_query = f"""
+            f"""
             SELECT
                 alert_id,
                 alert_type,
@@ -427,32 +312,11 @@ def search_alerts(
             {where_clause}
             ORDER BY created_at DESC
             LIMIT ? OFFSET ?
-        """
-
-        alert_parameters = list(parameters)
-
-        alert_parameters.extend(
-            [
-                limit,
-                offset
-            ]
+            """,
+            parameters + [limit, offset]
         )
 
-        cursor.execute(
-            alert_query,
-            alert_parameters
-        )
-
-        alerts = rows_to_dicts(
-            cursor.fetchall()
-        )
-
-        return {
-            "alerts": alerts,
-            "total": total,
-            "limit": limit,
-            "offset": offset
-        }
+        return rows_to_dicts(cursor.fetchall())
 
     finally:
         conn.close()
@@ -467,6 +331,7 @@ def get_total_alerts():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -487,6 +352,7 @@ def get_high_risk_alerts():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -509,6 +375,7 @@ def get_critical_alerts():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -530,6 +397,7 @@ def get_playbook_executions():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -552,6 +420,7 @@ def get_blocked_ips():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -589,6 +458,7 @@ def get_recent_alerts(limit=10):
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -624,14 +494,11 @@ def get_recent_alerts(limit=10):
 # ==========================================================
 
 def get_threat_map_data(limit=500):
-    """
-    Return geographically enriched attacker alerts
-    for the SOC Attack Map.
-    """
 
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -681,6 +548,7 @@ def get_threat_map_summary():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -765,6 +633,7 @@ def create_incident(incident: dict):
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -853,6 +722,7 @@ def get_all_incidents():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -878,6 +748,7 @@ def get_incident_by_id(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -908,6 +779,7 @@ def update_incident_status(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -944,6 +816,7 @@ def assign_analyst(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -986,6 +859,7 @@ def add_analyst_note(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1030,6 +904,7 @@ def delete_incident(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1068,6 +943,7 @@ def get_open_incidents():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1099,6 +975,7 @@ def incident_exists(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1124,6 +1001,7 @@ def get_incident_summary():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1157,6 +1035,7 @@ def get_incidents_by_status(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1184,6 +1063,7 @@ def get_incidents_by_analyst(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1209,6 +1089,7 @@ def get_incident_counts():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1240,6 +1121,7 @@ def resolve_incident(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1286,6 +1168,7 @@ def log_incident_activity(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1326,6 +1209,7 @@ def get_incident_activity(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1351,14 +1235,139 @@ def get_incident_activity(
 
 
 # ==========================================================
-# DASHBOARD ANALYTICS
+# ADVANCED INCIDENT INVESTIGATION
 # ==========================================================
 
+def get_incident_investigation(
+    incident_id: str
+):
+    """
+    Return the complete investigation workspace dataset.
+
+    Combines:
+
+        Incident
+            +
+        Related Alert Evidence
+            +
+        Investigation Activity Timeline
+    """
+
+    if not incident_id:
+        return None
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        # --------------------------------------------------
+        # INCIDENT + RELATED ALERT
+        # --------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT
+                i.incident_id,
+                i.alert_id,
+                i.title,
+                i.priority,
+                i.incident_status,
+                i.assigned_to,
+                i.analyst_notes,
+                i.created_at,
+                i.updated_at,
+                i.resolved_at,
+
+                a.alert_type,
+                a.severity,
+                a.source_ip,
+                a.attacker_ip,
+                a.risk_score,
+                a.risk_level,
+                a.action_taken,
+                a.status AS alert_status,
+                a.country,
+                a.city,
+                a.region,
+                a.latitude,
+                a.longitude,
+                a.org,
+                a.created_at AS alert_created_at
+
+            FROM incidents i
+
+            LEFT JOIN alerts a
+                ON i.alert_id = a.alert_id
+
+            WHERE i.incident_id = ?
+            """,
+            (incident_id,)
+        )
+
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        investigation = dict(row)
+
+        # --------------------------------------------------
+        # ACTIVITY TIMELINE
+        # --------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT
+                activity_type,
+                activity,
+                performed_by,
+                created_at
+            FROM incident_activity
+            WHERE incident_id = ?
+            ORDER BY created_at ASC
+            """,
+            (incident_id,)
+        )
+
+        investigation["activity"] = rows_to_dicts(
+            cursor.fetchall()
+        )
+
+        # --------------------------------------------------
+        # INVESTIGATION METADATA
+        # --------------------------------------------------
+
+        investigation["has_alert_evidence"] = (
+            investigation.get("alert_id") is not None
+        )
+
+        investigation["has_attacker_ip"] = bool(
+            investigation.get("attacker_ip")
+        )
+
+        investigation["has_geolocation"] = (
+            investigation.get("latitude") is not None
+            and
+            investigation.get("longitude") is not None
+        )
+
+        return investigation
+
+    finally:
+        conn.close()
+
+
+# ==========================================================
+# DASHBOARD ANALYTICS
+# ==========================================================
 def get_alerts_by_severity():
 
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1384,6 +1393,7 @@ def get_incidents_by_status_chart():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1409,6 +1419,7 @@ def get_daily_alerts():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1435,6 +1446,7 @@ def get_risk_distribution():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1454,6 +1466,7 @@ def get_risk_distribution():
     finally:
         conn.close()
 
+
 # ==========================================================
 # ADVANCED SOC DASHBOARD ANALYTICS
 # ==========================================================
@@ -1466,6 +1479,7 @@ def get_top_attacker_ips(limit=10):
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1484,7 +1498,9 @@ def get_top_attacker_ips(limit=10):
             (limit,)
         )
 
-        return rows_to_dicts(cursor.fetchall())
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
 
     finally:
         conn.close()
@@ -1498,6 +1514,7 @@ def get_top_threat_countries(limit=10):
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1517,7 +1534,9 @@ def get_top_threat_countries(limit=10):
             (limit,)
         )
 
-        return rows_to_dicts(cursor.fetchall())
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
 
     finally:
         conn.close()
@@ -1531,6 +1550,7 @@ def get_alert_type_distribution():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1546,7 +1566,9 @@ def get_alert_type_distribution():
             """
         )
 
-        return rows_to_dicts(cursor.fetchall())
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
 
     finally:
         conn.close()
@@ -1560,6 +1582,7 @@ def get_recent_critical_alerts(limit=8):
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1586,7 +1609,9 @@ def get_recent_critical_alerts(limit=8):
             (limit,)
         )
 
-        return rows_to_dicts(cursor.fetchall())
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
 
     finally:
         conn.close()
@@ -1601,6 +1626,7 @@ def get_dashboard_metrics():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1676,6 +1702,7 @@ def get_incident_dashboard_metrics():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1751,30 +1778,43 @@ def get_dashboard_overview():
     """
 
     return {
-        "metrics": get_dashboard_metrics(),
 
-        "incidents": get_incident_dashboard_metrics(),
+        "metrics":
+            get_dashboard_metrics(),
 
-        "severity": get_alerts_by_severity(),
+        "incidents":
+            get_incident_dashboard_metrics(),
 
-        "risk": get_risk_distribution(),
+        "severity":
+            get_alerts_by_severity(),
 
-        "alert_types": get_alert_type_distribution(),
+        "risk":
+            get_risk_distribution(),
 
-        "daily_alerts": get_daily_alerts(),
+        "alert_types":
+            get_alert_type_distribution(),
 
-        "top_attackers": get_top_attacker_ips(),
+        "daily_alerts":
+            get_daily_alerts(),
 
-        "top_countries": get_top_threat_countries(),
+        "top_attackers":
+            get_top_attacker_ips(),
 
-        "recent_critical": get_recent_critical_alerts(),
+        "top_countries":
+            get_top_threat_countries(),
 
-        "threat_map": get_threat_map_data(),
+        "recent_critical":
+            get_recent_critical_alerts(),
 
-        "threat_map_summary": get_threat_map_summary()
+        "threat_map":
+            get_threat_map_data(),
+
+        "threat_map_summary":
+            get_threat_map_summary()
+
     }
-    
-    
+
+
 # ==========================================================
 # REAL-TIME SOC NOTIFICATIONS
 # ==========================================================
@@ -1790,27 +1830,30 @@ def create_notification(
     """
     Create a SOC notification.
 
-    Notification types can include:
-        - ALERT
-        - INCIDENT
-        - PLAYBOOK
-        - CONTAINMENT
-        - SYSTEM
+    Notification types:
+        ALERT
+        INCIDENT
+        PLAYBOOK
+        CONTAINMENT
+        SYSTEM
 
     Notifications start as unread.
     """
 
     if not notification_type:
+
         raise ValueError(
             "Notification type is required"
         )
 
     if not title:
+
         raise ValueError(
             "Notification title is required"
         )
 
     if not message:
+
         raise ValueError(
             "Notification message is required"
         )
@@ -1818,6 +1861,7 @@ def create_notification(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1852,14 +1896,31 @@ def create_notification(
         )
 
         return {
-            "id": notification_id,
-            "notification_type": notification_type,
-            "severity": severity,
-            "title": title,
-            "message": message,
-            "alert_id": alert_id,
-            "incident_id": incident_id,
-            "is_read": 0
+
+            "id":
+                notification_id,
+
+            "notification_type":
+                notification_type,
+
+            "severity":
+                severity,
+
+            "title":
+                title,
+
+            "message":
+                message,
+
+            "alert_id":
+                alert_id,
+
+            "incident_id":
+                incident_id,
+
+            "is_read":
+                0
+
         }
 
     except Exception:
@@ -1877,20 +1938,28 @@ def get_notifications(
 ):
     """
     Return recent SOC notifications.
-
-    unread_only=True returns only unread notifications.
     """
 
     try:
+
         limit = int(limit)
-    except (TypeError, ValueError):
+
+    except (
+        TypeError,
+        ValueError
+    ):
+
         limit = 20
 
-    limit = max(1, min(limit, 100))
+    limit = max(
+        1,
+        min(limit, 100)
+    )
 
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         if unread_only:
@@ -1945,13 +2014,11 @@ def get_notifications(
 
 
 def get_unread_notification_count():
-    """
-    Return the number of unread SOC notifications.
-    """
 
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -1971,13 +2038,11 @@ def get_unread_notification_count():
 def mark_notification_read(
     notification_id: int
 ):
-    """
-    Mark one notification as read.
-    """
 
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -2005,13 +2070,11 @@ def mark_notification_read(
 
 
 def mark_all_notifications_read():
-    """
-    Mark every unread SOC notification as read.
-    """
 
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -2027,7 +2090,8 @@ def mark_all_notifications_read():
         conn.commit()
 
         return {
-            "updated": updated_count
+            "updated":
+                updated_count
         }
 
     except Exception:
@@ -2042,13 +2106,11 @@ def mark_all_notifications_read():
 def delete_notification(
     notification_id: int
 ):
-    """
-    Delete a notification.
-    """
 
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -2072,11 +2134,20 @@ def delete_notification(
 
     finally:
         conn.close()
+
+
 # ==========================================================
 # REPORTING
 # ==========================================================
 
-def export_incidents():
+def export_incidents(format=None):
+    """
+    Export incidents as CSV text, PDF bytes, or raw dictionaries.
+
+    ``backend/main.py`` uses ``format="csv"`` and ``format="pdf"``.
+    Calling this function without a format preserves the original raw
+    incident-list behaviour.
+    """
 
     conn = create_connection()
 
@@ -2100,12 +2171,104 @@ def export_incidents():
             """
         )
 
-        return rows_to_dicts(
-            cursor.fetchall()
-        )
+        incidents = rows_to_dicts(cursor.fetchall())
 
     finally:
         conn.close()
+
+    if not format:
+        return incidents
+
+    export_format = str(format).lower().strip()
+
+    if export_format == "csv":
+        output = io.StringIO()
+        fieldnames = [
+            "incident_id",
+            "alert_id",
+            "title",
+            "priority",
+            "incident_status",
+            "assigned_to",
+            "analyst_notes",
+            "created_at",
+            "updated_at"
+        ]
+
+        writer = csv.DictWriter(
+            output,
+            fieldnames=fieldnames
+        )
+        writer.writeheader()
+        writer.writerows(incidents)
+
+        return output.getvalue()
+
+    if export_format == "pdf":
+        buffer = io.BytesIO()
+
+        document = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(letter),
+            rightMargin=24,
+            leftMargin=24,
+            topMargin=24,
+            bottomMargin=24
+        )
+
+        styles = getSampleStyleSheet()
+        title = Paragraph(
+            "SOAR Incident Report",
+            styles["Title"]
+        )
+
+        headers = [
+            "Incident ID",
+            "Alert ID",
+            "Title",
+            "Priority",
+            "Status",
+            "Assigned To",
+            "Created",
+            "Updated"
+        ]
+
+        table_data = [headers]
+
+        for incident in incidents:
+            table_data.append([
+                str(incident.get("incident_id") or ""),
+                str(incident.get("alert_id") or ""),
+                str(incident.get("title") or ""),
+                str(incident.get("priority") or ""),
+                str(incident.get("incident_status") or ""),
+                str(incident.get("assigned_to") or ""),
+                str(incident.get("created_at") or ""),
+                str(incident.get("updated_at") or "")
+            ])
+
+        table = Table(
+            table_data,
+            repeatRows=1
+        )
+
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#343a40")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 7),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f2f2f2")])
+        ]))
+
+        document.build([title, table])
+
+        return buffer.getvalue()
+
+    raise ValueError(
+        "Unsupported export format. Use 'csv', 'pdf', or None."
+    )
 
 
 # ==========================================================
@@ -2129,6 +2292,7 @@ def create_user(user: dict):
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -2175,6 +2339,7 @@ def get_user(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -2202,6 +2367,7 @@ def get_all_users():
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
@@ -2231,6 +2397,7 @@ def user_exists(
     conn = create_connection()
 
     try:
+
         cursor = conn.cursor()
 
         cursor.execute(
