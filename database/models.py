@@ -219,6 +219,61 @@ def create_incident_activity_table():
 
     finally:
         conn.close()
+        
+
+
+# ==========================================================
+# PLAYBOOK APPROVALS TABLE
+# ==========================================================
+
+def create_playbook_approvals_table():
+    """
+    Store approval requests for high-impact SOAR actions.
+    """
+
+    conn = create_connection()
+
+    try:
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS playbook_approvals (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            incident_id TEXT NOT NULL,
+
+            alert_id TEXT,
+
+            action TEXT NOT NULL,
+
+            target TEXT NOT NULL,
+
+            risk_score INTEGER NOT NULL,
+
+            status TEXT NOT NULL DEFAULT 'PENDING',
+
+            requested_by TEXT DEFAULT 'SOAR Engine',
+
+            reviewed_by TEXT,
+
+            reviewer_comment TEXT,
+
+            requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+            reviewed_at TIMESTAMP,
+
+            FOREIGN KEY (incident_id)
+            REFERENCES incidents(incident_id)
+            ON DELETE CASCADE
+        )
+        """)
+
+        conn.commit()
+
+    finally:
+        conn.close()
 
 
 # ==========================================================
@@ -347,7 +402,9 @@ def initialize_database():
     create_incidents_table()
 
     create_incident_activity_table()
-
+    
+    create_playbook_approvals_table()
+    
     create_users_table()
 
     # Sprint 2 — Feature 4
