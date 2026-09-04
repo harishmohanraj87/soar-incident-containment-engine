@@ -10,3 +10,13 @@ __pycache__/
 .env
 .venv/
 venv/
+
+# Generated and local files
+__pycache__/
+*.pyc
+*.db
+*.backup
+*.bak
+*_backup.py
+*_backup.txt
+
