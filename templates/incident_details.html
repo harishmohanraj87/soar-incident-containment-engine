@@ -1,611 +1,556 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOAR Incident Workspace</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <title>
+    <style>
+        body {
+            background: #f4f6f9;
+        }
 
-        Incident Details
+        .hero {
+            background: linear-gradient(135deg, #111827, #1f2937);
+            color: white;
+            border-radius: 14px;
+        }
 
-    </title>
+        .card {
+            border: 0;
+            border-radius: 12px;
+        }
 
-    <!-- Bootstrap -->
+        .metric {
+            font-size: 28px;
+            font-weight: 700;
+        }
 
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet">
+        .risk-box {
+            border-left: 5px solid #dc3545;
+        }
 
-    <!-- Bootstrap Icons -->
+        .timeline {
+            border-left: 3px solid #dee2e6;
+            margin-left: 12px;
+            padding-left: 25px;
+        }
 
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        .timeline-item {
+            position: relative;
+            margin-bottom: 22px;
+        }
 
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -34px;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #0d6efd;
+            border: 3px solid white;
+        }
+
+        .section-title {
+            font-weight: 700;
+        }
+
+        .mono {
+            font-family: Consolas, monospace;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body>
 
-<div class="container mt-4">
+<div class="container-fluid px-4 py-4">
 
-    <div class="row">
+    <!-- HEADER -->
+    <div class="hero p-4 mb-4 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="text-uppercase small opacity-75">
+                    Security Operations Center
+                </div>
 
-        <div class="col-lg-10 mx-auto">
+                <h2 class="mb-1">
+                    <i class="bi bi-shield-fill-check"></i>
+                    Incident Response Workspace
+                </h2>
 
-            <!-- ====================================== -->
-            <!-- PAGE HEADER -->
-            <!-- ====================================== -->
+                <div class="opacity-75">
+                    {{ incident[3] }}
+                </div>
+            </div>
 
+            <a href="/incidents" class="btn btn-light">
+                <i class="bi bi-arrow-left"></i>
+                Back to SOC
+            </a>
+        </div>
+    </div>
+
+
+    <!-- INCIDENT METRICS -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+                <div class="text-muted small">INCIDENT</div>
+                <div class="metric mono">
+                    {{ incident[1] }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+                <div class="text-muted small">PRIORITY</div>
+                <div class="metric">
+                    {% if incident[4] == "P1" %}
+                        <span class="badge bg-danger fs-5">P1</span>
+                    {% elif incident[4] == "P2" %}
+                        <span class="badge bg-warning text-dark fs-5">P2</span>
+                    {% else %}
+                        <span class="badge bg-info text-dark fs-5">{{ incident[4] }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+                <div class="text-muted small">STATUS</div>
+                <div class="metric">
+                    <span class="badge bg-primary fs-6">
+                        {{ incident[5] }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm p-3">
+                <div class="text-muted small">ASSIGNED ANALYST</div>
+                <div class="metric fs-5">
+                    {{ incident[6] }}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="row g-4">
+
+        <!-- LEFT -->
+        <div class="col-lg-8">
+
+            <!-- INCIDENT INFORMATION -->
             <div class="card shadow-sm mb-4">
 
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0 section-title">
+                        <i class="bi bi-info-circle"></i>
+                        Incident Information
+                    </h5>
+                </div>
+
                 <div class="card-body">
 
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="row">
 
-                        <div>
+                        <div class="col-md-6">
 
-                            <h2>
+                            <p>
+                                <strong>Incident ID</strong><br>
+                                <span class="mono">{{ incident[1] }}</span>
+                            </p>
 
-                                <i class="bi bi-shield-lock-fill text-primary"></i>
+                            <p>
+                                <strong>Alert ID</strong><br>
+                                <span class="mono">{{ incident[2] }}</span>
+                            </p>
 
-                                Incident Details
-
-                            </h2>
-
-                            <p class="text-muted mb-0">
-
-                                Security Operations Center
-
+                            <p>
+                                <strong>Title</strong><br>
+                                {{ incident[3] }}
                             </p>
 
                         </div>
 
-                        <a
-                            href="/incidents/dashboard"
-                            class="btn btn-outline-primary">
+                        <div class="col-md-6">
 
-                            <i class="bi bi-arrow-left"></i>
+                            <p>
+                                <strong>Created</strong><br>
+                                {{ incident[8] }}
+                            </p>
 
-                            Back
+                            <p>
+                                <strong>Updated</strong><br>
+                                {{ incident[9] }}
+                            </p>
 
-                        </a>
+                            <p>
+                                <strong>Resolved</strong><br>
+                                {{ incident[10] or "Not resolved" }}
+                            </p>
+
+                        </div>
 
                     </div>
 
                 </div>
-
             </div>
 
-            <!-- ====================================== -->
-            <!-- INCIDENT SUMMARY -->
-            <!-- ====================================== -->
 
-            <div class="card shadow-sm">
+            <!-- EXPLAINABLE RISK -->
+            <div class="card shadow-sm mb-4 risk-box">
+
+                <div class="card-header">
+                    <h5 class="mb-0 section-title">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        Explainable Risk Assessment
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="row align-items-center">
+
+                        <div class="col-md-4 text-center">
+
+                            <div class="text-muted">
+                                Risk Score
+                            </div>
+
+                            <div class="display-3 fw-bold text-danger">
+                                {{ incident[4] }}
+                            </div>
+
+                            <small class="text-muted">
+                                Incident priority
+                            </small>
+
+                        </div>
+
+                        <div class="col-md-8">
+
+                            <h6 class="fw-bold">
+                                Why this incident matters
+                            </h6>
+
+                            <ul class="mb-0">
+                                <li>Threat intelligence enrichment was performed.</li>
+                                <li>Risk-based containment logic evaluated the alert.</li>
+                                <li>Automated playbook execution was triggered when required.</li>
+                                <li>The resulting activity is recorded in the incident timeline.</li>
+                            </ul>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- AI SOC ANALYST -->
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0 section-title">
+                        <i class="bi bi-robot"></i>
+                        AI SOC Analyst
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="alert alert-primary mb-3">
+                        <strong>Recommended workflow</strong>
+                        <br>
+                        Validate the threat intelligence evidence, review the automated
+                        containment action, and confirm whether the incident can be
+                        marked as contained.
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <strong>Detection</strong>
+                            <p class="text-muted">
+                                Alert received and correlated into an incident.
+                            </p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong>Response</strong>
+                            <p class="text-muted">
+                                SOAR evaluated risk and executed the appropriate playbook.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- MITRE -->
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header">
+                    <h5 class="mb-0 section-title">
+                        <i class="bi bi-crosshair"></i>
+                        MITRE ATT&CK Mapping
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <small class="text-muted">TACTIC</small>
+                                <div class="fw-bold">Credential Access</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <small class="text-muted">TECHNIQUE</small>
+                                <div class="fw-bold">Brute Force</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <small class="text-muted">RESPONSE</small>
+                                <div class="fw-bold">Automated Containment</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- TIMELINE -->
+            <div class="card shadow-sm mb-4">
 
                 <div class="card-header bg-dark text-white">
-
-                    <h5 class="mb-0">
-
-                        Incident Information
-
+                    <h5 class="mb-0 section-title">
+                        <i class="bi bi-clock-history"></i>
+                        Incident Activity Timeline
                     </h5>
-
                 </div>
 
                 <div class="card-body">
 
-                    {% if error %}
+                    {% if activity %}
 
-                    <div class="alert alert-danger">
+                    <div class="timeline">
 
-                        {{ error }}
+                        {% for item in activity %}
+
+                        <div class="timeline-item">
+
+                            <div class="fw-bold">
+                                {{ item[2] }}
+                            </div>
+
+                            <div class="text-muted small">
+                                {{ item[5] }}
+                                ·
+                                {{ item[4] }}
+                            </div>
+
+                        </div>
+
+                        {% endfor %}
 
                     </div>
 
                     {% else %}
 
-                    <div class="row">
-
-                        <div class="col-md-6">
-
-                            <p>
-
-                                <strong>
-
-                                    Incident ID
-
-                                </strong>
-
-                                <br>
-
-                                {{ incident[1] }}
-
-                            </p>
-
-                            <p>
-
-                                <strong>
-
-                                    Alert ID
-
-                                </strong>
-
-                                <br>
-
-                                {{ incident[2] }}
-
-                            </p>
-
-                            <p>
-
-                                <strong>
-
-                                    Title
-
-                                </strong>
-
-                                <br>
-
-                                {{ incident[3] }}
-
-                            </p>
-
-                        </div>
-
-                        <div class="col-md-6">
-                                                        <p>
-
-                                <strong>
-
-                                    Priority
-
-                                </strong>
-
-                                <br>
-
-                                {% if incident[4] == "P1" %}
-
-                                    <span class="badge bg-danger">
-
-                                        {{ incident[4] }}
-
-                                    </span>
-
-                                {% elif incident[4] == "P2" %}
-
-                                    <span class="badge bg-warning text-dark">
-
-                                        {{ incident[4] }}
-
-                                    </span>
-
-                                {% elif incident[4] == "P3" %}
-
-                                    <span class="badge bg-info text-dark">
-
-                                        {{ incident[4] }}
-
-                                    </span>
-
-                                {% else %}
-
-                                    <span class="badge bg-secondary">
-
-                                        {{ incident[4] }}
-
-                                    </span>
-
-                                {% endif %}
-
-                            </p>
-
-                            <p>
-
-                                <strong>
-
-                                    Status
-
-                                </strong>
-
-                                <br>
-
-                                {% if incident[5] == "NEW" %}
-
-                                    <span class="badge bg-primary">
-
-                                        {{ incident[5] }}
-
-                                    </span>
-
-                                {% elif incident[5] == "INVESTIGATING" %}
-
-                                    <span class="badge bg-warning text-dark">
-
-                                        {{ incident[5] }}
-
-                                    </span>
-
-                                {% elif incident[5] == "CONTAINED" %}
-
-                                    <span class="badge bg-info text-dark">
-
-                                        {{ incident[5] }}
-
-                                    </span>
-
-                                {% elif incident[5] == "RESOLVED" %}
-
-                                    <span class="badge bg-success">
-
-                                        {{ incident[5] }}
-
-                                    </span>
-
-                                {% elif incident[5] == "CLOSED" %}
-
-                                    <span class="badge bg-dark">
-
-                                        {{ incident[5] }}
-
-                                    </span>
-
-                                {% else %}
-
-                                    <span class="badge bg-secondary">
-
-                                        {{ incident[5] }}
-
-                                    </span>
-
-                                {% endif %}
-
-                            </p>
-
-                            <p>
-
-                                <strong>
-
-                                    Assigned Analyst
-
-                                </strong>
-
-                                <br>
-
-                                {{ incident[6] }}
-
-                            </p>
-
-                        </div>
-
+                    <div class="text-muted">
+                        No activity recorded yet.
                     </div>
-
-                    <hr>
-
-                    <div class="row">
-
-                        <div class="col-md-4">
-
-                            <strong>
-
-                                Created
-
-                            </strong>
-
-                            <br>
-
-                            {{ incident[8] }}
-
-                        </div>
-
-                        <div class="col-md-4">
-
-                            <strong>
-
-                                Updated
-
-                            </strong>
-
-                            <br>
-
-                            {{ incident[9] }}
-
-                        </div>
-
-                        <div class="col-md-4">
-
-                            <strong>
-
-                                Resolved
-
-                            </strong>
-
-                            <br>
-
-                            {{ incident[10] if incident[10] else "Not Resolved" }}
-
-                        </div>
-
-                    </div>
-
-                    <hr><!-- ====================================== -->
-<!-- ANALYST NOTES -->
-<!-- ====================================== -->
-
-<div class="card shadow-sm mt-4">
-
-    <div class="card-header bg-primary text-white">
-
-        <h5 class="mb-0">
-
-            Analyst Notes
-
-        </h5>
-
-    </div>
-
-    <div class="card-body">
-
-        <form>
-
-            <div class="mb-3">
-
-                <textarea
-                    class="form-control"
-                    rows="6"
-                    readonly>{{ incident[7] if incident[7] else "No analyst notes available." }}</textarea>
-
-            </div>
-
-        </form>
-
-    </div>
-
-</div>
-
-<!-- ====================================== -->
-<!--<!-- ====================================== -->
-<!-- UPDATE STATUS -->
-<!-- ====================================== -->
-
-<div class="card shadow-sm mt-4">
-
-    <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">Update Status</h5>
-    </div>
-
-    <div class="card-body">
-
-        <form
-            method="POST"
-            action="/incidents/dashboard/{{ incident[1] }}/status">
-
-            <div class="mb-3">
-
-                <select
-                    class="form-select"
-                    name="status">
-
-                    <option value="NEW">NEW</option>
-                    <option value="INVESTIGATING">INVESTIGATING</option>
-                    <option value="CONTAINED">CONTAINED</option>
-                    <option value="RESOLVED">RESOLVED</option>
-                    <option value="CLOSED">CLOSED</option>
-
-                </select>
-
-            </div>
-
-            <button
-                class="btn btn-primary"
-                type="submit">
-
-                Update Status
-
-            </button>
-
-        </form>
-
-    </div>
-
-</div>
-
-<!-- ====================================== -->
-<!-- ASSIGN ANALYST -->
-<!-- ====================================== -->
-
-<div class="card shadow-sm mt-4">
-
-    <div class="card-header bg-success text-white">
-        <h5 class="mb-0">Assign Analyst</h5>
-    </div>
-
-    <div class="card-body">
-
-        <form
-            method="POST"
-            action="/incidents/dashboard/{{ incident[1] }}/assign">
-
-            <div class="mb-3">
-
-                <input
-                    class="form-control"
-                    type="text"
-                    name="assigned_to"
-                    placeholder="SOC Analyst Name">
-
-            </div>
-
-            <button
-                class="btn btn-success"
-                type="submit">
-
-                Assign Analyst
-
-            </button>
-
-        </form>
-
-    </div>
-
-</div>
-
-<!-- ====================================== -->
-<!-- ADD NOTE -->
-<!-- ====================================== -->
-
-<div class="card shadow-sm mt-4">
-
-    <div class="card-header bg-warning">
-        <h5 class="mb-0">Add Investigation Note</h5>
-    </div>
-
-    <div class="card-body">
-
-        <form
-            method="POST"
-            action="/incidents/dashboard/{{ incident[1] }}/notes">
-
-            <div class="mb-3">
-
-                <textarea
-                    class="form-control"
-                    rows="6"
-                    name="note"
-                    placeholder="Write investigation findings..."></textarea>
-
-            </div>
-
-            <button
-                class="btn btn-warning"
-                type="submit">
-
-                Save Note
-
-            </button>
-
-        </form>
-
-    </div>
-
-</div>
-
-<!-- ====================================== -->
-<!-- FOOTER -->
-<!-- ====================================== -->
-
-<footer class="mt-5 mb-4">
-<!-- ====================================== -->
-<!-- INCIDENT ACTIVITY TIMELINE -->
-<!-- ====================================== -->
-
-<div class="card shadow-sm mt-4">
-
-    <div class="card-header bg-dark text-white">
-
-        <h5 class="mb-0">
-
-            <i class="bi bi-clock-history"></i>
-
-            Incident Activity Timeline
-
-        </h5>
-
-    </div>
-
-    <div class="card-body">
-
-        {% if activity|length == 0 %}
-
-            <div class="text-muted text-center">
-
-                No activity recorded yet.
-
-            </div>
-
-        {% else %}
-
-            {% for item in activity %}
-
-            <div class="border-start border-4 border-primary ps-3 mb-4">
-
-                <h6 class="mb-1">
-
-                    {% if item[0] == "CREATED" %}
-                        🟢 Incident Created
-
-                    {% elif item[0] == "STATUS" %}
-                        🟡 Status Updated
-
-                    {% elif item[0] == "ASSIGNED" %}
-                        👤 Analyst Assigned
-
-                    {% elif item[0] == "NOTE" %}
-                        📝 Investigation Note
-
-                    {% elif item[0] == "RESOLVED" %}
-                        ✅ Incident Resolved
-
-                    {% else %}
-                        ℹ️ Activity
 
                     {% endif %}
 
-                </h6>
+                </div>
+            </div>
 
-                <div>
 
-                    {{ item[1] }}
+            <!-- ANALYST NOTES -->
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header">
+                    <h5 class="mb-0 section-title">
+                        <i class="bi bi-journal-text"></i>
+                        Analyst Notes
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    {% if incident[7] %}
+                        <div class="alert alert-secondary">
+                            {{ incident[7] }}
+                        </div>
+                    {% else %}
+                        <div class="text-muted">
+                            No analyst notes recorded.
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT -->
+        <div class="col-lg-4">
+
+            <!-- CONTAINMENT -->
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0 section-title">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        Containment
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="mb-3">
+                        <small class="text-muted">AUTOMATED RESPONSE</small>
+
+                        <div class="fs-4 fw-bold">
+                            SOAR Playbook
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger">
+                        <strong>Containment engine active</strong>
+                        <br>
+                        Automated response is executed according to calculated risk.
+                    </div>
+
+                    <div class="border rounded p-3">
+
+                        <div class="text-muted small">
+                            RESPONSE CHAIN
+                        </div>
+
+                        <div class="mt-2">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            Alert received
+                        </div>
+
+                        <div>
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            Threat intelligence enriched
+                        </div>
+
+                        <div>
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            Risk calculated
+                        </div>
+
+                        <div>
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            Playbook evaluated
+                        </div>
+
+                        <div>
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            Incident recorded
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- STATUS -->
+            <div class="card shadow-sm mb-4">
+
+                <div class="card-header">
+                    <h5 class="mb-0 section-title">
+                        <i class="bi bi-gear"></i>
+                        Incident Control
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="mb-3">
+                        <strong>Current status</strong>
+
+                        <div class="mt-2">
+                            <span class="badge bg-primary fs-6">
+                                {{ incident[5] }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Assigned to</strong>
+
+                        <div class="mt-2">
+                            {{ incident[6] }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <strong>Lifecycle</strong>
+
+                        <div class="mt-2 text-muted">
+                            Detection → Investigation → Containment → Resolution
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- SOC MESSAGE -->
+            <div class="card shadow-sm">
+
+                <div class="card-body">
+
+                    <h6 class="fw-bold">
+                        <i class="bi bi-shield-check"></i>
+                        SOAR Decision
+                    </h6>
+
+                    <p class="text-muted mb-0">
+                        This workspace combines detection, enrichment, risk analysis,
+                        automated response and analyst investigation into one incident.
+                    </p>
 
                 </div>
 
-                <small class="text-muted">
-
-                    {{ item[2] }}
-
-                    |
-
-                    {{ item[3] }}
-
-                </small>
-
             </div>
 
-            {% endfor %}
-
-        {% endif %}
+        </div>
 
     </div>
 
 </div>
 
-    <div class="text-center text-muted">
-
-        <hr>
-
-        <small>
-
-            SOAR Incident Containment Engine
-
-            <br>
-
-            Sprint 5 • Incident Management Dashboard
-
-        </small>
-
-    </div>
-
-{% endif %}
-
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
-
 </html>
