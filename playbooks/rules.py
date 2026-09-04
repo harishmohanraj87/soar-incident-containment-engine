@@ -1,42 +1,62 @@
 """
 rules.py
-Defines playbook rules based on risk score.
+
+Defines risk-based playbook policies for the
+SOAR Incident Containment Engine.
 """
+
 
 PLAYBOOK_RULES = {
     "critical": {
         "min_score": 90,
-        "action": "block_ip"
+        "action": "contain_host",
+        "approval_required": True,
+        "description": "Critical threat requiring host containment approval",
     },
+
     "high": {
         "min_score": 70,
-        "action": "notify_soc"
+        "action": "block_ip",
+        "approval_required": False,
+        "description": "High-risk source IP requiring network containment",
     },
+
     "medium": {
         "min_score": 40,
-        "action": "create_incident"
+        "action": "notify_soc",
+        "approval_required": False,
+        "description": "Medium-risk alert requiring analyst attention",
     },
+
     "low": {
         "min_score": 0,
-        "action": "log_event"
-    }
+        "action": "log_event",
+        "approval_required": False,
+        "description": "Low-risk event recorded for monitoring",
+    },
 }
 
 
 def get_playbook(risk_score):
     """
-    Returns the appropriate playbook action
-    based on the calculated risk score.
+    Return the playbook policy for a given risk score.
     """
 
+    try:
+        risk_score = int(risk_score)
+    except (TypeError, ValueError):
+        raise ValueError("Risk score must be a number.")
+
+    if risk_score < 0 or risk_score > 100:
+        raise ValueError("Risk score must be between 0 and 100.")
+
     if risk_score >= PLAYBOOK_RULES["critical"]["min_score"]:
-        return PLAYBOOK_RULES["critical"]["action"]
+        return PLAYBOOK_RULES["critical"]
 
-    elif risk_score >= PLAYBOOK_RULES["high"]["min_score"]:
-        return PLAYBOOK_RULES["high"]["action"]
+    if risk_score >= PLAYBOOK_RULES["high"]["min_score"]:
+        return PLAYBOOK_RULES["high"]
 
-    elif risk_score >= PLAYBOOK_RULES["medium"]["min_score"]:
-        return PLAYBOOK_RULES["medium"]["action"]
+    if risk_score >= PLAYBOOK_RULES["medium"]["min_score"]:
+        return PLAYBOOK_RULES["medium"]
 
-    else:
-        return PLAYBOOK_RULES["low"]["action"]
+    return PLAYBOOK_RULES["low"]

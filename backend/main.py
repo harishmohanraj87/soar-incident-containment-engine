@@ -1,4 +1,4 @@
-# ==========================================================
+﻿# ==========================================================
 # SOAR INCIDENT CONTAINMENT ENGINE
 # backend/main.py
 #
@@ -26,6 +26,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from backend.parser import parse_alert
 from backend.normalizer import normalize_alert
 from backend.auth import hash_password
+from wazuh.webhook import router as wazuh_router
 
 from threat_intel.enricher import enrich_ip
 from playbooks.engine import execute_playbook
@@ -90,6 +91,12 @@ from database.crud import (
     user_exists,
     authenticate_user,
     get_all_users,
+    create_playbook_approval,
+    get_playbook_approval,
+    get_pending_playbook_approvals,
+    get_incident_playbook_approvals,
+    review_playbook_approval,
+
 )
 
 
@@ -102,6 +109,13 @@ app = FastAPI(
     description="Security Orchestration, Automation and Response Platform",
     version="1.0.0",
 )
+
+
+# ==========================================================
+# WAZUH INTEGRATION ROUTER
+# ==========================================================
+
+app.include_router(wazuh_router)
 
 app.add_middleware(
     SessionMiddleware,
@@ -160,13 +174,6 @@ class AlertRequest(BaseModel):
     timestamp: Optional[str] = None
 
 
-class WazuhAlertRequest(BaseModel):
-    timestamp: Optional[str] = None
-    rule: dict = Field(default_factory=dict)
-    agent: dict = Field(default_factory=dict)
-    data: dict = Field(default_factory=dict)
-    full_log: Optional[str] = None
-
 
 class IncidentStatusRequest(BaseModel):
     status: str
@@ -178,6 +185,13 @@ class AssignRequest(BaseModel):
 
 class NotesRequest(BaseModel):
     notes: str
+class PlaybookApprovalRequest(BaseModel):
+    status: str = Field(
+        ...,
+        description="APPROVED or REJECTED"
+    )
+
+    reviewer_comment: str = ""
 
 
 # ==========================================================
@@ -721,10 +735,251 @@ async def dashboard(request: Request):
             "threat_map_summary": threat_map_summary,
         },
     )
+# ==========================================================
+# SOAR PLAYBOOK APPROVALS
+# ==========================================================
 
+@app.get("/api/playbook-approvals")
+async def pending_playbook_approvals_api(
+    request: Request
+):
+    """
+    Return all pending SOAR playbook approval requests.
+    """
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    try:
+
+        approvals = get_pending_playbook_approvals()
+
+        return {
+            "count": len(approvals),
+            "approvals": make_json_safe(
+                approvals
+            )
+        }
+
+    except Exception as error:
+
+        print(
+            f"Playbook approval fetch error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load playbook approvals"
+        )
+
+
+@app.get("/api/playbook-approvals/{approval_id}")
+async def playbook_approval_detail_api(
+    approval_id: int,
+    request: Request
+):
+    """
+    Return one playbook approval request.
+    """
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    try:
+
+        approval = get_playbook_approval(
+            approval_id
+        )
+
+        if approval is None:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Playbook approval not found"
+            )
+
+        return make_json_safe(
+            approval
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+
+        print(
+            f"Playbook approval detail error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load approval request"
+        )
+
+
+@app.post(
+    "/api/playbook-approvals/{approval_id}/review"
+)
+async def review_playbook_approval_api(
+    approval_id: int,
+    approval_request: PlaybookApprovalRequest,
+    request: Request
+):
+    """
+    Approve or reject a pending high-impact
+    SOAR playbook action.
+    """
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    username = current_user(request)
+
+    status = (
+        approval_request.status
+        .strip()
+        .upper()
+    )
+
+    if status not in (
+        "APPROVED",
+        "REJECTED"
+    ):
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Status must be APPROVED "
+                "or REJECTED"
+            )
+        )
+
+    try:
+
+        approval = get_playbook_approval(
+            approval_id
+        )
+
+        if approval is None:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Playbook approval not found"
+            )
+
+        if approval["status"] != "PENDING":
+
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Approval request has "
+                    "already been reviewed"
+                )
+            )
+
+        updated = review_playbook_approval(
+            approval_id=approval_id,
+            status=status,
+            reviewed_by=username,
+            reviewer_comment=(
+                approval_request.reviewer_comment
+                or ""
+            )
+        )
+
+        if not updated:
+
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Approval request could not "
+                    "be reviewed"
+                )
+            )
+
+        updated_approval = get_playbook_approval(
+            approval_id
+        )
+
+        return {
+            "success": True,
+            "message": (
+                "Playbook approval "
+                f"{status.lower()}"
+            ),
+            "approval": make_json_safe(
+                updated_approval
+            )
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+
+        print(
+            f"Playbook approval review error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to review playbook approval"
+        )
+
+
+@app.get(
+    "/api/incidents/{incident_id}/playbook-approvals"
+)
+async def incident_playbook_approvals_api(
+    incident_id: str,
+    request: Request
+):
+    """
+    Return all playbook approval requests
+    associated with an incident.
+    """
+
+    redirect = require_login(request)
+
+    if redirect:
+        return redirect
+
+    try:
+
+        approvals = get_incident_playbook_approvals(
+            incident_id
+        )
+
+        return {
+            "incident_id": incident_id,
+            "count": len(approvals),
+            "approvals": make_json_safe(
+                approvals
+            )
+        }
+
+    except Exception as error:
+
+        print(
+            f"Incident approval fetch error: {error}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Unable to load incident "
+                "playbook approvals"
+            )
+        )
 
 # ==========================================================
-# FEATURE 3 — ADVANCED SOC DASHBOARD API
+# FEATURE 3 â€” ADVANCED SOC DASHBOARD API
 # ==========================================================
 
 @app.get("/api/dashboard/overview")
@@ -754,7 +1009,7 @@ async def dashboard_overview_api(request: Request):
 
 
 # ==========================================================
-# FEATURE 1 — THREAT MAP
+# FEATURE 1 â€” THREAT MAP
 # ==========================================================
 
 @app.get("/api/threat-map")
@@ -809,7 +1064,7 @@ async def threat_map_summary_api(request: Request):
 
 
 # ==========================================================
-# FEATURE 2 — ALERT SEARCH PAGE
+# FEATURE 2 â€” ALERT SEARCH PAGE
 # ==========================================================
 
 @app.get(
@@ -855,7 +1110,7 @@ async def alerts_page(request: Request):
 
 
 # ==========================================================
-# FEATURE 2 — ADVANCED ALERT SEARCH API
+# FEATURE 2 â€” ADVANCED ALERT SEARCH API
 # ==========================================================
 
 @app.get("/api/alerts/search")
@@ -1018,105 +1273,9 @@ async def receive_alert(alert: AlertRequest):
         )
 
 
+
 # ==========================================================
-# WAZUH WEBHOOK
-# ==========================================================
-
-@app.post("/wazuh/webhook")
-async def wazuh_webhook(
-    alert: WazuhAlertRequest,
-):
-    wazuh_data = alert.model_dump()
-
-    rule = wazuh_data.get(
-        "rule",
-        {},
-    )
-
-    agent = wazuh_data.get(
-        "agent",
-        {},
-    )
-
-    data = wazuh_data.get(
-        "data",
-        {},
-    )
-
-    try:
-        rule_level = int(
-            rule.get(
-                "level",
-                0,
-            )
-        )
-    except (
-        ValueError,
-        TypeError,
-    ):
-        rule_level = 0
-
-    if rule_level >= 12:
-        severity = "CRITICAL"
-    elif rule_level >= 8:
-        severity = "HIGH"
-    elif rule_level >= 5:
-        severity = "MEDIUM"
-    else:
-        severity = "LOW"
-
-    timestamp = (
-        wazuh_data.get("timestamp")
-        or datetime.now().isoformat()
-    )
-
-    alert_id = (
-        f"WAZUH-"
-        f"{rule.get('id', 'UNKNOWN')}-"
-        f"{int(time.time() * 1000)}"
-    )
-
-    soar_alert = {
-        "alert_id": alert_id,
-        "alert_type": rule.get(
-            "description",
-            "Wazuh Security Alert",
-        ),
-        "severity": severity,
-        "source_ip": agent.get("ip"),
-        "attacker_ip": (
-            data.get("srcip")
-            or data.get("src_ip")
-            or data.get("source_ip")
-        ),
-        "description": wazuh_data.get(
-            "full_log"
-        ),
-        "timestamp": timestamp,
-    }
-
-    try:
-        result = process_alert(soar_alert)
-
-        return {
-            "message": (
-                "Wazuh alert received and processed"
-            ),
-            "wazuh_alert": wazuh_data,
-            "soar_result": result,
-        }
-
-    except Exception as error:
-        print(
-            f"Wazuh processing error: {error}"
-        )
-
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to process Wazuh alert",
-        )
-
-
+# INCIDENT LIST
 # ==========================================================
 # INCIDENT LIST
 # ==========================================================
@@ -1142,9 +1301,29 @@ async def incidents_page(request: Request):
         },
     )
 
+@app.get(
+    "/incidents/dashboard",
+    response_class=HTMLResponse,
+)
+async def incidents_dashboard_page(
+    request: Request,
+):
+    redirect = require_login(request)
 
+    if redirect:
+        return redirect
+
+    incidents = get_all_incidents()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="incidents.html",
+        context={
+            "incidents": make_json_safe(incidents),
+        },
+    )
 # ==========================================================
-# FEATURE 5 — INCIDENT INVESTIGATION DASHBOARD
+# FEATURE 5 â€” INCIDENT INVESTIGATION DASHBOARD
 #
 # Specific /dashboard route MUST appear before
 # generic /incidents/{incident_id}.
@@ -1198,7 +1377,7 @@ async def incident_dashboard_page(
 
 
 # ==========================================================
-# FEATURE 5 — INCIDENT INVESTIGATION API
+# FEATURE 5 â€” INCIDENT INVESTIGATION API
 # ==========================================================
 
 @app.get(
@@ -1403,7 +1582,7 @@ async def incident_counts_api(
 
 
 # ==========================================================
-# INCIDENT STATUS UPDATE — PATCH
+# INCIDENT STATUS UPDATE â€” PATCH
 # ==========================================================
 
 @app.patch(
@@ -1481,7 +1660,7 @@ async def change_incident_status(
 
 
 # ==========================================================
-# INCIDENT STATUS UPDATE — FORM
+# INCIDENT STATUS UPDATE â€” FORM
 # ==========================================================
 
 @app.post(
@@ -1525,7 +1704,7 @@ async def change_incident_status_form(
 
 
 # ==========================================================
-# ASSIGN ANALYST — PATCH API
+# ASSIGN ANALYST â€” PATCH API
 # ==========================================================
 
 @app.patch(
@@ -1575,7 +1754,7 @@ async def assign_incident_api(
 
 
 # ==========================================================
-# ASSIGN ANALYST — FORM
+# ASSIGN ANALYST â€” FORM
 # ==========================================================
 
 @app.post(
@@ -1623,7 +1802,7 @@ async def assign_incident_form(
 
 
 # ==========================================================
-# ADD NOTE — PATCH API
+# ADD NOTE â€” PATCH API
 # ==========================================================
 
 @app.patch(
@@ -1672,7 +1851,7 @@ async def add_note_api(
 
 
 # ==========================================================
-# ADD NOTE — FORM
+# ADD NOTE â€” FORM
 # ==========================================================
 
 @app.post(
@@ -1775,7 +1954,7 @@ async def resolve_incident_api(
 
 
 # ==========================================================
-# DELETE INCIDENT — ADMIN
+# DELETE INCIDENT â€” ADMIN
 # ==========================================================
 
 @app.delete(
@@ -1807,7 +1986,7 @@ async def delete_incident_api(
 
 
 # ==========================================================
-# FEATURE 4 — REAL-TIME NOTIFICATIONS
+# FEATURE 4 â€” REAL-TIME NOTIFICATIONS
 # ==========================================================
 
 @app.get("/api/notifications")
@@ -1950,7 +2129,7 @@ async def mark_all_notifications_read_api(
 
 
 # ==========================================================
-# INCIDENT EXPORT — CSV
+# INCIDENT EXPORT â€” CSV
 # ==========================================================
 
 @app.get(
@@ -1989,7 +2168,7 @@ async def export_incidents_csv(
 
 
 # ==========================================================
-# INCIDENT EXPORT — PDF
+# INCIDENT EXPORT â€” PDF
 # ==========================================================
 
 @app.get(
@@ -2043,7 +2222,7 @@ async def export_incidents_pdf_legacy(
 
 
 # ==========================================================
-# ADMIN — USER MANAGEMENT
+# ADMIN â€” USER MANAGEMENT
 # ==========================================================
 
 @app.get(
@@ -2154,3 +2333,4 @@ async def health_check():
 # ==========================================================
 # END OF SOAR APPLICATION
 # ==========================================================
+

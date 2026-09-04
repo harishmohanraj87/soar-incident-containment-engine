@@ -1,20 +1,22 @@
-# Python cache
 __pycache__/
-*.py[cod]
-
-# Environment
+*.pyc
+*.pyo
+*.db
+*.sqlite
+*.sqlite3
+*.backup
+*.bak
+*.txt
 .env
-
-# Virtual environments
 .venv/
 venv/
 
-# Database
+# Generated and local files
+__pycache__/
+*.pyc
 *.db
+*.backup
+*.bak
+*_backup.py
+*_backup.txt
 
-# VS Code
-.vscode/
-
-# OS files
-.DS_Store
-Thumbs.db

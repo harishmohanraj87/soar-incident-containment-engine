@@ -1,4 +1,4 @@
-import sqlite3
+﻿import sqlite3
 import csv
 import io
 
@@ -2439,3 +2439,509 @@ def authenticate_user(
         return None
 
     return user
+
+# ==========================================================
+# PLAYBOOK APPROVALS
+# ==========================================================
+
+def create_playbook_approval(
+    incident_id: str,
+    alert_id: str,
+    action: str,
+    target: str,
+    risk_score: int,
+    requested_by: str = "SOAR Engine"
+):
+    """
+    Create a pending approval request for a high-impact
+    SOAR playbook action.
+
+    The referenced incident must exist before an approval
+    can be created.
+    """
+
+    if not incident_id:
+        raise ValueError("Missing incident ID")
+
+    if not action:
+        raise ValueError("Missing playbook action")
+
+    if not target:
+        raise ValueError("Missing containment target")
+
+    if alert_id is None:
+        raise ValueError("Missing alert ID")
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        # --------------------------------------------------
+        # VERIFY INCIDENT
+        # --------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT 1
+            FROM incidents
+            WHERE incident_id = ?
+            """,
+            (incident_id,)
+        )
+
+        if cursor.fetchone() is None:
+            raise ValueError(
+                f"Incident '{incident_id}' does not exist."
+            )
+
+        # --------------------------------------------------
+        # VERIFY ALERT
+        # --------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT 1
+            FROM alerts
+            WHERE alert_id = ?
+            """,
+            (alert_id,)
+        )
+
+        if cursor.fetchone() is None:
+            raise ValueError(
+                f"Alert '{alert_id}' does not exist."
+            )
+
+        # --------------------------------------------------
+        # PREVENT DUPLICATE PENDING APPROVAL
+        # --------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM playbook_approvals
+            WHERE incident_id = ?
+              AND action = ?
+              AND target = ?
+              AND status = 'PENDING'
+            ORDER BY requested_at DESC
+            LIMIT 1
+            """,
+            (
+                incident_id,
+                action,
+                target
+            )
+        )
+
+        existing = cursor.fetchone()
+
+        if existing:
+            return dict(existing)
+
+        # --------------------------------------------------
+        # CREATE APPROVAL
+        # --------------------------------------------------
+
+        cursor.execute(
+            """
+            INSERT INTO playbook_approvals (
+                incident_id,
+                alert_id,
+                action,
+                target,
+                risk_score,
+                status,
+                requested_by
+            )
+            VALUES (?, ?, ?, ?, ?, 'PENDING', ?)
+            """,
+            (
+                incident_id,
+                alert_id,
+                action,
+                target,
+                risk_score,
+                requested_by
+            )
+        )
+
+        approval_id = cursor.lastrowid
+
+        conn.commit()
+
+        print(
+            f"Playbook approval {approval_id} created."
+        )
+
+        return {
+            "id": approval_id,
+            "incident_id": incident_id,
+            "alert_id": alert_id,
+            "action": action,
+            "target": target,
+            "risk_score": risk_score,
+            "status": "PENDING",
+            "requested_by": requested_by
+        }
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+
+def get_playbook_approval(
+    approval_id: int
+):
+    """
+    Retrieve a single playbook approval request.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM playbook_approvals
+            WHERE id = ?
+            """,
+            (approval_id,)
+        )
+
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    finally:
+        conn.close()
+
+
+def get_pending_playbook_approvals():
+    """
+    Return all pending playbook approval requests.
+    """
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM playbook_approvals
+            WHERE status = 'PENDING'
+            ORDER BY requested_at DESC
+            """
+        )
+
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+        conn.close()
+
+
+def get_incident_playbook_approvals(
+    incident_id: str
+):
+    """
+    Return all playbook approvals associated
+    with an incident.
+    """
+
+    if not incident_id:
+        raise ValueError("Missing incident ID")
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM playbook_approvals
+            WHERE incident_id = ?
+            ORDER BY requested_at DESC
+            """,
+            (incident_id,)
+        )
+
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+        conn.close()
+
+
+def review_playbook_approval(
+    approval_id: int,
+    status: str,
+    reviewed_by: str,
+    reviewer_comment: str = ""
+):
+    """
+    Approve or reject a pending playbook action.
+
+    Valid statuses:
+        APPROVED
+        REJECTED
+
+    Only PENDING approvals can be reviewed.
+    """
+
+    if not approval_id:
+        raise ValueError(
+            "Missing approval ID"
+        )
+
+    if not reviewed_by:
+        raise ValueError(
+            "Reviewer identity is required"
+        )
+
+    status = str(status).upper().strip()
+
+    if status not in (
+        "APPROVED",
+        "REJECTED"
+    ):
+        raise ValueError(
+            "Approval status must be APPROVED or REJECTED"
+        )
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        # --------------------------------------------------
+        # VERIFY APPROVAL EXISTS
+        # --------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM playbook_approvals
+            WHERE id = ?
+            """,
+            (approval_id,)
+        )
+
+        approval = cursor.fetchone()
+
+        if approval is None:
+            raise ValueError(
+                f"Playbook approval {approval_id} not found."
+            )
+
+        approval = dict(approval)
+
+        # --------------------------------------------------
+        # PREVENT DOUBLE REVIEW
+        # --------------------------------------------------
+
+        if approval["status"] != "PENDING":
+            raise ValueError(
+                f"Approval {approval_id} has already been "
+                f"reviewed with status "
+                f"'{approval['status']}'."
+            )
+
+        # --------------------------------------------------
+        # REVIEW APPROVAL
+        # --------------------------------------------------
+
+        cursor.execute(
+            """
+            UPDATE playbook_approvals
+            SET
+                status = ?,
+                reviewed_by = ?,
+                reviewer_comment = ?,
+                reviewed_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+              AND status = 'PENDING'
+            """,
+            (
+                status,
+                reviewed_by,
+                reviewer_comment or "",
+                approval_id
+            )
+        )
+
+        if cursor.rowcount == 0:
+            raise RuntimeError(
+                "Playbook approval could not be updated."
+            )
+
+        conn.commit()
+
+        print(
+            f"Playbook approval {approval_id} "
+            f"reviewed as {status} by {reviewed_by}."
+        )
+
+        return True
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+
+def mark_playbook_approval_executed(
+    approval_id: int,
+    executed_by: str = "System"
+):
+    """
+    Mark an APPROVED playbook approval as EXECUTED.
+
+    This prevents the same approval from being executed
+    repeatedly.
+    """
+
+    if not approval_id:
+        raise ValueError(
+            "Missing approval ID"
+        )
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE playbook_approvals
+            SET
+                status = 'EXECUTED',
+                reviewed_by = COALESCE(
+                    reviewed_by,
+                    ?
+                ),
+                reviewed_at = COALESCE(
+                    reviewed_at,
+                    CURRENT_TIMESTAMP
+                )
+            WHERE id = ?
+              AND status = 'APPROVED'
+            """,
+            (
+                executed_by,
+                approval_id
+            )
+        )
+
+        updated = cursor.rowcount > 0
+
+        conn.commit()
+
+        if updated:
+            print(
+                f"Playbook approval {approval_id} "
+                f"marked EXECUTED."
+            )
+
+        return updated
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+
+def get_executed_playbook_approvals(
+    limit: int = 50
+):
+    """
+    Return recently executed playbook approvals.
+    """
+
+    try:
+        limit = int(limit)
+    except (
+        TypeError,
+        ValueError
+    ):
+        limit = 50
+
+    limit = max(
+        1,
+        min(limit, 200)
+    )
+
+    conn = create_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM playbook_approvals
+            WHERE status = 'EXECUTED'
+            ORDER BY reviewed_at DESC
+            LIMIT ?
+            """,
+            (limit,)
+        )
+
+        return rows_to_dicts(
+            cursor.fetchall()
+        )
+
+    finally:
+        conn.close()
+
+
+def reject_playbook_approval(
+    approval_id: int,
+    reviewed_by: str,
+    reviewer_comment: str = ""
+):
+    """
+    Convenience function for rejecting a playbook approval.
+    """
+
+    return review_playbook_approval(
+        approval_id=approval_id,
+        status="REJECTED",
+        reviewed_by=reviewed_by,
+        reviewer_comment=reviewer_comment
+    )
+
+
+def approve_playbook_approval(
+    approval_id: int,
+    reviewed_by: str,
+    reviewer_comment: str = ""
+):
+    """
+    Convenience function for approving a playbook approval.
+    """
+
+    return review_playbook_approval(
+        approval_id=approval_id,
+        status="APPROVED",
+        reviewed_by=reviewed_by,
+        reviewer_comment=reviewer_comment
+    )
