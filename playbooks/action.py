@@ -61,3 +61,17 @@ def log_event(ip_address):
         "target": ip_address,
         "timestamp": str(datetime.now())
     }
+    
+def contain_host(host_address):
+    """Simulate isolating a compromised host."""
+
+    print(
+        f"[{datetime.now()}] ACTION: Containing host {host_address}"
+    )
+
+    return {
+        "status": "success",
+        "action": "contain_host",
+        "target": host_address,
+        "timestamp": str(datetime.now())
+    }
