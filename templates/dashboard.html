@@ -34,7 +34,37 @@ SOC Command Center
 }
 
 .soc-dashboard {
+    position: relative;
+    isolation: isolate;
     color: var(--soc-text);
+}
+
+.soc-dashboard::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 8% 12%, rgba(93,124,255,.075), transparent 25%),
+        radial-gradient(circle at 92% 28%, rgba(37,217,255,.045), transparent 24%),
+        radial-gradient(circle at 50% 92%, rgba(155,108,255,.035), transparent 30%);
+}
+
+.soc-dashboard::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    opacity: .18;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 3px,
+        rgba(255,255,255,.012) 4px
+    );
+    mix-blend-mode: screen;
 }
 
 .soc-dashboard * {
@@ -240,6 +270,28 @@ SOC Command Center
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 14px;
+}
+
+.metric-card {
+    transform: translateZ(0);
+    will-change: transform, border-color, box-shadow;
+}
+
+.metric-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 16px;
+    right: 16px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(121,160,255,.65), transparent);
+    opacity: .7;
+}
+
+.metric-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(120,145,220,.28);
+    box-shadow: 0 18px 42px rgba(0,0,0,.28), 0 0 24px rgba(93,124,255,.06);
 }
 
 .metric-card {
@@ -1015,6 +1067,54 @@ SOC Command Center
 
 .pipeline-container {
     margin-top: 18px;
+}
+
+@media (min-width: 1101px) {
+    .pipeline-container {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        align-items: stretch;
+        gap: 0;
+        padding: 4px 0 8px;
+    }
+
+    .pipeline-step {
+        position: relative;
+        min-width: 0;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 9px;
+        min-height: 145px;
+        padding: 12px 8px;
+        text-align: center;
+    }
+
+    .pipeline-step:not(.completed):not(.active) {
+        opacity: .68;
+    }
+
+    .pipeline-info {
+        width: 100%;
+    }
+
+    .pipeline-info strong,
+    .pipeline-info small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .pipeline-status {
+        margin-top: auto;
+    }
+
+    .pipeline-line {
+        width: 100%;
+        height: 1px;
+        margin: 30px -4px 0;
+        background: linear-gradient(90deg, rgba(93,124,255,.05), rgba(93,124,255,.45), rgba(93,124,255,.05));
+    }
 }
 
 .pipeline-step {
@@ -1941,6 +2041,30 @@ SOC Command Center
         align-items: flex-start;
     }
 
+}
+
+
+/* ==========================================================
+   FINAL POLISH / ACCESSIBILITY
+   ========================================================== */
+
+.soc-dashboard button:focus-visible,
+.soc-dashboard a:focus-visible,
+.soc-dashboard input:focus-visible,
+.soc-dashboard select:focus-visible {
+    outline: 2px solid rgba(37,217,255,.8);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .soc-dashboard *,
+    .soc-dashboard *::before,
+    .soc-dashboard *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
 }
 
 </style>
@@ -3441,9 +3565,10 @@ SOC Command Center
 
             <div class="soc-form-group">
 
-                <label>Alert ID</label>
+                <label for="alertId">Alert ID</label>
 
                 <input
+                    id="alertId"
                     type="text"
                     name="alert_id"
                     placeholder="ALT-3001"
@@ -3454,9 +3579,9 @@ SOC Command Center
 
             <div class="soc-form-group">
 
-                <label>Alert Type</label>
+                <label for="alertType">Alert Type</label>
 
-                <select name="alert_type">
+                <select id="alertType" name="alert_type">
 
                     <option>Brute Force</option>
                     <option>Malware</option>
@@ -3472,9 +3597,9 @@ SOC Command Center
 
             <div class="soc-form-group">
 
-                <label>Severity</label>
+                <label for="severity">Severity</label>
 
-                <select name="severity">
+                <select id="severity" name="severity">
 
                     <option>LOW</option>
                     <option>MEDIUM</option>
@@ -3488,9 +3613,10 @@ SOC Command Center
 
             <div class="soc-form-group">
 
-                <label>Source IP</label>
+                <label for="sourceIp">Source IP</label>
 
                 <input
+                    id="sourceIp"
                     type="text"
                     name="source_ip"
                     placeholder="192.168.1.10"
@@ -3501,9 +3627,10 @@ SOC Command Center
 
             <div class="soc-form-group">
 
-                <label>Attacker IP</label>
+                <label for="attackerIp">Attacker IP</label>
 
                 <input
+                    id="attackerIp"
                     type="text"
                     name="attacker_ip"
                     placeholder="8.8.8.8"
