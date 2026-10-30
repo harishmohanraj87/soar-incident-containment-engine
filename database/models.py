@@ -1,4 +1,4 @@
-from database.database import create_connection
+﻿from database.database import create_connection
 
 
 # ==========================================================
@@ -230,65 +230,56 @@ def create_playbook_approvals_table():
     """
     Store approval requests for high-impact SOAR actions.
     """
-
     conn = create_connection()
 
     try:
-
         cursor = conn.cursor()
 
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS playbook_approvals (
-
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-            incident_id TEXT NOT NULL,
-
-            alert_id TEXT,
-
-            action TEXT NOT NULL,
-
-            target TEXT NOT NULL,
-
-            risk_score INTEGER NOT NULL,
-
-            status TEXT NOT NULL DEFAULT 'PENDING',
-
-            requested_by TEXT DEFAULT 'SOAR Engine',
-
-            reviewed_by TEXT,
-
-            reviewer_comment TEXT,
-
-            requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-            reviewed_at TIMESTAMP,
-
-            execution_started_at TIMESTAMP,
-
-            executed_at TIMESTAMP,
-
-            execution_result TEXT,
-
-            execution_error TEXT,
-
-            FOREIGN KEY (incident_id)
-            REFERENCES incidents(incident_id)
-            ON DELETE CASCADE
-        )
-
-        add_column_if_not_exists(cursor, "playbook_approvals", "execution_started_at", "TIMESTAMP")
-        add_column_if_not_exists(cursor, "playbook_approvals", "executed_at", "TIMESTAMP")
-        add_column_if_not_exists(cursor, "playbook_approvals", "execution_result", "TEXT")
-        add_column_if_not_exists(cursor, "playbook_approvals", "execution_error", "TEXT")
+            CREATE TABLE IF NOT EXISTS playbook_approvals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                incident_id TEXT NOT NULL,
+                alert_id TEXT,
+                action TEXT NOT NULL,
+                target TEXT NOT NULL,
+                risk_score INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'PENDING',
+                requested_by TEXT DEFAULT 'SOAR Engine',
+                reviewed_by TEXT,
+                reviewer_comment TEXT,
+                requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                reviewed_at TIMESTAMP,
+                execution_started_at TIMESTAMP,
+                executed_at TIMESTAMP,
+                execution_result TEXT,
+                execution_error TEXT,
+                FOREIGN KEY (incident_id)
+                    REFERENCES incidents(incident_id)
+                    ON DELETE CASCADE
+            )
         """)
+
+        add_column_if_not_exists(
+            cursor, "playbook_approvals",
+            "execution_started_at", "TIMESTAMP"
+        )
+        add_column_if_not_exists(
+            cursor, "playbook_approvals",
+            "executed_at", "TIMESTAMP"
+        )
+        add_column_if_not_exists(
+            cursor, "playbook_approvals",
+            "execution_result", "TEXT"
+        )
+        add_column_if_not_exists(
+            cursor, "playbook_approvals",
+            "execution_error", "TEXT"
+        )
 
         conn.commit()
 
     finally:
         conn.close()
-
-
 # ==========================================================
 # USERS TABLE
 # ==========================================================
