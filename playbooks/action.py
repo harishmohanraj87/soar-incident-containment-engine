@@ -8,70 +8,53 @@ In future versions, they can be replaced with real firewall,
 EDR, cloud, or SIEM API integrations.
 """
 
-from datetime import datetime
+import os
+from datetime import datetime, timezone
+
+
+def execute_action(action: str, target: str):
+    """Run an explicitly labelled adapter; DEMO never changes external systems."""
+    mode = os.getenv("SOAR_EXECUTION_MODE", "DEMO").strip().upper()
+    timestamp = datetime.now(timezone.utc).isoformat()
+    if mode == "DEMO":
+        return {"status": "success", "action": action, "target": target,
+                "timestamp": timestamp, "execution_mode": "DEMO", "simulated": True,
+                "containment_verified": False,
+                "message": f"DEMO: {action} was simulated; no external system was changed."}
+    if mode == "INTEGRATION":
+        return {"status": "failed", "action": action, "target": target,
+                "timestamp": timestamp, "execution_mode": "INTEGRATION", "simulated": False,
+                "containment_verified": False,
+                "message": "No integration adapter is configured for this action."}
+    return {"status": "failed", "action": action, "target": target,
+            "timestamp": timestamp, "execution_mode": mode, "simulated": False,
+            "containment_verified": False, "message": "Unsupported execution mode."}
 
 
 def block_ip(ip_address):
     """Simulate blocking a malicious IP address."""
 
-    print(f"[{datetime.now()}] ACTION: Blocking IP {ip_address}")
-
-    return {
-        "status": "success",
-        "action": "block_ip",
-        "target": ip_address,
-        "timestamp": str(datetime.now())
-    }
+    return execute_action("block_ip", ip_address)
 
 
 def notify_soc(ip_address):
     """Simulate notifying the SOC analyst."""
 
-    print(f"[{datetime.now()}] ACTION: Notifying SOC Analyst about {ip_address}")
-
-    return {
-        "status": "success",
-        "action": "notify_soc",
-        "target": ip_address,
-        "timestamp": str(datetime.now())
-    }
+    return execute_action("notify_soc", ip_address)
 
 
 def create_incident(ip_address):
     """Simulate creating an incident ticket."""
 
-    print(f"[{datetime.now()}] ACTION: Creating incident for {ip_address}")
-
-    return {
-        "status": "success",
-        "action": "create_incident",
-        "target": ip_address,
-        "timestamp": str(datetime.now())
-    }
+    return execute_action("create_incident", ip_address)
 
 
 def log_event(ip_address):
     """Simulate logging an event."""
 
-    print(f"[{datetime.now()}] ACTION: Logging event for {ip_address}")
-
-    return {
-        "status": "success",
-        "action": "log_event",
-        "target": ip_address,
-        "timestamp": str(datetime.now())
-    }
+    return execute_action("log_event", ip_address)
     
 def contain_host(host_address):
     """Simulate isolating a compromised host."""
 
-    print(
-        f"[{datetime.now()}] ACTION: Containing host {host_address}"
-    )
-
-    return {
-        "status": "success",
-        "action": "contain_host",
-        "target": host_address,
-        "timestamp": str(datetime.now())
-    }
+    return execute_action("contain_host", host_address)

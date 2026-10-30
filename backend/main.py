@@ -22,6 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from starlette.middleware.sessions import SessionMiddleware
+from dotenv import load_dotenv
 
 from backend.parser import parse_alert
 from backend.normalizer import normalize_alert
@@ -29,12 +30,13 @@ from backend.auth import hash_password
 from wazuh.webhook import router as wazuh_router
 
 from threat_intel.enricher import enrich_ip
-from playbooks.engine import execute_playbook
+from playbooks.engine import execute_playbook, execute_approved_playbook
 
 from database.models import (
     create_alerts_table,
     create_incidents_table,
     create_incident_activity_table,
+    create_playbook_approvals_table,
     create_users_table,
     create_notifications_table,
 )
@@ -87,6 +89,8 @@ from database.crud import (
 
     export_incidents,
 
+    update_alert_response,
+
     create_user,
     user_exists,
     authenticate_user,
@@ -104,6 +108,12 @@ from database.crud import (
 # APPLICATION
 # ==========================================================
 
+load_dotenv()
+
+session_secret = os.getenv("SESSION_SECRET")
+if not session_secret:
+    raise RuntimeError("SESSION_SECRET must be configured before starting the application.")
+
 app = FastAPI(
     title="SOAR Incident Containment Engine",
     description="Security Orchestration, Automation and Response Platform",
@@ -119,10 +129,8 @@ app.include_router(wazuh_router)
 
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv(
-        "SESSION_SECRET",
-        "soar-super-secret-key",
-    ),
+    secret_key=session_secret,
+    https_only=os.getenv("SESSION_HTTPS_ONLY", "false").lower() == "true",
 )
 
 app.mount(
@@ -141,6 +149,7 @@ templates = Jinja2Templates(directory="templates")
 create_alerts_table()
 create_incidents_table()
 create_incident_activity_table()
+create_playbook_approvals_table()
 create_users_table()
 create_notifications_table()
 
@@ -393,27 +402,11 @@ def process_alert(alert: dict):
     ).upper()
 
     # ------------------------------------------------------
-    # 5. PLAYBOOK
+    # 5. PERSIST ALERT AND INCIDENT BEFORE ANY DEPENDENT PLAYBOOK APPROVAL
     # ------------------------------------------------------
 
     if attacker_ip:
-        try:
-            playbook_result = execute_playbook(
-                {
-                    "ip": attacker_ip,
-                    "risk_score": risk_score,
-                }
-            )
-        except Exception as error:
-            print(
-                f"Playbook execution error: {error}"
-            )
-
-            playbook_result = {
-                "status": "FAILED",
-                "action": "No action executed",
-                "error": str(error),
-            }
+        playbook_result = {"status": "DEFERRED", "action": "Pending persistence"}
     else:
         playbook_result = {
             "status": "SKIPPED",
@@ -532,13 +525,37 @@ def process_alert(alert: dict):
 
             log_incident_activity(
                 incident_id,
-                "PLAYBOOK_EXECUTED",
-                f"Automated response executed: {action_taken}",
+                "PLAYBOOK_QUEUED",
+                "Response policy evaluation queued after alert and incident persistence.",
                 "SOAR Engine",
             )
 
     # ------------------------------------------------------
-    # 8. REAL-TIME NOTIFICATIONS
+    # 8. PLAYBOOK (now that referenced records exist)
+    # ------------------------------------------------------
+    if attacker_ip:
+        try:
+            playbook_result = execute_playbook({
+                "ip": attacker_ip,
+                "risk_score": risk_score,
+                "incident_id": incident_id,
+                "alert_id": alert_id,
+            })
+        except Exception as error:
+            playbook_result = {"status": "FAILED", "action": "No action executed", "error": str(error)}
+
+        action_taken = playbook_result.get("action", "No action executed")
+        response_status = "PENDING_APPROVAL" if playbook_result.get("status") == "pending_approval" else playbook_result.get("status", "FAILED").upper()
+        update_alert_response(alert_id, action_taken, response_status)
+        log_incident_activity(
+            incident_id,
+            "PLAYBOOK_APPROVAL_REQUESTED" if response_status == "PENDING_APPROVAL" else "PLAYBOOK_EXECUTED",
+            f"Playbook outcome: {action_taken}. State: {response_status}.",
+            "SOAR Engine",
+        )
+
+    # ------------------------------------------------------
+    # 9. REAL-TIME NOTIFICATIONS
     # ------------------------------------------------------
 
     if alert_created and severity in ("HIGH", "CRITICAL"):
@@ -834,10 +851,9 @@ async def review_playbook_approval_api(
     SOAR playbook action.
     """
 
-    redirect = require_login(request)
-
-    if redirect:
-        return redirect
+    admin_check = require_admin(request)
+    if admin_check:
+        return admin_check
 
     username = current_user(request)
 
@@ -903,6 +919,13 @@ async def review_playbook_approval_api(
                 )
             )
 
+        log_incident_activity(
+            approval["incident_id"],
+            "PLAYBOOK_APPROVAL_REVIEWED",
+            f"Approval {approval_id} reviewed as {status}. Comment: {approval_request.reviewer_comment or ''}",
+            username,
+        )
+
         updated_approval = get_playbook_approval(
             approval_id
         )
@@ -931,6 +954,22 @@ async def review_playbook_approval_api(
             status_code=500,
             detail="Unable to review playbook approval"
         )
+
+
+@app.post("/api/playbook-approvals/{approval_id}/execute")
+async def execute_playbook_approval_api(approval_id: int, request: Request):
+    """Execute one approved action; the engine atomically prevents duplicates."""
+    admin_check = require_admin(request)
+    if admin_check:
+        return admin_check
+    try:
+        result = execute_approved_playbook(approval_id, executed_by=current_user(request))
+        return {"success": True, "result": make_json_safe(result)}
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error))
+    except Exception as error:
+        print(f"Playbook execution error: {error}")
+        raise HTTPException(status_code=500, detail="Approved playbook execution failed")
 
 
 @app.get(

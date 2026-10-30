@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from pathlib import Path
 
@@ -8,7 +9,13 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DATABASE_NAME = BASE_DIR / "soar.db"
+DEFAULT_DATABASE_NAME = BASE_DIR / "soar.db"
+
+
+def get_database_name():
+    """Return the configured database path without mutating production data in tests."""
+    configured_path = os.getenv("SOAR_DATABASE_PATH")
+    return Path(configured_path) if configured_path else DEFAULT_DATABASE_NAME
 
 
 # ==========================================================
@@ -21,7 +28,7 @@ def create_connection():
     """
 
     conn = sqlite3.connect(
-        DATABASE_NAME,
+        get_database_name(),
         timeout=10,
         check_same_thread=False
     )
