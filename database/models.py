@@ -264,10 +264,23 @@ def create_playbook_approvals_table():
 
             reviewed_at TIMESTAMP,
 
+            execution_started_at TIMESTAMP,
+
+            executed_at TIMESTAMP,
+
+            execution_result TEXT,
+
+            execution_error TEXT,
+
             FOREIGN KEY (incident_id)
             REFERENCES incidents(incident_id)
             ON DELETE CASCADE
         )
+
+        add_column_if_not_exists(cursor, "playbook_approvals", "execution_started_at", "TIMESTAMP")
+        add_column_if_not_exists(cursor, "playbook_approvals", "executed_at", "TIMESTAMP")
+        add_column_if_not_exists(cursor, "playbook_approvals", "execution_result", "TEXT")
+        add_column_if_not_exists(cursor, "playbook_approvals", "execution_error", "TEXT")
         """)
 
         conn.commit()

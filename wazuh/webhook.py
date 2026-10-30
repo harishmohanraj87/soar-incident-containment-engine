@@ -6,7 +6,10 @@ maps them to the standard SOAR alert format,
 and forwards them into the existing SOAR pipeline.
 """
 
-from fastapi import APIRouter, HTTPException
+import os
+import secrets
+
+from fastapi import APIRouter, HTTPException, Request
 
 from wazuh.parser import parse_wazuh_alert
 from wazuh.mapper import map_to_soar
@@ -19,11 +22,20 @@ router = APIRouter(
 
 
 @router.post("/webhook")
-async def receive_wazuh_alert(alert: dict):
+async def receive_wazuh_alert(request: Request, alert: dict):
     """
     Receive a raw Wazuh alert and process it through
     the existing SOAR alert pipeline.
     """
+
+    # The webhook is fail-closed: an unset secret disables ingestion rather
+    # than exposing a public unauthenticated containment endpoint.
+    configured_secret = os.getenv("WAZUH_WEBHOOK_SECRET")
+    provided_secret = request.headers.get("X-Wazuh-Webhook-Secret", "")
+    if not configured_secret:
+        raise HTTPException(status_code=503, detail="Wazuh webhook authentication is not configured.")
+    if not provided_secret or not secrets.compare_digest(provided_secret, configured_secret):
+        raise HTTPException(status_code=401, detail="Invalid Wazuh webhook credentials.")
 
     # ------------------------------------------------------
     # VALIDATE REQUEST

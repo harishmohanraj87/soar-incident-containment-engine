@@ -438,15 +438,40 @@ def get_blocked_ips():
 
 
 def get_mttr():
-    """
-    Current placeholder.
+    """Mean Time to Resolve in minutes for resolved incidents with valid timestamps."""
+    conn = create_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT AVG((julianday(resolved_at) - julianday(created_at)) * 24 * 60)
+            FROM incidents
+            WHERE incident_status IN ('RESOLVED', 'CLOSED')
+              AND created_at IS NOT NULL
+              AND resolved_at IS NOT NULL
+              AND julianday(resolved_at) >= julianday(created_at)
+        """)
+        value = cursor.fetchone()[0]
+        return "N/A" if value is None else f"{value:.1f} min"
+    finally:
+        conn.close()
 
-    This will be replaced with actual
-    Detection -> Containment / Resolution
-    time calculation in a later sprint.
-    """
 
-    return "2.4 min"
+def update_alert_response(alert_id: str, action_taken: str, status: str = None):
+    """Persist the actual playbook outcome after alert and incident creation."""
+    conn = create_connection()
+    try:
+        cursor = conn.cursor()
+        if status:
+            cursor.execute("UPDATE alerts SET action_taken = ?, status = ? WHERE alert_id = ?", (action_taken, status, alert_id))
+        else:
+            cursor.execute("UPDATE alerts SET action_taken = ? WHERE alert_id = ?", (action_taken, alert_id))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 # ==========================================================
@@ -2811,10 +2836,10 @@ def mark_playbook_approval_executed(
     executed_by: str = "System"
 ):
     """
-    Mark an APPROVED playbook approval as EXECUTED.
+    Atomically claim an APPROVED playbook approval for execution.
 
-    This prevents the same approval from being executed
-    repeatedly.
+    It remains EXECUTING until the adapter returns an outcome, preventing
+    concurrent duplicate containment attempts and false successful states.
     """
 
     if not approval_id:
@@ -2831,15 +2856,14 @@ def mark_playbook_approval_executed(
             """
             UPDATE playbook_approvals
             SET
-                status = 'EXECUTED',
+                status = 'EXECUTING',
                 reviewed_by = COALESCE(
                     reviewed_by,
                     ?
                 ),
-                reviewed_at = COALESCE(
-                    reviewed_at,
-                    CURRENT_TIMESTAMP
-                )
+                execution_started_at = CURRENT_TIMESTAMP,
+                execution_result = NULL,
+                execution_error = NULL
             WHERE id = ?
               AND status = 'APPROVED'
             """,
@@ -2856,7 +2880,7 @@ def mark_playbook_approval_executed(
         if updated:
             print(
                 f"Playbook approval {approval_id} "
-                f"marked EXECUTED."
+                f"claimed for execution."
             )
 
         return updated
@@ -2865,6 +2889,34 @@ def mark_playbook_approval_executed(
         conn.rollback()
         raise
 
+    finally:
+        conn.close()
+
+
+def complete_playbook_approval_execution(
+    approval_id: int,
+    succeeded: bool,
+    result: str = "",
+    error: str = ""
+):
+    """Persist the result of a previously claimed playbook execution."""
+    conn = create_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE playbook_approvals
+            SET status = ?, executed_at = CURRENT_TIMESTAMP,
+                execution_result = ?, execution_error = ?
+            WHERE id = ? AND status = 'EXECUTING'
+            """,
+            ("EXECUTED" if succeeded else "FAILED", result or None, error or None, approval_id),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 

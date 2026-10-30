@@ -45,6 +45,7 @@ from database.crud import (
     create_playbook_approval,
     get_playbook_approval,
     mark_playbook_approval_executed,
+    complete_playbook_approval_execution,
     update_incident_status,
     log_incident_activity,
     create_notification
@@ -475,6 +476,16 @@ def execute_approved_playbook(
             "It may have already been executed."
         )
 
+    log_incident_activity(
+        incident_id=incident_id,
+        activity_type="PLAYBOOK_EXECUTION_STARTED",
+        activity=(
+            f"Approved playbook '{action}' execution started. "
+            f"Approval ID: {approval_id}."
+        ),
+        performed_by=executed_by
+    )
+
     # ======================================================
     # EXECUTE APPROVED ACTION
     # ======================================================
@@ -519,6 +530,10 @@ def execute_approved_playbook(
 
     except Exception as error:
 
+        complete_playbook_approval_execution(
+            approval_id, succeeded=False, error=str(error)
+        )
+
         # --------------------------------------------------
         # FAILURE AUDIT
         # --------------------------------------------------
@@ -557,13 +572,17 @@ def execute_approved_playbook(
     # ======================================================
 
     if not isinstance(result, dict):
-
+        complete_playbook_approval_execution(
+            approval_id, succeeded=False, error="Adapter returned an invalid result."
+        )
         raise RuntimeError(
             "Approved playbook returned an invalid result."
         )
 
     if result.get("status") != "success":
-
+        complete_playbook_approval_execution(
+            approval_id, succeeded=False, error=result.get("message", "Adapter reported failure.")
+        )
         raise RuntimeError(
             "Approved playbook action failed."
         )
@@ -578,7 +597,7 @@ def execute_approved_playbook(
 
         updated = update_incident_status(
             incident_id,
-            "CONTAINED"
+            "CONTAINMENT_SIMULATED" if result.get("simulated") else "CONTAINED"
         )
 
         if not updated:
@@ -588,7 +607,7 @@ def execute_approved_playbook(
                 f"{incident_id} to CONTAINED."
             )
 
-        incident_status = "CONTAINED"
+        incident_status = "CONTAINMENT_SIMULATED" if result.get("simulated") else "CONTAINED"
 
     # ======================================================
     # AUDIT TRAIL
@@ -598,11 +617,12 @@ def execute_approved_playbook(
         incident_id=incident_id,
         activity_type="PLAYBOOK_EXECUTED",
         activity=(
-            f"Approved playbook '{action}' "
-            f"executed successfully against {target}. "
+            f"Approved playbook '{action}' completed against {target}. "
             f"Approval ID: {approval_id}. "
             f"Risk score: {risk_score}. "
-            f"Approved by: {approval['reviewed_by']}."
+            f"Approved by: {approval['reviewed_by']}. "
+            f"Mode: {result.get('execution_mode', 'UNKNOWN')}. "
+            f"Simulated: {bool(result.get('simulated'))}."
         ),
         performed_by=executed_by
     )
@@ -623,19 +643,23 @@ def execute_approved_playbook(
         else "PLAYBOOK",
         severity=notification_severity,
         title=(
-            "Host Containment Executed"
+            "Host Containment Simulated" if result.get("simulated") else "Host Containment Executed"
             if action == "contain_host"
             else "Approved Playbook Executed"
         ),
         message=(
             f"Approved playbook '{action}' "
-            f"was successfully executed against "
+            f"completed against "
             f"{target}. "
             f"Approval ID: {approval_id}. "
             f"Executed by: {executed_by}."
         ),
         alert_id=alert_id,
         incident_id=incident_id
+    )
+
+    complete_playbook_approval_execution(
+        approval_id, succeeded=True, result=result.get("message", "Adapter completed successfully.")
     )
 
     # ======================================================
